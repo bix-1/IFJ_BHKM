@@ -1,15 +1,17 @@
 /*
- * Purpose: Compiler implementation of imperative programing language IFJ20
+ * Project: Compiler for imperative programing language IFJ20
  *
- * Authors: Hladký Tomáš	xhladk15@stud.fit.vutbr.cz
- *          Kostolányi Adam	xkosto04@stud.fit.vutbr.cz
- *          Makiš Jozef	    xmakis00@stud.fit.vutbr.cz
- *          Bartko Jakub	xbartk07@stud.fit.vutbr.cz
+ * File: codegen.h
+ * Brief: Code generator header file
+ *
+ * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
+ *          Kostolányi Adam xkosto04@stud.fit.vutbr.cz
+ *          Makiš Jozef     xmakis00@stud.fit.vutbr.cz
+ *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
-
-#ifndef IFJ_BHKM_CODEGEN_H
-#define IFJ_BHKM_CODEGEN_H
+#ifndef CODEGEN_H
+#define CODEGEN_H
 
 #include <stdlib.h>
 
-#endif //IFJ_BHKM_CODEGEN_H
+#endif //CODEGEN_H
