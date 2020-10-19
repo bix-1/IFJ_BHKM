@@ -1,9 +1,9 @@
-# Makefile for compiler for imperative programing language IFJ20
+# Makefile for compiler implementation of imperative programing language IFJ20
 #
-# Authors:	Hladký Tomáš	xhladk15@stud.fit.vutbr.cz
-#			Kostolányi Adam	xkosto04@stud.fit.vutbr.cz
-#			Makiš Jozef	    xmakis00@stud.fit.vutbr.cz
-#			Bartko Jakub	xbartk07@stud.fit.vutbr.cz
+# Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
+#          Kostolányi Adam xkosto04@stud.fit.vutbr.cz
+#          Makiš Jozef     xmakis00@stud.fit.vutbr.cz
+#          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
 #
 
 CC = gcc
