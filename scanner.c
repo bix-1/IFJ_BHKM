@@ -21,6 +21,8 @@ int get_next_token(string *attr) {
     int c;
     Token token;
 
+    str_clear(attr); // deleting everything in string, if it is identifier we start storing data
+
     while (1) {
         //we get another char from our source file
         c = getc(source);
@@ -30,10 +32,10 @@ int get_next_token(string *attr) {
                 if (isspace(c)) {
                     scanner_state = s_start;
                 } else if (isalpha(c) || c == '_') {
-                    str_add_char(attr, islower(c)); //save first char
+                    str_add_char(attr, c); //save first char
                     scanner_state = s_identifier;
                 } else if (isdigit(c)) {
-                    str_add_char(attr, islower(c)); //save first char
+                    str_add_char(attr, c); //save first char
                     scanner_state = s_int_lit;
                 } else if (c == '/') {
                     c = getc(source);
@@ -133,7 +135,33 @@ int get_next_token(string *attr) {
                 }
                 break;
             case s_identifier:
-                //TODO
+                if (isalnum(c) || c == '_') {
+                    str_add_char(attr, c);
+                } else {
+                    if (str_cmp_cons(attr, "else") == 0) {
+                        token.token_type = T_ELSE;
+                    } else if (str_cmp_cons(attr, "float64") == 0) {
+                        token.token_type = T_FLOAT64;
+                    } else if (str_cmp_cons(attr, "for") == 0) {
+                        token.token_type = T_FOR;
+                    } else if (str_cmp_cons(attr, "func") == 0) {
+                        token.token_type = T_FUNC;
+                    } else if (str_cmp_cons(attr, "if") == 0) {
+                        token.token_type = T_IF;
+                    } else if (str_cmp_cons(attr, "int") == 0) {
+                        token.token_type = T_INT;
+                    } else if (str_cmp_cons(attr, "package") == 0) {
+                        token.token_type = T_PACKAGE;
+                    } else if (str_cmp_cons(attr, "return") == 0) {
+                        token.token_type = T_RETRUN;
+                    } else if (str_cmp_cons(attr, "string") == 0) {
+                        token.token_type = T_STRING;
+                    } else {
+                        token.token_type = T_IDENTIFIER;
+                    }
+                    str_free(attr);
+                    return L_SUCCESS;
+                }
                 break;
             case s_int_lit:
                 //TODO
