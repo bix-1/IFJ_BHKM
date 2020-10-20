@@ -17,11 +17,11 @@
 /*
  * Function creates new string.
  */
-int str_init(string *s){
+int str_init(string *s) {
     //allocates string to 1 char size
     s->str = (char *) malloc(STR_LEN_INC);
 
-    if(s->str == NULL){
+    if (s->str == NULL) {
         return 1;
     }
 
@@ -33,14 +33,14 @@ int str_init(string *s){
 /*
  * Function frees allocated memory
  */
-void str_free(string *s){
+void str_free(string *s) {
     free(s->str);
 }
 
 /*
  * Function clears string array.
  */
-void str_clear(string *s){
+void str_clear(string *s) {
     s->str[0] = '\0';
     s->str_lenght = 0;
 }
@@ -48,12 +48,12 @@ void str_clear(string *s){
 /*
  * Function adds new char intostring array.
  */
-int str_add_char(string *s, char c){
-    if(s->str_lenght + 1 >= s->str_alloc_size){
+int str_add_char(string *s, char c) {
+    if (s->str_lenght + 1 >= s->str_alloc_size) {
         //if there is not enoguh memory, we reallocate
         s->str = (char *) realloc(s->str, s->str_lenght + STR_LEN_INC);
 
-        if(s->str == NULL){
+        if (s->str == NULL) {
             return 1;
         }
 
@@ -70,13 +70,13 @@ int str_add_char(string *s, char c){
 /*
  * Function copies second string into the first.
  */
-int str_copy(string *s1, string *s2){
+int str_copy(string *s1, string *s2) {
     int new_str_lenght = s2->str_lenght;
     //if there is not enoguh memory, we reallocate
-    if(new_str_lenght >= s1->str_alloc_size){
+    if (new_str_lenght >= s1->str_alloc_size) {
         s1->str = (char *) realloc(s1->str, new_str_lenght + 1);
 
-        if(s1->str == NULL){
+        if (s1->str == NULL) {
             return 1;
         }
 
@@ -92,13 +92,13 @@ int str_copy(string *s1, string *s2){
 /*
  * Function compares string with constant.
  */
-int str_cmp_cons(string *s, char *s_const){
+int str_cmp_cons(string *s, char *s_const) {
     return strcmp(s->str, s_const);
 }
 
 /*
  * Function comapares two strings.
  */
-int str_cmp(string *s1, string *s2){
+int str_cmp(string *s1, string *s2) {
     return strcmp(s1->str, s2->str);
 }
