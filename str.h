@@ -22,10 +22,17 @@ typedef struct {
 } string;
 
 int str_init(string *s);
+
 void str_free(string *s);
+
 void str_clear(string *s);
+
 int str_add_char(string *s, char c);
+
 int str_copy(string *s1, string *s2);
+
 int str_cmp_cons(string *s, char *s_const);
+
 int str_cmp(string *s1, string *s2);
+
 #endif //IFJ_BHKM_STR_H
