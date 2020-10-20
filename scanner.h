@@ -14,10 +14,18 @@
 #define IFJ_BHKM_SCANNER_H
 
 #include "str.h"
+#include "stdio.h"
+#include "ctype.h"
+
+// global variable for input file
+FILE *source;
 
 /*
  * Token constants.
  */
+
+#define L_SUCCESS 0
+#define L_ERROR 1
 
 // math
 #define T_PLUS 100          // +
@@ -57,15 +65,15 @@
 /*
  * Automatons states.
  */
-enum scanner_state{
+enum scanner_state {
     // s - initial state
-    s_start,                //s
+    s_start = 10,                //s
 
     // math operators
     s_plus,                 //f2
     s_minus,                //f3
     s_mul,                  //f4
-    S_div,                  //f5
+    s_div,                  //f5
 
     // comparison operators
     s_assignment,           //f8
@@ -77,7 +85,7 @@ enum scanner_state{
     s_neq,                  //f10
 
     // number literals
-    s_indentifier,          //f15
+    s_identifier,          //f15
     s_int_lit,              //f16 integer literal
     s_decimal_tmp,          //q17
     s_decimal_lit,          //f17 decimal literal
@@ -104,18 +112,22 @@ enum scanner_state{
  * Data type, that allows to store different data types in the same memory location.
  * Only one member can contain a value at any given time.
  */
-typedef union  {
+typedef union {
     int int_lit;
     double dec_lit;
     string str_lit;
-} literal_attr;
+} Literal_attr;
 
 /*
  * Structure, that contains token type and his attribute.
  */
 typedef struct {
     int token_type;
-    literal_attr attr;
-} token;
+    Literal_attr attr;
+} Token;
+
+void source_file_setup(FILE *f);
+
+int get_next_token(string *attr);
 
 #endif //IFJ_BHKM_SCANNER_H
