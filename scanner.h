@@ -62,6 +62,7 @@ FILE *source;
 #define T_FOR 125
 #define T_PACKAGE 126
 
+#define T_IDENTIFIER 127
 /*
  * Automatons states.
  */
@@ -115,7 +116,7 @@ enum scanner_state {
 typedef union {
     int int_lit;
     double dec_lit;
-    string str_lit;
+    string *str_lit;
 } Literal_attr;
 
 /*
