@@ -11,6 +11,8 @@
  */
 
 #include "scanner.h"
+//TODO built functions
+
 
 void source_file_setup(FILE *f) {
     source = f;
@@ -18,7 +20,7 @@ void source_file_setup(FILE *f) {
 
 int get_next_token(string *attr) {
     int scanner_state = s_start; // we set initial scanner state
-    int c;
+    int c; // variable for input char
     char *endptr; // auxiliary variable for strtod function
     Token token;
 
@@ -47,6 +49,7 @@ int get_next_token(string *attr) {
                     scanner_state = s_string_tmp;
                 } else if (c == '/') {
                     c = getc(source);
+
                     if (c == '/') {
                         scanner_state = s_line_c;
                     } else if (c == '*') {
@@ -142,7 +145,7 @@ int get_next_token(string *attr) {
                     return L_ERROR;
                 }
                 break;
-            case s_identifier: //f15
+            case s_identifier: //f151
                 // we are filling our string with indentifier
                 if (isalnum(c) || c == '_') {
                     str_add_char(attr, c);
@@ -208,10 +211,10 @@ int get_next_token(string *attr) {
                 }
                 break;
             case s_exp_tmp: //q18
-                if(isdigit(c)){
+                if (isdigit(c)) {
                     str_add_char(attr, c);
                     scanner_state = s_decimal_lit;
-                } else if (c == '+' || c == '-'){
+                } else if (c == '+' || c == '-') {
                     scanner_state = s_exp_sig_tmp;
                 } else {
                     ungetc(c, source);
@@ -220,7 +223,7 @@ int get_next_token(string *attr) {
                 }
                 break;
             case s_exp_sig_tmp: //r18
-                if(isdigit(c)){
+                if (isdigit(c)) {
                     str_add_char(attr, c);
                     scanner_state = s_exp_lit;
                 } else {
@@ -230,7 +233,7 @@ int get_next_token(string *attr) {
                 }
                 break;
             case s_decimal_tmp: //q17
-                if(isdigit(c)){
+                if (isdigit(c)) {
                     str_add_char(attr, c);
                     scanner_state = s_decimal_lit;
                 } else {
@@ -252,24 +255,36 @@ int get_next_token(string *attr) {
                 }
                 break;
             case s_exp_lit: //f18
-                if(isdigit(c)){
+                if (isdigit(c)) {
                     str_add_char(attr, c);
-                } else if (c == '+' || c == '-'){
-                    str_add_char(attr, c);
-                    scanner_state = s_decimal_lit;
                 } else {
                     ungetc(c, source);
                     token.token_type = T_FLOAT64;
                     token.attr.dec_lit = strtod(attr->str, &endptr);
                 }
                 break;
-            case s_string_tmp:
-                //TODO
-                break;
             case s_line_c:
-                //TODO
+                if(c == EOF || c =='\n'){
+                    ungetc(c, source);
+                    scanner_state = s_start;
+                }
                 break;
             case s_block_c:
+                if (c == '*') {
+                    c = getc(source);
+
+                    if (c == '/'){
+                        scanner_state = s_start;
+                    } else {
+                        ungetc(c, source);
+                    }
+                } else if (c == EOF) { // block comment without end
+                    ungetc(c, source);
+                    str_free(attr);
+                    return L_ERROR;
+                }
+                break;
+            case s_string_tmp:
                 //TODO
                 break;
         }
