@@ -16,6 +16,7 @@
 #include "str.h"
 #include "stdio.h"
 #include "ctype.h"
+#include <stdlib.h>
 
 // global variable for input file
 FILE *source;
@@ -26,6 +27,7 @@ FILE *source;
 
 #define L_SUCCESS 0
 #define L_ERROR 1
+#define I_ERROR 99
 
 // math
 #define T_PLUS 100          // +
