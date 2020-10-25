@@ -20,23 +20,28 @@
 #include <stdio.h>
 #include <string.h>
 
-void error( int errCode ) {
-  char filename[] = getFilename();
-  int errLine = getLine();
+void error( int errCode )
+{
+  char filename[] = get_filename();
+  int errLine = get_line();
   char msg[100];
 
-  switch ( errCode ) {
+  switch ( errCode )
+  {
     case 1:
       strcat( msg, "Lexical analysis failed" );
       break;
+
     case 2:
       strcat( msg, "Syntactic analysis failed" );
       break;
 
-    // TODO
-    // add the rest
+    case 99:
+      strcat( msg, "Internal compiler error (compiler's fault)" );
+      break;
 
     default:
+      strcat( msg, "Semantic error" );
       break;
   }
 
