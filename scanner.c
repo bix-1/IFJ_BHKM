@@ -23,6 +23,7 @@ int get_next_token(string *attr) {
     int c; // variable for input char
     char *endptr; // auxiliary variable for strtod function
     Token token;
+    char hex[2];
 
     if (str_init(token.attr.str_lit) == 1) {
         return I_ERROR;
@@ -45,7 +46,7 @@ int get_next_token(string *attr) {
                     str_add_char(attr, c); //save first char
                     scanner_state = s_int_lit;
                 } else if (c == '"') {
-                    str_add_char(attr, c); //save first char
+                    // we dont save first char '"', because we dont want it in the string
                     scanner_state = s_string_tmp;
                 } else if (c == '/') {
                     c = getc(source);
@@ -150,6 +151,7 @@ int get_next_token(string *attr) {
                 if (isalnum(c) || c == '_') {
                     str_add_char(attr, c);
                 } else {
+                    
                     if (str_init(token.attr.str_lit) == 1) {
                         return I_ERROR;
                     }
@@ -263,17 +265,17 @@ int get_next_token(string *attr) {
                     token.attr.dec_lit = strtod(attr->str, &endptr);
                 }
                 break;
-            case s_line_c:
-                if(c == EOF || c =='\n'){
+            case s_line_c: //p2
+                if (c == EOF || c == '\n') {
                     ungetc(c, source);
                     scanner_state = s_start;
                 }
                 break;
-            case s_block_c:
+            case s_block_c: //p1
                 if (c == '*') {
                     c = getc(source);
 
-                    if (c == '/'){
+                    if (c == '/') {
                         scanner_state = s_start;
                     } else {
                         ungetc(c, source);
@@ -284,8 +286,80 @@ int get_next_token(string *attr) {
                     return L_ERROR;
                 }
                 break;
-            case s_string_tmp:
-                //TODO
+            case s_string_tmp: //q19
+                if (c > 31) {
+                    if (c == '"') {
+                        scanner_state = s_string;
+                    } else if (c == '\\') {
+                        scanner_state = s_esc_seq;
+                    } else {
+                        str_add_char(attr, c);
+                    }
+                } else {
+                    ungetc(c, source);
+                    str_free(attr);
+                    return L_ERROR;
+                }
+                break;
+            case s_esc_seq: //r19
+                if (c == '\\') {
+                    str_add_char(attr, '\\');
+                    scanner_state = s_string_tmp;
+                } else if (c == 't') {
+                    str_add_char(attr, '\t');
+                    scanner_state = s_string_tmp;
+                } else if (c == 'n') {
+                    str_add_char(attr, '\n');
+                    scanner_state = s_string_tmp;
+                } else if (c == 'x') {
+                    scanner_state = s_hex_tmp;
+                } else if (c == '"') {
+                    str_add_char(attr, '\"');
+                    scanner_state = s_string_tmp;
+                } else {
+                    ungetc(c, source);
+                    str_free(attr);
+                    return L_ERROR;
+                }
+                break;
+            case s_hex_tmp: //t19
+                if (c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
+                    c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' ||
+                    isdigit(c)) {
+                    hex[0] = c;
+                    scanner_state = s_hex_num;
+                } else {
+                    ungetc(c, source);
+                    str_free(attr);
+                    return L_ERROR;
+                }
+                break;
+            case s_hex_num: //u19
+                if (c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
+                    c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' ||
+                    isdigit(c)) {
+                    long pars_tmp;
+                    hex[1] = c;
+                    pars_tmp = strtol(hex, &endptr, 16);
+                    c = (int) pars_tmp;
+                    str_add_char(attr, c);
+                    scanner_state = s_string_tmp;
+                } else {
+                    ungetc(c, source);
+                    str_free(attr);
+                    return L_ERROR;
+                }
+                break;
+            case s_string: //f19
+                ungetc(c, source);
+
+                if (str_init(token.attr.str_lit) == 1) {
+                    return I_ERROR;
+                }
+
+                token.token_type = T_STRING;
+                str_copy(token.attr.str_lit, attr);
+                str_free(attr);
                 break;
         }
     }
