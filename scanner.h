@@ -129,8 +129,21 @@ typedef struct {
     Literal_attr attr;
 } Token;
 
+/*
+ * Function that helps us set up our input file, with parameter for it.
+ */
 void source_file_setup(FILE *f);
 
+/*
+ * Function with parameter for string and char. Function clears loaded char and frees
+ * allocated memory with our string.
+ */
+void char_clear(string *attr, int c);
+
+/*
+ * Main function for lexical analyzer that keeps providing token types and his attribute
+ * for syntax analyzer. Function parameter with pointer to string struct.
+ */
 int get_next_token(string *attr);
 
 #endif //IFJ_BHKM_SCANNER_H
