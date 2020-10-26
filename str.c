@@ -14,9 +14,6 @@
 #include "stdlib.h"
 #include "string.h"
 
-/*
- * Function creates new string.
- */
 int str_init(string *s) {
     //allocates string to 1 char size
     s->str = (char *) malloc(STR_LEN_INC);
@@ -30,24 +27,15 @@ int str_init(string *s) {
     s->str_alloc_size = 0;
 }
 
-/*
- * Function frees allocated memory
- */
 void str_free(string *s) {
     free(s->str);
 }
 
-/*
- * Function clears string array.
- */
 void str_clear(string *s) {
     s->str[0] = '\0';
     s->str_lenght = 0;
 }
 
-/*
- * Function adds new char intostring array.
- */
 int str_add_char(string *s, char c) {
     if (s->str_lenght + 1 >= s->str_alloc_size) {
         //if there is not enoguh memory, we reallocate
@@ -89,16 +77,10 @@ int str_copy(string *s1, string *s2) {
     return 0;
 }
 
-/*
- * Function compares string with constant.
- */
 int str_cmp_cons(string *s, char *s_const) {
     return strcmp(s->str, s_const);
 }
 
-/*
- * Function comapares two strings.
- */
 int str_cmp(string *s1, string *s2) {
     return strcmp(s1->str, s2->str);
 }
