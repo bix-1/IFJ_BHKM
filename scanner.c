@@ -11,34 +11,44 @@
  */
 
 #include "scanner.h"
-//TODO built functions
 
+int line_num = 0; // line count for accurate error message
 
 void source_file_setup(FILE *f) {
     source = f;
 }
 
-void char_clear(string *attr, int c){
+void char_clear(string *attr, int c) {
     ungetc(c, source);
     str_free(attr);
 }
 
 int get_next_token(string *attr) {
-    int scanner_state = s_start; // we set initial scanner state
+    int scanner_state; // variable declaration for switch
     int c; // variable for input char
-    char *endptr; // auxiliary variable for strtod function
+    char *endptr; // auxiliary variable for strtod and strtol function
+    char hex[2]; // array that stores hex number for conversion
     Token token;
-    char hex[2];
 
-    if (str_init(token.attr.str_lit) == 1) {
+    if (str_init(attr) == 1) {
         return I_ERROR;
     }
 
-    str_clear(attr); // deleting everything in string, if it is identifier we start storing data
+    str_clear(attr); // clears everything in string, if it is identifier we start storing data
+
+    if (source == NULL) {
+        return I_ERROR;
+    }
+
+    scanner_state = s_start; // we set initial scanner state
 
     while (1) {
         //we get another char from our source file
         c = getc(source);
+        // calculating number of
+        if (c == '\n') {
+            line_num++;
+        }
 
         switch (scanner_state) {
             case s_start:
@@ -51,9 +61,10 @@ int get_next_token(string *attr) {
                     str_add_char(attr, c); //save first char
                     scanner_state = s_int_lit;
                 } else if (c == '"') {
-                    // we dont save first char '"', because we dont want it in the string
+                    // we dont save first char '"', because we dont want it in the string attribute
                     scanner_state = s_string_tmp;
                 } else if (c == '/') {
+                    // we load another char so we can decide, whether it is comment or div
                     c = getc(source);
 
                     if (c == '/') {
@@ -102,6 +113,7 @@ int get_next_token(string *attr) {
                         return L_SUCCESS;
                     }
                 } else if (c == '!') {
+                    // we check for not eq operator otherwise it is error
                     c = getc(source);
 
                     if (c == '=') {
@@ -150,7 +162,7 @@ int get_next_token(string *attr) {
                 if (isalnum(c) || c == '_') {
                     str_add_char(attr, c);
                 } else {
-
+                    // we initialize string attribute for identifier
                     if (str_init(token.attr.str_lit) == 1) {
                         return I_ERROR;
                     }
@@ -207,7 +219,8 @@ int get_next_token(string *attr) {
                 } else {
                     ungetc(c, source);
                     token.token_type = T_INT;
-                    token.attr.int_lit = atoi(attr->str); // we dont need to check for conversion errors,
+                    token.attr.int_lit = atoi(attr->str);
+                    // we dont need to check for conversion errors,
                     //because we know that just integer number literal
                 }
                 break;
@@ -251,6 +264,11 @@ int get_next_token(string *attr) {
                     ungetc(c, source);
                     token.token_type = T_FLOAT64;
                     token.attr.dec_lit = strtod(attr->str, &endptr);
+                    // conversion check
+                    if (*endptr != 0){
+                        char_clear(attr, c);
+                        return L_ERROR;
+                    }
                 }
                 break;
             case s_exp_lit: //f18
@@ -260,6 +278,11 @@ int get_next_token(string *attr) {
                     ungetc(c, source);
                     token.token_type = T_FLOAT64;
                     token.attr.dec_lit = strtod(attr->str, &endptr);
+                    // conversion check
+                    if (*endptr != 0){
+                        char_clear(attr, c);
+                        return L_ERROR;
+                    }
                 }
                 break;
             case s_line_c: //p2
@@ -321,7 +344,7 @@ int get_next_token(string *attr) {
                 if (c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
                     c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' ||
                     isdigit(c)) {
-                    hex[0] = c;
+                    hex[0] = c; // stroring first hex number
                     scanner_state = s_hex_num;
                 } else {
                     char_clear(attr, c);
@@ -332,16 +355,21 @@ int get_next_token(string *attr) {
                 if (c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
                     c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' ||
                     isdigit(c)) {
-                    long pars_tmp;
-                    hex[1] = c;
-                    pars_tmp = strtol(hex, &endptr, 16);
+                    long pars_tmp; // temp variable for strtol function
+                    hex[1] = c; // storing second hex number
+                    pars_tmp = strtol(hex, &endptr, 16); // converting hex number into decimal number
                     c = (int) pars_tmp;
+                    // conversion check
+                    if (*endptr != 0){
+                        char_clear(attr, c);
+                        return L_ERROR;
+                    }
 
                     if (c < 32) {
                         char_clear(attr, c);
                         return L_ERROR;
                     }
-
+                    // we are storing converted hex number as char into our string literal
                     str_add_char(attr, c);
                     scanner_state = s_string_tmp;
                 } else {
@@ -351,7 +379,7 @@ int get_next_token(string *attr) {
                 break;
             case s_string: //f19
                 ungetc(c, source);
-
+                // we initialize string attribute for string
                 if (str_init(token.attr.str_lit) == 1) {
                     return I_ERROR;
                 }
