@@ -12,16 +12,16 @@
 
 
 #include "error.h"
-#include "scanner.h"
+#include "scanner.h"  // get_line
 #include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
+#include <string.h>   // string operations
+#include <stdarg.h>   // va_start, va_end
 
 
+// Prints error message
 void error( int errCode, const char *fmt, ... )
 {
-  // int errLine = get_line(); // line containing error
-  int errLine = 0;
+  int errLine = get_line(); // line containing error
   char msg[50];             // error report msg
 
   // Generates error report msg based on errCode
