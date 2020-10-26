@@ -18,6 +18,11 @@ void source_file_setup(FILE *f) {
     source = f;
 }
 
+void char_clear(string *attr, int c){
+    ungetc(c, source);
+    str_free(attr);
+}
+
 int get_next_token(string *attr) {
     int scanner_state = s_start; // we set initial scanner state
     int c; // variable for input char
@@ -57,8 +62,7 @@ int get_next_token(string *attr) {
                         scanner_state = s_block_c;
                     } else {
                         token.token_type = T_DIV;
-                        ungetc(c, source);
-                        str_free(attr);
+                        char_clear(attr, c);
                         return L_SUCCESS;
                     }
                 } else if (c == ',') {
@@ -93,9 +97,8 @@ int get_next_token(string *attr) {
                         str_free(attr);
                         return L_SUCCESS;
                     } else {
-                        ungetc(c, source);
                         token.token_type = T_ASSIGNMENT;
-                        str_free(attr);
+                        char_clear(attr, c);
                         return L_SUCCESS;
                     }
                 } else if (c == '!') {
@@ -107,8 +110,7 @@ int get_next_token(string *attr) {
                         return L_SUCCESS;
                     }
 
-                    ungetc(c, source);
-                    str_free(attr);
+                    char_clear(attr, c);
                     return L_ERROR;
                 } else if (c == '>') {
                     c = getc(source);
@@ -119,8 +121,7 @@ int get_next_token(string *attr) {
                         return L_SUCCESS;
                     } else {
                         token.token_type = T_GREATER;
-                        ungetc(c, source);
-                        str_free(attr);
+                        char_clear(attr, c);
                         return L_SUCCESS;
                     }
                 } else if (c == '<') {
@@ -132,8 +133,7 @@ int get_next_token(string *attr) {
                         return L_SUCCESS;
                     } else {
                         token.token_type = T_LESS;
-                        ungetc(c, source);
-                        str_free(attr);
+                        char_clear(attr, c);
                         return L_SUCCESS;
                     }
                 } else if (c == EOF) {
@@ -141,8 +141,7 @@ int get_next_token(string *attr) {
                     str_free(attr);
                     return L_SUCCESS;
                 } else {
-                    ungetc(c, source);
-                    str_free(attr);
+                    char_clear(attr, c);
                     return L_ERROR;
                 }
                 break;
@@ -151,7 +150,7 @@ int get_next_token(string *attr) {
                 if (isalnum(c) || c == '_') {
                     str_add_char(attr, c);
                 } else {
-                    
+
                     if (str_init(token.attr.str_lit) == 1) {
                         return I_ERROR;
                     }
@@ -219,8 +218,7 @@ int get_next_token(string *attr) {
                 } else if (c == '+' || c == '-') {
                     scanner_state = s_exp_sig_tmp;
                 } else {
-                    ungetc(c, source);
-                    str_free(attr);
+                    char_clear(attr, c);
                     return L_ERROR;
                 }
                 break;
@@ -239,8 +237,7 @@ int get_next_token(string *attr) {
                     str_add_char(attr, c);
                     scanner_state = s_decimal_lit;
                 } else {
-                    ungetc(c, source);
-                    str_free(attr);
+                    char_clear(attr, c);
                     return L_ERROR;
                 }
                 break;
@@ -281,8 +278,7 @@ int get_next_token(string *attr) {
                         ungetc(c, source);
                     }
                 } else if (c == EOF) { // block comment without end
-                    ungetc(c, source);
-                    str_free(attr);
+                    char_clear(attr, c);
                     return L_ERROR;
                 }
                 break;
@@ -296,8 +292,7 @@ int get_next_token(string *attr) {
                         str_add_char(attr, c);
                     }
                 } else {
-                    ungetc(c, source);
-                    str_free(attr);
+                    char_clear(attr, c);
                     return L_ERROR;
                 }
                 break;
@@ -329,8 +324,7 @@ int get_next_token(string *attr) {
                     hex[0] = c;
                     scanner_state = s_hex_num;
                 } else {
-                    ungetc(c, source);
-                    str_free(attr);
+                    char_clear(attr, c);
                     return L_ERROR;
                 }
                 break;
@@ -342,11 +336,16 @@ int get_next_token(string *attr) {
                     hex[1] = c;
                     pars_tmp = strtol(hex, &endptr, 16);
                     c = (int) pars_tmp;
+
+                    if (c < 32) {
+                        char_clear(attr, c);
+                        return L_ERROR;
+                    }
+
                     str_add_char(attr, c);
                     scanner_state = s_string_tmp;
                 } else {
-                    ungetc(c, source);
-                    str_free(attr);
+                    char_clear(attr, c);
                     return L_ERROR;
                 }
                 break;
