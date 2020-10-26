@@ -10,22 +10,21 @@
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
 
-// TODO
-// less obfuscated error msg
-//    -- add  the: ... argument parsing
-
 
 #include "error.h"
 #include "scanner.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
-void error( int errCode )
+
+void error( int errCode, const char *fmt, ... )
 {
-  char filename[] = get_filename();
-  int errLine = get_line();
-  char msg[100];
+  // int errLine = get_line(); // line containing error
+  int errLine = 0;
+  char msg[50];             // error report msg
 
+  // Generates error report msg based on errCode
   switch ( errCode )
   {
     case 1:
@@ -47,9 +46,21 @@ void error( int errCode )
 
   fprintf(
     stderr,
-    "%s:%d: ERROR: %s -- with exit code %d\n",
-    filename, errLine, msg, errCode
+    "ERROR:%d\t\t%s -- with exit code %d\n\t",
+    errLine, msg, errCode
   );
+
+  // Handling error msg from scanner/parser
+  if ( fmt != NULL )
+  {
+    // handling format & its arguments
+    va_list pArg;
+    va_start( pArg, fmt );
+    vfprintf( stderr, fmt, pArg );
+    va_end( pArg );
+    // for neat spacing
+    fprintf( stderr, "\n" );
+  }
 
   exit( errCode );
 }

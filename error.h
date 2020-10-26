@@ -13,7 +13,7 @@
 #define ERROR_H
 
 
-void error( int errCode );
+void error( int errCode, const char *fmt, ... );
 
 
 #endif
