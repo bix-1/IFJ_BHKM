@@ -19,10 +19,18 @@
 
 
 // Prints error message
-void error( int errCode, const char *fmt, ... )
-{
-  int errLine = get_line(); // line containing error
-  char msg[50];             // error report msg
+void error(
+  int errCode,
+  const char * file,
+  const char * func,
+  const char * fmt, ...
+) {
+  int errLine = 0;    // line containing error
+  char msg[50] = "";  // error report msg
+
+  // TODO uncomment after implementation of get_line()
+  // internal compiler err -- no line to report
+  // if ( errCode != 99 ) errLine = get_line();
 
   // Generates error report msg based on errCode
   switch ( errCode )
@@ -46,11 +54,11 @@ void error( int errCode, const char *fmt, ... )
 
   fprintf(
     stderr,
-    "ERROR:%d\t\t%s -- with exit code %d\n\t",
-    errLine, msg, errCode
+    "ERROR:%d\t\t%s -- with exit code %d\n%s:\t%s:\n\t\t",
+    errLine, msg, errCode, file, func
   );
 
-  // Handling error msg from scanner/parser
+  // Handling error msg
   if ( fmt != NULL )
   {
     // handling format & its arguments
@@ -58,9 +66,9 @@ void error( int errCode, const char *fmt, ... )
     va_start( pArg, fmt );
     vfprintf( stderr, fmt, pArg );
     va_end( pArg );
-    // for neat spacing
-    fprintf( stderr, "\n" );
   }
+  // for neat spacing
+  fprintf( stderr, "\n" );
 
   exit( errCode );
 }

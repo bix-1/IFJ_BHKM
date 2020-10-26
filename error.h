@@ -9,11 +9,18 @@
  *          Makiš Jozef     xmakis00@stud.fit.vutbr.cz
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
+
+
 #ifndef ERROR_H
 #define ERROR_H
 
 
-void error( int errCode, const char *fmt, ... );
+void error(
+  int errCode,
+  const char * file,
+  const char * func,
+  const char * fmt, ...
+);
 
 
 #endif
