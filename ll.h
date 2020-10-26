@@ -26,9 +26,11 @@ typedef struct {
 } List;
 
 
+// List functions
 List *  list_create       ();
 void    list_destroy      ( List * );
-
+// Instruction functions
+Instruction * instr_create  ();
 
 
 

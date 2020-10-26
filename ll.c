@@ -18,11 +18,16 @@
 
 List * list_create ()
 {
+  // create list
   List * l = malloc( sizeof(List) );
-  if ( l == NULL )  error( 99, "ll.c: list_create: Failed to create list" );
+  if ( l == NULL )
+    error( 99, "ll.c", "list_create", "Failed to create list" );
+  // init list
   l->first = NULL;
+
   return l;
 }
+
 
 void list_destroy ( List * l )
 {
@@ -42,4 +47,13 @@ void list_destroy ( List * l )
   }
 
   free( l );
+}
+
+
+Instruction * instr_create  ()
+{
+  // create instruction
+  Instruction * i = malloc( sizeof(Instruction) );
+  if ( i == NULL )
+    error( 99, "ll.c", "instr_create", "Failed to create instruction" );
 }
