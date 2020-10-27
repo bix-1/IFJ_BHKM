@@ -8,7 +8,7 @@
 
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic
-TMPS = *.o codegen_test test_ll
+TMPS = *.o codegen_test test_ll test_error
 
 all: codegen_test
 # TODO : temp. Makefile default - change from test to final
@@ -28,6 +28,10 @@ codegen_test: codegen_test.c codegen.o
 
 test_ll: tests/test_ll.c ll.o error.o
 	${CC} ${CFLANG} $^ -o $@
+
+test_error: tests/test_error.c error.o ll.o
+	${CC} ${CFLAGS} $^ -o $@
+
 
 #------ end of Testing -----#
 
