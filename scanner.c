@@ -311,7 +311,6 @@ int get_next_token(string *attr) {
                     char_clear(attr, c);
                     return L_ERROR;
                 } else {
-                    ungetc(c, source);
                     scanner_state = s_block_c;
                 }
                 break;
