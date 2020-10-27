@@ -17,10 +17,10 @@
 int main() {
 	// Error tests (removed from final implementation)
 	// List * l_err = list_create();
-	Instruction * i_err = instr_create();
+	// Instruction * i_err = instr_create();
 
-	// List * l = list_create();
-	// list_destroy( l );
+	List * l = list_create();
+	list_destroy( l );
 
 	return 0;
 }
