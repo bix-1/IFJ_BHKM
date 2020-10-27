@@ -22,6 +22,9 @@ ll.o: ll.c ll.h
 error.o: error.c error.h
 	${CC} ${CFLAGS} -c $< -o $@
 
+htab.o: htab.c htab.h
+	${CC} ${CFLAGS} -c $< -o $@
+
 ########## Testing ##########
 test_codegen: tests/test_codegen.c codegen.o
 	${CC} ${CFLAGS} tests/test_codegen.c codegen.o -o test_codegen
@@ -29,7 +32,7 @@ test_codegen: tests/test_codegen.c codegen.o
 test_ll: tests/test_ll.c ll.o error.o
 	${CC} ${CFLANG} $^ -o $@
 
-test_error: tests/test_error.c error.o ll.o
+test_error: tests/test_error.c error.o ll.o htab.o
 	${CC} ${CFLAGS} $^ -o $@
 
 

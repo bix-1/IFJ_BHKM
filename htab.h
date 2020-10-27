@@ -84,4 +84,7 @@ htab_value_t htab_iterator_set_value(htab_iterator_t it, htab_value_t val);
 void htab_clear(htab_t *t);    // clear all entries
 void htab_free(htab_t *t);     // destructor
 
+// Global variables
+htab_t * htab;
+
 #endif // HTAB_H
