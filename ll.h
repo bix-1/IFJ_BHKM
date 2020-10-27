@@ -15,24 +15,37 @@
 #define LL_H
 
 
-typedef struct Instruction Instruction;
+typedef struct Instruction instr_t;
 struct Instruction {
   int type;
-  char * elem1;
-  char * elem2;
-  Instruction * next;
+  const char * elem1;
+  const char * elem2;
+  instr_t * next;
 };
 
 typedef struct {
-  Instruction * first;
+  instr_t * first;
+  instr_t * active;
 } List;
 
 
 // List functions
-List *  list_create       ();
-void    list_destroy      ( List * );
+List *  list_create   ();
+void    list_destroy  ( List ** );
+int     list_size     ( List * );
+void    list_add      ( List *, instr_t * );
+instr_t * list_get_active ( List * );
+instr_t * list_next ( List * );
+
 // Instruction functions
-Instruction * instr_create  ();
+instr_t * instr_create  ();
+void  instr_set_type ( instr_t *, int );
+int   instr_get_type ( instr_t * );
+void instr_add_elem ( instr_t *, const char * );
+const char * instr_get_elem1 ( instr_t * );
+const char * instr_get_elem2 ( instr_t * );
+
+
 
 
 // Global variables
