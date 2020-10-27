@@ -45,14 +45,16 @@ int get_next_token(string *attr) {
     while (1) {
         //we get another char from our source file
         c = getc(source);
-        // calculating number of
-        if (c == '\n') {
-            line_num++;
-        }
 
         switch (scanner_state) {
             case s_start:
+                //check for space, tab, new line ...
                 if (isspace(c)) {
+                    if (c == '\n') {
+                        line_num++;
+                        token.token_type = T_EOL;
+                    }
+
                     scanner_state = s_start;
                 } else if (isalpha(c) || c == '_') {
                     str_add_char(attr, c); //save first char
@@ -157,6 +159,8 @@ int get_next_token(string *attr) {
                     return L_ERROR;
                 }
                 break;
+            // if we are reading correct char from source, then we are adding him into our string
+            // otherwise we unget the char and check for the string if it is identifier or keyword
             case s_identifier: //f151
                 // we are filling our string with indentifier
                 if (isalnum(c) || c == '_') {
@@ -297,12 +301,18 @@ int get_next_token(string *attr) {
 
                     if (c == '/') {
                         scanner_state = s_start;
+                    } else if (c == '\n'){
+                        line_num++;
                     } else {
                         ungetc(c, source);
+                        scanner_state = s_block_c;
                     }
                 } else if (c == EOF) { // block comment without end
                     char_clear(attr, c);
                     return L_ERROR;
+                } else {
+                    ungetc(c, source);
+                    scanner_state = s_block_c;
                 }
                 break;
             case s_string_tmp: //q19
