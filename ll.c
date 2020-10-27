@@ -10,6 +10,7 @@
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
 
+
 #include "ll.h"
 #include "error.h"
 #include <stdio.h>
@@ -56,4 +57,6 @@ Instruction * instr_create  ()
   Instruction * i = malloc( sizeof(Instruction) );
   if ( i == NULL )
     error( 99, "ll.c", "instr_create", "Failed to create instruction" );
+
+  return NULL;
 }

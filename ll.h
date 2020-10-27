@@ -9,6 +9,8 @@
  *          Makiš Jozef     xmakis00@stud.fit.vutbr.cz
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
+
+
 #ifndef LL_H
 #define LL_H
 
@@ -32,6 +34,9 @@ void    list_destroy      ( List * );
 // Instruction functions
 Instruction * instr_create  ();
 
+
+// Global variables
+List * list;
 
 
 #endif

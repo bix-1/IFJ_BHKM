@@ -12,6 +12,8 @@
 
 
 #include "error.h"
+#include "ll.h"     // cleaning up linked list
+#include "htab.h"   // cleaning up hash table
 #include "scanner.h"  // get_line
 #include <stdio.h>
 #include <string.h>   // string operations
@@ -28,7 +30,7 @@ void error(
   int errLine = 0;    // line containing error
   char msg[50] = "";  // error report msg
 
-  // TODO uncomment after implementation of get_line()
+  // TODO add after implementation of get_line()
   // internal compiler err -- no line to report
   // if ( errCode != 99 ) errLine = get_line();
 
@@ -69,6 +71,10 @@ void error(
   }
   // for neat spacing
   fprintf( stderr, "\n" );
+
+  // clean-up of linked list and hash table
+  list_destroy( list );
+  htab_free( htab );
 
   exit( errCode );
 }
