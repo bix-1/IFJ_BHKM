@@ -145,5 +145,9 @@ void char_clear(string *attr, int c);
  * for syntax analyzer. Function parameter with pointer to string struct.
  */
 int get_next_token(string *attr);
+/*
+ * Returns current line for error handling in error.c module
+ */
+int get_err_line();
 
 #endif //IFJ_BHKM_SCANNER_H

@@ -14,7 +14,7 @@
 #include "error.h"
 #include "ll.h"     // cleaning up linked list
 #include "htab.h"   // cleaning up hash table
-#include "scanner.h"  // get_line
+#include "scanner.h"  // get_err_line
 #include <stdio.h>
 #include <string.h>   // string operations
 #include <stdarg.h>   // va_start, va_end
@@ -30,9 +30,8 @@ void error(
   int errLine = 0;    // line containing error
   char msg[50] = "";  // error report msg
 
-  // TODO add after implementation of get_line()
   // internal compiler err -- no line to report
-  // if ( errCode != 99 ) errLine = get_line();
+  if ( errCode != 99 ) errLine = get_err_line();
 
   // Generates error report msg based on errCode
   switch ( errCode )
@@ -73,7 +72,7 @@ void error(
   fprintf( stderr, "\n" );
 
   // clean-up of linked list and hash table
-  list_destroy( list );
+  list_destroy( &list );
   htab_free( htab );
 
   exit( errCode );

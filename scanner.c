@@ -14,6 +14,10 @@
 
 int line_num = 0; // line count for accurate error message
 
+int get_err_line () {
+  return line_num;
+}
+
 void source_file_setup(FILE *f) {
     source = f;
 }

@@ -25,14 +25,20 @@ error.o: error.c error.h
 htab.o: htab.c htab.h
 	${CC} ${CFLAGS} -c $< -o $@
 
+scanner.o: scanner.c scanner.h str.o
+	${CC} ${CFLAGS} -c scanner.c -o $@
+
+str.o: str.c str.h
+	${CC} ${CFLAGS} -c $< -o $@
+
 ########## Testing ##########
 test_codegen: tests/test_codegen.c codegen.o
 	${CC} ${CFLAGS} tests/test_codegen.c codegen.o -o test_codegen
 
-test_ll: tests/test_ll.c ll.o error.o htab.o
+test_ll: tests/test_ll.c ll.o error.o htab.o scanner.o str.o
 	${CC} ${CFLANG} $^ -o $@
 
-test_error: tests/test_error.c error.o ll.o htab.o
+test_error: tests/test_error.c error.o ll.o htab.o scanner.o str.o
 	${CC} ${CFLAGS} $^ -o $@
 
 
