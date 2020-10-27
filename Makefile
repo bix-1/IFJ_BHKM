@@ -8,9 +8,9 @@
 
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic
-TMPS = *.o codegen_test test_ll
+TMPS = *.o test_codegen test_ll
 
-all: codegen_test
+all: test_codegen
 # TODO : temp. Makefile default - change from test to final
 
 codegen.o: codegen.c codegen.h
@@ -23,8 +23,8 @@ error.o: error.c error.h
 	${CC} ${CFLAGS} -c $< -o $@
 
 ########## Testing ##########
-codegen_test: codegen_test.c codegen.o
-	${CC} ${CFLAGS} codegen_test.c codegen.o -o codegen_test
+test_codegen: tests/test_codegen.c codegen.o
+	${CC} ${CFLAGS} tests/test_codegen.c codegen.o -o test_codegen
 
 test_ll: tests/test_ll.c ll.o error.o
 	${CC} ${CFLANG} $^ -o $@
