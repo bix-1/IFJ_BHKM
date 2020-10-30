@@ -11,7 +11,7 @@
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
 
-#include "htab.h"
+#include "symtable.h"
 
 extern bool htab_iterator_valid(htab_iterator_t it);
 extern bool htab_iterator_equal(htab_iterator_t it1, htab_iterator_t it2);

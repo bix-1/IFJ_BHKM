@@ -14,7 +14,7 @@ all: test_codegen
 # TODO : temp. Makefile default - change from test to final
 
 codegen.o: codegen.c codegen.h
-	${CC} ${CFLAGS} -c codegen.c -o codegen.o
+	${CC} ${CFLAGS} -c $< -o $@
 
 ll.o: ll.c ll.h
 	${CC} ${CFLAGS} -c $< -o $@
@@ -22,7 +22,7 @@ ll.o: ll.c ll.h
 error.o: error.c error.h
 	${CC} ${CFLAGS} -c $< -o $@
 
-htab.o: htab.c htab.h
+symtable.o: symtable.c symtable.h
 	${CC} ${CFLAGS} -c $< -o $@
 
 scanner.o: scanner.c scanner.h str.o
@@ -32,13 +32,13 @@ str.o: str.c str.h
 	${CC} ${CFLAGS} -c $< -o $@
 
 ########## Testing ##########
-test_codegen: tests/test_codegen.c codegen.o
-	${CC} ${CFLAGS} tests/test_codegen.c codegen.o -o test_codegen
+test_codegen: tests/test_codegen.c ll.o error.o symtable.o codegen.o scanner.o str.o
+	${CC} ${CFLAGS} $^ -o $@
 
-test_ll: tests/test_ll.c ll.o error.o htab.o scanner.o str.o
+test_ll: tests/test_ll.c ll.o error.o symtable.o scanner.o str.o
 	${CC} ${CFLANG} $^ -o $@
 
-test_error: tests/test_error.c error.o ll.o htab.o scanner.o str.o
+test_error: tests/test_error.c error.o ll.o symtable.o scanner.o str.o
 	${CC} ${CFLAGS} $^ -o $@
 
 

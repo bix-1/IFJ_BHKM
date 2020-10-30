@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "../ll.h"
 #include "../error.h"
-#include "../htab.h"
+#include "../symtable.h"
 
 int main ()
 {

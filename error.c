@@ -13,7 +13,7 @@
 
 #include "error.h"
 #include "ll.h"     // cleaning up linked list
-#include "htab.h"   // cleaning up hash table
+#include "symtable.h"   // cleaning up hash table
 #include "scanner.h"  // get_err_line
 #include <stdio.h>
 #include <string.h>   // string operations
