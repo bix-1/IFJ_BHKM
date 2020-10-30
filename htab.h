@@ -44,10 +44,10 @@ struct htab_item {
 
 // Iterator:
 typedef struct htab_iterator {
-	struct htab_item *ptr;      // ukazatel na položku
-	const htab_t *t;            // ve které tabulce
-	size_t idx;                 // ve kterém seznamu tabulky (TODO: optimalizovat?)
-} htab_iterator_t;              // typedef podle zadání
+	struct htab_item *ptr;      // item pointer
+	const htab_t *t;            // in which table
+	size_t idx;                 // in which bucket
+} htab_iterator_t;
 
 //hash function
 size_t htab_hash_fun(htab_key_t str);
