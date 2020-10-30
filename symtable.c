@@ -1,8 +1,8 @@
 /*
  * Project: Compiler for imperative programing language IFJ20
  *
- * File: htab.c
- * Brief: Implementation of hash table functions
+ * File: symtable.c
+ * Brief: Implementation of hash table functions for symtable
  * Contribution: Used from IJC 2nd project, implemented by xhladk15
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz

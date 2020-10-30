@@ -1,8 +1,8 @@
 /*
  * Project: Compiler for imperative programing language IFJ20
  *
- * File: htab.h
- * Brief: Header file for htab.c
+ * File: symtable.h
+ * Brief: Header file for symtable.c
  * Contribution: Used from IJC 2nd project, implemented by xhladk15
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
@@ -85,6 +85,6 @@ void htab_clear(htab_t *t);    // clear all entries
 void htab_free(htab_t *t);     // destructor
 
 // Global variables
-htab_t * htab;
+htab_t *symtable;
 
 #endif // HTAB_H
