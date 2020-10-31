@@ -15,8 +15,8 @@
 #define LL_H
 
 
-typedef struct Instruction instr_t;
-struct Instruction {
+typedef struct instruction instr_t;
+struct instruction {
   int type;
   const char * elem1;
   const char * elem2;
@@ -26,7 +26,7 @@ struct Instruction {
 typedef struct {
   instr_t * first;
   instr_t * active;
-} List;
+} list_t;
 
 
 // List functions
@@ -49,7 +49,7 @@ const char * instr_get_elem2 ( instr_t * );
 
 
 // Global variables
-List * list;
+list_t * list;
 
 
 #endif
