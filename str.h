@@ -12,6 +12,7 @@
 
 #ifndef IFJ_BHKM_STR_H
 #define IFJ_BHKM_STR_H
+#include "error.h"
 
 #define STR_LEN_INC 8 // initial allocated size for char
 
