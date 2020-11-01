@@ -66,6 +66,9 @@ FILE *source;
 #define T_PACKAGE 126
 
 #define T_IDENTIFIER 127
+
+#define T_EMPTY 128 // nevedel som do ktorej kat. to mam dat, popr. to zmen/uprav
+
 /*
  * Automatons states.
  */
