@@ -13,6 +13,7 @@
 #ifndef IFJ_BHKM_SCANNER_H
 #define IFJ_BHKM_SCANNER_H
 
+#include "error.h"
 #include "str.h"
 #include "stdio.h"
 #include "ctype.h"
