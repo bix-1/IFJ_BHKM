@@ -201,7 +201,7 @@ int get_next_token(string *attr) {
                         token.token_type = T_PACKAGE;
                         str_copy(token.attr.str_lit, attr);
                     } else if (str_cmp_cons(attr, "return") == 0) {
-                        token.token_type = T_RETRUN;
+                        token.token_type = T_RETURN;
                         str_copy(token.attr.str_lit, attr);
                     } else if (str_cmp_cons(attr, "string") == 0) {
                         token.token_type = T_STRING;
