@@ -1,8 +1,8 @@
 /*
  * Project: Compiler for imperative programing language IFJ20
  *
- * File: scanner.c
- * Brief: Implementation of scanner.
+ * File: stack.h
+ * Brief: Stack header file.
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
  *          Kostolányi Adam xkosto04@stud.fit.vutbr.cz
@@ -12,15 +12,12 @@
 
 #include "scanner.h"
 
-
-
 typedef struct tokenStack
 {
     Token top;
     Token *nextTok;
-    
 
-}tokenStack;
+} tokenStack;
 
 void stack_init(tokenStack *stack);
 void stack_push(tokenStack *stack, Token tokPush);
