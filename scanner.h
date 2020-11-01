@@ -61,7 +61,7 @@ FILE *source;
 #define T_IF 121
 #define T_ELSE 122
 #define T_FUNC 123
-#define T_RETRUN 124
+#define T_RETURN 124
 #define T_FOR 125
 #define T_PACKAGE 126
 
