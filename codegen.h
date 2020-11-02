@@ -17,39 +17,6 @@
 
 enum intermediate_code_instr {
 	/*
-	 * Defines function start
-	 *
-	 * tab_elem1: symbol func
-	 * tab_elem2: NULL
-	 *
-	 * Example:
-	 * func hello(var1, var2) {
-	 */
-	IC_FUN_START,
-
-	/*
-	 * Function return variable
-	 *
-	 * tab_elem1: symbol var
-	 * tab_elem2: NULL
-	 *
-	 * Example:
-	 * return x
-	 */
-	IC_FUN_RET_VAR,
-
-	/*
-	 * Function return const
-	 *
-	 * tab_elem1: symbol const
-	 * tab_elem2: NULL
-	 *
-	 * Example:
-	 * return 42
-	 */
-	IC_FUN_RET_CONST,
-
-	/*
 	 * Variable declaration
 	 *
 	 * tab_elem1: symbol var
@@ -83,17 +50,16 @@ enum intermediate_code_instr {
 	 * tab_elem2: NULL
 	 *
 	 * Example:
-	 * var x = 12
-	 * x := 12
+	 * const var x = 12
 	 *
 	 */
 	IC_DEF_CONST,
 
 	/*
-	 * Variable definition with init with fun
+	 * Function call with single/multiple values return
 	 *
-	 * tab_elem1: symbol var_array
-	 * tab_elem2: NULL
+	 * tab_elem1: symbol var_list
+	 * tab_elem2: symbol func
 	 *
 	 * Example:
 	 * var x = some_fun()
@@ -118,10 +84,21 @@ enum intermediate_code_instr {
 	IC_DEF_FUN,
 
 	/*
+	 * Defines function start, parameter variables are inside symbol func
+	 *
+	 * tab_elem1: symbol func
+	 * tab_elem2: NULL
+	 *
+	 * Example:
+	 * some_fun()
+	 */
+	IC_CALL_FUN,
+
+	/*
 	 * Variable value set with var
 	 *
 	 * tab_elem1: symbol var
-	 * tab_elem2: NULL
+	 * tab_elem2: symbol var
 	 *
 	 * Example:
 	 * x = y
@@ -133,26 +110,13 @@ enum intermediate_code_instr {
 	 * Variable value set with const
 	 *
 	 * tab_elem1: symbol var
-	 * tab_elem2: NULL
+	 * tab_elem2: symbol const
 	 *
 	 * Example:
 	 * x = 12
 	 *
 	 */
 	IC_MOV_CONST,
-
-	/*
-	 * Variable value set with fun
-	 *
-	 * tab_elem1: symbol var
-	 * tab_elem2: NULL
-	 *
-	 * Example:
-	 * x = some_fun()
-	 * x, y, z = some_fun()
-	 *
-	 */
-	IC_MOV_FUN,
 
 	/*
 	 * Variable add operation with var
@@ -164,7 +128,6 @@ enum intermediate_code_instr {
 	 * x += y
 	 *
 	 */
-
 	IC_ADD_VAR,
 
 	/*
