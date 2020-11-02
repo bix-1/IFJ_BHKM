@@ -12,11 +12,23 @@
 
 #include "scanner.h"
 
+typedef struct stackElem *stackElemPtr;
+
+/*
+ * Structure which is element of stack, holds token and pointer to next token
+ */
+typedef struct stackElem
+{
+    Token token;
+    stackElemPtr nextTok;
+} stackElem;
+
+/*
+ * Structure, that holds top element and next element on stack
+ */
 typedef struct tokenStack
 {
-    Token top;
-    Token *nextTok;
-
+    stackElemPtr topToken;
 } tokenStack;
 
 /*
