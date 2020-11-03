@@ -10,6 +10,9 @@
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
 
+#ifndef IFJ_BHKM_STACK_H
+#define IFJ_BHKM_STACK_H
+
 #include "scanner.h"
 
 typedef struct stackElem *stackElemPtr;
@@ -19,7 +22,7 @@ typedef struct stackElem *stackElemPtr;
  */
 typedef struct stackElem
 {
-    Token token;
+    tToken token;
     stackElemPtr nextTok;
 } stackElem;
 
@@ -39,7 +42,7 @@ void stack_init(tokenStack *stack);
 /*
 *   Function pushes tokPush on the top of the stack
 */
-void stack_push(tokenStack *stack, Token tokPush);
+void stack_push(tokenStack *stack, tToken tokPush);
 
 /*
 *   Function which pops the token on the top of the stack
@@ -55,3 +58,5 @@ void stack_empty(tokenStack *stack);
 *   Function which free's the stack
 */
 void stack_free(tokenStack *stack);
+
+#endif //IFJ_BHKM_STACK_H
