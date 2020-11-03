@@ -14,12 +14,28 @@
 #ifndef ERROR_H
 #define ERROR_H
 
+/*
+  Function error
+  --------------
+  Prints error message
 
+  file:     name of FILE      in which the error was encounteres
+  func:     name of FUNCTION  ...
+  msg, ...: custom message & its formatting
+
+  returns:
+
+  -----------------
+  Example of usage:
+
+    const char input[] = "Hello Wrld";
+    error(99, "code.c", "foo", "Invalid input: %s", input);
+*/
 void error(
   int errCode,
   const char * file,
   const char * func,
-  const char * fmt, ...
+  const char * msg, ...
 );
 
 

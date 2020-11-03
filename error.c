@@ -12,12 +12,12 @@
 
 
 #include "error.h"
-#include "ll.h"     // cleaning up linked list
+#include "ll.h"         // cleaning up linked list
 #include "symtable.h"   // cleaning up hash table
-#include "scanner.h"  // get_err_line
+#include "scanner.h"    // get_err_line
 #include <stdio.h>
-#include <string.h>   // string operations
-#include <stdarg.h>   // va_start, va_end
+#include <string.h>     // string operations
+#include <stdarg.h>     // va_start, va_end
 
 
 // Prints error message
@@ -25,10 +25,10 @@ void error(
   int errCode,
   const char * file,
   const char * func,
-  const char * fmt, ...
+  const char * msg, ...
 ) {
   int errLine = 0;    // line containing error
-  char msg[50] = "";  // error report msg
+  char tmp[50] = "";  // error report msg
 
   // internal compiler err -- no line to report
   if ( errCode != 99 ) errLine = get_err_line();
@@ -37,35 +37,35 @@ void error(
   switch ( errCode )
   {
     case 1:
-      strcat( msg, "Lexical analysis failed" );
+      strcat( tmp, "Lexical analysis failed" );
       break;
 
     case 2:
-      strcat( msg, "Syntactic analysis failed" );
+      strcat( tmp, "Syntactic analysis failed" );
       break;
 
     case 99:
-      strcat( msg, "Internal compiler error (compiler's fault)" );
+      strcat( tmp, "Internal compiler error (compiler's fault)" );
       break;
 
     default:
-      strcat( msg, "Semantic error" );
+      strcat( tmp, "Semantic error" );
       break;
   }
 
   fprintf(
     stderr,
     "ERROR:%d\t\t%s -- with exit code %d\n%s:\t%s:\n\t\t",
-    errLine, msg, errCode, file, func
+    errLine, tmp, errCode, file, func
   );
 
   // Handling error msg
-  if ( fmt != NULL )
+  if ( msg != NULL )
   {
     // handling format & its arguments
     va_list pArg;
-    va_start( pArg, fmt );
-    vfprintf( stderr, fmt, pArg );
+    va_start( pArg, msg );
+    vfprintf( stderr, msg, pArg );
     va_end( pArg );
   }
   // for neat spacing

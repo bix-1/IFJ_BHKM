@@ -9,8 +9,10 @@ int main ()
 	list = list_create();
 	symtable = htab_init(1);
 
-	error( 99, NULL, NULL, NULL );
-	// check results using valgrind
+	// error(99, NULL, NULL, NULL);
+	const char s[] = "msg";
+	error(99, "test_error.c", "main", "Test error %s", s);
 
+	// check results using valgrind
 	return 0;
 }
