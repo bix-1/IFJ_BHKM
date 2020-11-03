@@ -24,7 +24,7 @@ void stack_init(tokenStack *stack)
     stack->topToken = newElem;
 }
 
-void stack_push(tokenStack *stack, Token tokPush)
+void stack_push(tokenStack *stack, tToken tokPush)
 {
     stackElemPtr newElem = (stackElemPtr)malloc(sizeof(stackElemPtr));
 
