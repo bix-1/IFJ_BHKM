@@ -11,21 +11,22 @@
  */
 
 #include "scanner.h"
+#include "str.h"
 
 FILE *f;
 extern int line_num;
 
-void print_lex(Token token) {
-    if (token.token_type == T_INT) {
-        printf("Lexema : %d, ma hodnotu: %d", token.token_type, token.attr.int_lit);
-    } else if (token.token_type == T_FLOAT64) {
-        printf("Lexema : %d, ma hodnotu: %f", token.token_type, token.attr.dec_lit);
-    } else if (token.token_type == T_STRING || token.token_type == T_ELSE || token.token_type == T_IDENTIFIER ||
-            token.token_type == T_IF || token.token_type == T_PACKAGE || token.token_type == T_RETURN ||
-            token.token_type == T_FUNC || token.token_type == T_FOR) {
-        printf("Lexema : %d, ma hodnotu: %s", token.token_type, token.attr.str_lit);
+void print_lex(tToken *token) {
+    if (token->token_type == T_INT) {
+        printf("Lexema : %d, ma hodnotu: %d", token->token_type, token->attr.int_lit);
+    } else if (token->token_type == T_FLOAT64) {
+        printf("Lexema : %d, ma hodnotu: %f", token->token_type, token->attr.dec_lit);
+    } else if (token->token_type == T_STRING || token->token_type == T_ELSE || token->token_type == T_IDENTIFIER ||
+            token->token_type == T_IF || token->token_type == T_PACKAGE || token->token_type == T_RETURN ||
+            token->token_type == T_FUNC || token->token_type == T_FOR) {
+        printf("Lexema : %d, ma hodnotu: %s", token->token_type, token->attr.str_lit);
     } else {
-        printf("Lexema : %d, ma hodnotu: %d", token.token_type, token.attr.int_lit);
+        printf("Lexema : %d, ma hodnotu: %d", token->token_type, token->attr.int_lit);
     }
 }
 
@@ -39,9 +40,13 @@ void f_open(char *file) {
     source_file_setup(f);
 }
 int main() {
-    Token token;
-
     printf("[TEST01]\n");
     printf("Token pre integer literal\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/int_lit_test");
+    tToken tok;
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
 }
 
