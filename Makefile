@@ -35,7 +35,7 @@ stack.o: stack.c stack.h
 	${CC} ${CFLAGS} -c $< -o $@
 
 expression.o: expression.c expression.h
-	${CC} ${CFLAGS} -c $< -o$@
+	${CC} ${CFLAGS} -c $< -o $@
 
 ########## Testing ##########
 test_codegen: tests/test_codegen.c ll.o error.o symtable.o codegen.o scanner.o str.o
