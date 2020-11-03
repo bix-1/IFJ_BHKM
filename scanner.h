@@ -131,7 +131,7 @@ typedef union {
 typedef struct {
     int token_type;
     Literal_attr attr;
-} Token;
+} tToken;
 
 /*
  * Function that helps us set up our input file, with parameter for it.
@@ -148,7 +148,7 @@ void char_clear(string *attr, int c);
  * Main function for lexical analyzer that keeps providing token types and his attribute
  * for syntax analyzer. Function parameter with pointer to string struct.
  */
-int get_next_token(string *attr);
+int get_next_token(tToken *token);
 /*
  * Returns current line for error handling in error.c module
  */

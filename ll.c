@@ -17,10 +17,10 @@
 #include <stdlib.h>
 
 
-List * list_create ()
+list_t * list_create ()
 {
   // create list
-  List * l = malloc( sizeof(List) );
+  list_t * l = malloc( sizeof(list_t) );
   if ( l == NULL )
     error( 99, "ll.c", "list_create", "Failed to create list" );
   // init list
@@ -31,7 +31,7 @@ List * list_create ()
 }
 
 
-void list_destroy ( List ** l )
+void list_destroy ( list_t ** l )
 {
   if ( l == NULL || *l == NULL ) return;
 
@@ -50,7 +50,7 @@ void list_destroy ( List ** l )
 }
 
 
-int list_size ( List * l )
+int list_size ( list_t * l )
 {
   if ( l == NULL ) return -1;
   if ( l->first == NULL ) return 0;
@@ -65,7 +65,7 @@ int list_size ( List * l )
 }
 
 
-void list_add ( List *l, instr_t * i )
+void list_add ( list_t *l, instr_t * i )
 {
   if ( l == NULL || i == NULL ) return;
   // list empty
@@ -83,14 +83,14 @@ void list_add ( List *l, instr_t * i )
 }
 
 
-instr_t * list_get_active ( List * l )
+instr_t * list_get_active ( list_t * l )
 {
   if ( l == NULL ) return NULL;
   return l->active;
 }
 
 
-instr_t * list_next ( List * l )
+instr_t * list_next ( list_t * l )
 {
   if ( l == NULL || l->active == NULL ) return NULL;
   l->active = l->active->next;

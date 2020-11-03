@@ -30,12 +30,12 @@ typedef struct {
 
 
 // List functions
-List *  list_create   ();
-void    list_destroy  ( List ** );
-int     list_size     ( List * );
-void    list_add      ( List *, instr_t * );
-instr_t * list_get_active ( List * );
-instr_t * list_next ( List * );
+list_t *  list_create   ();
+void    list_destroy  ( list_t ** );
+int     list_size     ( list_t * );
+void    list_add      ( list_t *, instr_t * );
+instr_t * list_get_active ( list_t * );
+instr_t * list_next ( list_t * );
 
 // Instruction functions
 instr_t * instr_create  ();
