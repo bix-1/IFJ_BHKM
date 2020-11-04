@@ -20,6 +20,9 @@ all: test_codegen
 scanner.a: scanner.o error.o str.o
 	${AR} $@ $^
 
+parser.a: parser.o scanner.a stack.o expression.a
+	${AR} -T $@ $^
+
 error.a: error.o ll.o symtable.o scanner.a
 	${AR} -T $@ $^
 
@@ -27,6 +30,12 @@ ll.a: ll.o error.a
 	${AR} -T $@ $^
 
 symtable.a: symtable.o
+	${AR} -T $@ $^
+
+str.a: str.o error.a
+	${AR} -T $@ $^
+
+expression.a: expression.o parser.a stack.o scanner.a
 	${AR} -T $@ $^
 
 #------ end of Static libraries -----#
@@ -48,6 +57,9 @@ test_ll: tests/test_ll.c ll.a
 	${CC} ${CFLANG} $^ -o $@
 
 test_error: tests/test_error.c error.a ll.a symtable.a
+	${CC} ${CFLAGS} $^ -o $@
+
+test_parser: tests/parser_tests/parser_test.c str.a parser.a
 	${CC} ${CFLAGS} $^ -o $@
 #------ end of Testing -----#
 

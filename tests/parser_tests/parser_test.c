@@ -10,8 +10,8 @@
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
 
-#include "str.h"
-#include "parser.h"
+#include "../../str.h"
+#include "../../parser.h"
 #include <stdlib.h>
 
 FILE *f;
@@ -51,4 +51,3 @@ int main() {
     parse();
     fclose(f);
 }
-
