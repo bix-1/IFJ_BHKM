@@ -27,9 +27,13 @@
 
   -----------------
   Example of usage:
-
     const char input[] = "Hello Wrld";
     error(99, "code.c", "foo", "Invalid input: %s", input);
+
+  Output:
+    ERROR:0		Internal compiler error (compiler's fault) -- with exit code 99
+    code.c:	foo:
+              Invalid input: Hello Wrld
 */
 void error(
   int errCode,
