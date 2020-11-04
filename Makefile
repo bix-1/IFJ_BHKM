@@ -6,48 +6,47 @@
 #          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
 #
 
+
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic
-TMPS = *.o test_codegen test_ll test_error
+TMPS = *.o *.a test_codegen test_ll test_error
+AR = ar -csr
+
 
 all: test_codegen
 # TODO : temp. Makefile default - change from test to final
 
-codegen.o: codegen.c codegen.h
-	${CC} ${CFLAGS} -c $< -o $@
+########## Static libraries ##########
+scanner.a: scanner.o error.o str.o
+	${AR} $@ $^
 
-ll.o: ll.c ll.h
-	${CC} ${CFLAGS} -c $< -o $@
+error.a: error.o ll.o symtable.o scanner.a
+	${AR} -T $@ $^
 
-error.o: error.c error.h
-	${CC} ${CFLAGS} -c $< -o $@
+ll.a: ll.o error.a
+	${AR} -T $@ $^
 
-symtable.o: symtable.c symtable.h
-	${CC} ${CFLAGS} -c $< -o $@
+#------ end of Static libraries -----#
 
-scanner.o: scanner.c scanner.h str.o
-	${CC} ${CFLAGS} -c scanner.c -o $@
-
-str.o: str.c str.h
-	${CC} ${CFLAGS} -c $< -o $@
-
-stack.o: stack.c stack.h
-	${CC} ${CFLAGS} -c $< -o $@
-
-expression.o: expression.c expression.h
-	${CC} ${CFLAGS} -c $< -o $@
+# Rule for __all__ object files
+%.o: %.c %.h
+	${CC} ${CFLAGS} -c $<
 
 ########## Testing ##########
-test_codegen: tests/test_codegen.c ll.o error.o symtable.o codegen.o scanner.o str.o
+tests: test_codegen test_ll test_error
+	-./test_error
+	./test_codegen
+	./test_ll
+
+test_codegen: tests/test_codegen.c
 	${CC} ${CFLAGS} $^ -o $@
 
-test_ll: tests/test_ll.c ll.o error.o symtable.o scanner.o str.o
+test_ll: tests/test_ll.c ll.a
 	${CC} ${CFLANG} $^ -o $@
 
-test_error: tests/test_error.c error.o ll.o symtable.o scanner.o str.o
+# test_error: tests/test_error.c error.a ll.a symtable.o
+test_error: tests/test_error.c error.a
 	${CC} ${CFLAGS} $^ -o $@
-
-
 #------ end of Testing -----#
 
 clean:
