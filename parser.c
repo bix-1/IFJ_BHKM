@@ -10,6 +10,14 @@
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
 
-
 #include "parser.h"
 #include <stdio.h>
+
+void parse()
+{
+
+    parsData.stack = malloc(sizeof(tokenStack));
+    stack_init(parsData.stack);
+
+    parse_expression();
+}

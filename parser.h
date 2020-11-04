@@ -14,6 +14,19 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "scanner.h"
+#include "stack.h"
+#include "expression.h"
 
+
+typedef struct parserData
+{
+    tToken token;
+    tokenStack *stack;
+} tPData;
+
+extern tPData parsData;
+
+void parse();
 
 #endif
