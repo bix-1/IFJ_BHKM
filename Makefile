@@ -26,6 +26,9 @@ error.a: error.o ll.o symtable.o scanner.a
 ll.a: ll.o error.a
 	${AR} -T $@ $^
 
+symtable.a: symtable.o
+	${AR} -T $@ $^
+
 #------ end of Static libraries -----#
 
 # Rule for __all__ object files
@@ -44,8 +47,7 @@ test_codegen: tests/test_codegen.c
 test_ll: tests/test_ll.c ll.a
 	${CC} ${CFLANG} $^ -o $@
 
-# test_error: tests/test_error.c error.a ll.a symtable.o
-test_error: tests/test_error.c error.a
+test_error: tests/test_error.c error.a ll.a symtable.a
 	${CC} ${CFLAGS} $^ -o $@
 #------ end of Testing -----#
 
