@@ -19,7 +19,7 @@ int main() {
 	// List * l_err = list_create();
 	// instr_t * i_err = instr_create();
 
-	List * l = list_create();
+	list_t * l = list_create();
 	printf( "\nSize of empty list: %d\n", list_size(l) );
 	printf( "Adding one instruction...\n" );
 	instr_t * i = instr_create();
