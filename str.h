@@ -12,7 +12,6 @@
 
 #ifndef IFJ_BHKM_STR_H
 #define IFJ_BHKM_STR_H
-#include "error.h"
 
 #define STR_LEN_INC 8 // initial allocated size for char
 
@@ -25,7 +24,7 @@ typedef struct {
 /*
  * Function creates new string.
  */
-int str_init(string *s);
+void str_init(string *s);
 
 /*
  * Function frees allocated memory
@@ -38,14 +37,14 @@ void str_free(string *s);
 void str_clear(string *s);
 
 /*
- * Function adds new char intostring array.
+ * Function adds new char into string array.
  */
-int str_add_char(string *s, char c);
+void str_add_char(string *s, char c);
 
 /*
  * Function copies second string into the first.
  */
-int str_copy(string *s1, string *s2);
+void str_copy(string *s1, string *s2);
 
 /*
  * Function compares string with constant.
