@@ -14,6 +14,7 @@
 #define IFJ_BHKM_SCANNER_H
 
 #include <stdio.h>
+#include "str.h"
 
 // global variable for input file
 FILE *source;
@@ -118,7 +119,7 @@ enum scanner_state {
 typedef union {
     int int_lit;
     double dec_lit;
-    string *str_lit;
+    string str_lit;
 } Literal_attr;
 
 /*

@@ -43,7 +43,7 @@ void str_add_char(string *s, char c) {
         s->str = (char *) realloc(s->str, s->str_lenght + STR_LEN_INC);
 
         if (s->str == NULL) {
-            error(99,"str.c", "str_init(string *s)", "Internal error");
+            error(99,"str.c", "str_add_char(string *s, char c)", "Internal error");
         }
 
         s->str_alloc_size = s->str_lenght + STR_LEN_INC;
@@ -64,7 +64,7 @@ void str_copy(string *s1, string *s2) {
         s1->str = (char *) realloc(s1->str, new_str_lenght + 1);
 
         if (s1->str == NULL) {
-            error(99,"str.c", "str_init(string *s)", "Internal error");
+            error(99,"str.c", "str_copy(string *s1, string *s2)", "Internal error");
         }
 
         s1->str_alloc_size = new_str_lenght + 1;
