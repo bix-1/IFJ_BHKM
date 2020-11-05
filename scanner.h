@@ -13,11 +13,7 @@
 #ifndef IFJ_BHKM_SCANNER_H
 #define IFJ_BHKM_SCANNER_H
 
-#include "error.h"
-#include "str.h"
-#include "stdio.h"
-#include "ctype.h"
-#include <stdlib.h>
+#include <stdio.h>
 
 // global variable for input file
 FILE *source;

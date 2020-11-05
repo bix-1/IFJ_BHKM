@@ -10,7 +10,12 @@
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
 
+#include "error.h"
+#include "str.h"
 #include "scanner.h"
+#include <ctype.h>
+#include <stdlib.h>
+
 
 int line_num = 0; // line count for accurate error message
 
@@ -35,9 +40,7 @@ int get_next_token(tToken *token) {
     //Token token;
     string attr;
 
-    if (str_init(&attr) == 1) {
-        error(99,"scanner.c", "get_next_token(string *attr)", "Internal error in: %s", source);
-    }
+    str_init(&attr);
 
     str_clear(&attr); // clears everything in string, if it is identifier we start storing data
 
@@ -62,10 +65,10 @@ int get_next_token(tToken *token) {
 
                     scanner_state = s_start;
                 } else if (isalpha(c) || c == '_') {
-                    str_add_char(&attr, c); //save first char
+                    str_add_char(&attr, (char) c); //save first char
                     scanner_state = s_identifier;
                 } else if (isdigit(c)) {
-                    str_add_char(&attr, c); //save first char
+                    str_add_char(&attr, (char) c); //save first char
                     scanner_state = s_int_lit;
                 } else if (c == '"') {
                     // we dont save first char '"', because we dont want it in the string attribute
@@ -169,12 +172,10 @@ int get_next_token(tToken *token) {
             case s_identifier: //f151
                 // we are filling our string with indentifier
                 if (isalnum(c) || c == '_') {
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                 } else {
                     // we initialize string attribute for identifier
-                    if (str_init(token->attr.str_lit) == 1) {
-                        error(99,"scanner.c", "get_next_token(string *attr)", "Internal error in: %s", source);
-                    }
+                    str_init(token->attr.str_lit);
 
                     ungetc(c, source); // we read all and we need to go one char back
 
@@ -218,12 +219,12 @@ int get_next_token(tToken *token) {
                 break;
             case s_int_lit: //f16
                 if (isdigit(c)) {
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                 } else if (c == 'e' || c == 'E') {
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_exp_tmp;
                 } else if (c == '.') {
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_tmp;
                 } else {
                     token->token_type = T_INT;
@@ -238,7 +239,7 @@ int get_next_token(tToken *token) {
                 break;
             case s_exp_tmp: //q18
                 if (isdigit(c)) {
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_lit;
                 } else if (c == '+' || c == '-') {
                     scanner_state = s_exp_sig_tmp;
@@ -249,7 +250,7 @@ int get_next_token(tToken *token) {
                 break;
             case s_exp_sig_tmp: //r18
                 if (isdigit(c)) {
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_exp_lit;
                 } else {
                     ungetc(c, source);
@@ -259,7 +260,7 @@ int get_next_token(tToken *token) {
                 break;
             case s_decimal_tmp: //q17
                 if (isdigit(c)) {
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_lit;
                 } else {
                     char_clear(&attr, c);
@@ -268,9 +269,9 @@ int get_next_token(tToken *token) {
                 break;
             case s_decimal_lit: //f17
                 if (isdigit(c)) {
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                 } else if (c == 'e' || c == 'E') {
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_exp_tmp;
                 } else {
                     ungetc(c, source);
@@ -286,7 +287,7 @@ int get_next_token(tToken *token) {
                 break;
             case s_exp_lit: //f18
                 if (isdigit(c)) {
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                 } else {
                     ungetc(c, source);
                     token->token_type = T_FLOAT64;
@@ -331,7 +332,7 @@ int get_next_token(tToken *token) {
                     } else if (c == '\\') {
                         scanner_state = s_esc_seq;
                     } else {
-                        str_add_char(&attr, c);
+                        str_add_char(&attr, (char) c);
                     }
                 } else {
                     char_clear(&attr, c);
@@ -363,7 +364,7 @@ int get_next_token(tToken *token) {
                 if (c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
                     c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' ||
                     isdigit(c)) {
-                    hex[0] = c; // stroring first hex number
+                    hex[0] = (char) c; // stroring first hex number
                     scanner_state = s_hex_num;
                 } else {
                     char_clear(&attr, c);
@@ -375,7 +376,7 @@ int get_next_token(tToken *token) {
                     c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' ||
                     isdigit(c)) {
                     long pars_tmp; // temp variable for strtol function
-                    hex[1] = c; // storing second hex number
+                    hex[1] = (char) c; // storing second hex number
                     pars_tmp = strtol(hex, &endptr, 16); // converting hex number into decimal number
                     c = (int) pars_tmp;
                     // conversion check
@@ -389,7 +390,7 @@ int get_next_token(tToken *token) {
                         error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
                     }
                     // we are storing converted hex number as char into our string literal
-                    str_add_char(&attr, c);
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_string_tmp;
                 } else {
                     char_clear(&attr, c);
@@ -399,14 +400,14 @@ int get_next_token(tToken *token) {
             case s_string: //f19
                 ungetc(c, source);
                 // we initialize string attribute for string
-                if (str_init(token->attr.str_lit) == 1) {
-                    error(99,"scanner.c", "get_next_token(string *attr)", "Internal error in: %s", source);
-                    //return I_ERROR;
-                }
-
+                str_init(token->attr.str_lit);
                 token->token_type = T_STRING;
                 str_copy(token->attr.str_lit, &attr);
                 str_free(&attr);
+                return L_SUCCESS;
+                break;
+            default:
+                error(1,"scanner.c", "default in switch","Default option in switch statement");
                 break;
         }
     }
