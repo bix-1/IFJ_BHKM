@@ -17,59 +17,117 @@
 
 enum intermediate_code_instr {
 	/*
-	 * Variable declaration
+	 *  Variables are stored in symtable in format main:<num_of_call><function>:<variable>
+	 *  num_of_call and function can repeat with another function
 	 *
-	 * tab_elem1: symbol var
-	 * tab_elem2: NULL
+	 *  num_of_call is need for multiple different function calls (different inputs)
+	 *
+	 *  Example for variable:
+	 *  main:0init:var
+	 *  main:0fun:0hello:var
+	 *
+	 *  Example for function:
+	 *  main:0some_fun:0another_fun
+	 *
+	 *  Example for recursive function:
+	 *  main:0hello:1hello:2hello
+	 *
+	 */
+
+	/*
+	 * Symbol constants:
+	 *
+	 * symbol var:   stores variable of int || float64 || string
+	 * symbol const: stores const variables of int || float64 || string or its reference
+	 *               to const in program, eg. 42
+	 * symbol func:  stores function with its parameters and returns (variables or const)
+	 *
+	 */
+
+	/*
+	 * Variable/variables declaration
+	 *
+	 * elem1: symbol var
+	 * elem2: NULL
 	 *
 	 * Example:
 	 * var x int
 	 * var y float64
 	 * var z string
 	 * var b bool
+	 *
+	 * ==========================
+	 * Note:
+	 * multiple variables in line are taken one by one
+	 *
+	 * var x, y, z int
+	 *
+	 * is rewritten to this:
+	 *
+	 * var x int
+	 * var y int
+	 * var z int
 	 */
 	IC_DECL_VAR,
 
 	/*
-	 * Variable definition with init with var
+	 * Variable/variables definition/assign with another var/vars or/and const/consts
 	 *
-	 * tab_elem1: symbol var
-	 * tab_elem2: NULL
+	 * elem1: symbol var_list (dest)
+	 * elem2: symbol var_list (src)
 	 *
 	 * Example:
-	 * var x = y
-	 * x := z
+	 * var x = a                // variable is also declared here
+	 * var x, y = a, b          // variables are also declared here
+	 *
+	 * x := a                   // variable cannot be already declared
+	 * x, y := a, b             // variables may or may not be declared
+	 *
+	 * x = a                    // variable must be already declared
+	 * x, y = a, b              // variables must be already declared
+	 *
+	 * x = 42
+	 *
+	 * ==========================
+	 * Note 1:
+	 *
+	 * If variable/variables were not declared, then IC_DECL_VAR is called first for
+	 * each variable one by one.
+	 *
+	 * ==========================
+	 * Note 2:
+	 *
+	 * symbol var_list is used because in multiple variables it's not clear
+	 * if variable is var or const
 	 *
 	 */
 	IC_DEF_VAR,
 
 	/*
-	 * Variable definition with init with const
-	 *
-	 * tab_elem1: symbol const
-	 * tab_elem2: NULL
-	 *
-	 * Example:
-	 * const var x = 12
-	 *
-	 */
-	IC_DEF_CONST,
-
-	/*
 	 * Function call with single/multiple values return
 	 *
-	 * tab_elem1: symbol var_list
-	 * tab_elem2: symbol func
+	 * elem1: symbol var_list
+	 * elem2: symbol func
 	 *
 	 * Example:
-	 * var x = some_fun()
-	 * x := some_fun()
+	 * var x = some_fun()           // variable is also declared here
+	 * var x, y, z = some_fun()     // variables are also declared here
 	 *
-	 * var x, y, z = some_fun()
-	 * x, y, z := some_fun()
+	 * x := some_fun()              // variable cannot be already declared
+	 * x, y, z := some_fun()        // variables may or may not be declared
+	 *
+	 * x = some_fun()               // variable must be already declared
+	 * x, y, z = some_fun()         // variables must be already declared
 	 *
 	 * ==========================
-	 * Note:
+	 * Note 1:
+	 *
+	 * If variable/variables were not declared, then IC_DECL_VAR is called first for
+	 * each variable one by one.
+	 *
+	 *
+	 * ==========================
+	 * Note 2:
 	 * in case that some variables are defined and some not
 	 *
 	 * x = defined, y = undefined
@@ -84,10 +142,10 @@ enum intermediate_code_instr {
 	IC_DEF_FUN,
 
 	/*
-	 * Defines function start, parameter variables are inside symbol func
+	 * Function call without assigning return value/values
 	 *
-	 * tab_elem1: symbol func
-	 * tab_elem2: NULL
+	 * elem1: symbol func
+	 * elem2: NULL
 	 *
 	 * Example:
 	 * some_fun()
@@ -95,34 +153,10 @@ enum intermediate_code_instr {
 	IC_CALL_FUN,
 
 	/*
-	 * Variable value set with var
-	 *
-	 * tab_elem1: symbol var
-	 * tab_elem2: symbol var
-	 *
-	 * Example:
-	 * x = y
-	 *
-	 */
-	IC_MOV_VAR,
-
-	/*
-	 * Variable value set with const
-	 *
-	 * tab_elem1: symbol var
-	 * tab_elem2: symbol const
-	 *
-	 * Example:
-	 * x = 12
-	 *
-	 */
-	IC_MOV_CONST,
-
-	/*
 	 * Variable add operation with var
 	 *
-	 * tab_elem1: symbol var (dest)
-	 * tab_elem2: symbol var (src)
+	 * elem1: symbol var (dest)
+	 * elem2: symbol var (src)
 	 *
 	 * Example:
 	 * x += y
@@ -133,8 +167,8 @@ enum intermediate_code_instr {
 	/*
 	 * Variable add operation with const
 	 *
-	 * tab_elem1: symbol var (dest)
-	 * tab_elem2: symbol const (src)
+	 * elem1: symbol var (dest)
+	 * elem2: symbol const (src)
 	 *
 	 * Example:
 	 * x += 12
@@ -145,8 +179,8 @@ enum intermediate_code_instr {
 	/*
 	 * Variable subtract operation with var
 	 *
-	 * tab_elem1: symbol var (dest)
-	 * tab_elem2: symbol var (src)
+	 * elem1: symbol var (dest)
+	 * elem2: symbol var (src)
 	 *
 	 * Example:
 	 * x -= y
@@ -157,8 +191,8 @@ enum intermediate_code_instr {
 	/*
 	 * Variable subtract operation with const
 	 *
-	 * tab_elem1: symbol var (dest)
-	 * tab_elem2: symbol var (src)
+	 * elem1: symbol var (dest)
+	 * elem2: symbol var (src)
 	 *
 	 * Example:
 	 * x -= 12
@@ -169,8 +203,8 @@ enum intermediate_code_instr {
 	/*
 	 * Variable multiply operation with var
 	 *
-	 * tab_elem1: symbol var (dest)
-	 * tab_elem2: symbol var (src)
+	 * elem1: symbol var (dest)
+	 * elem2: symbol var (src)
 	 *
 	 * Example:
 	 * x *= y
@@ -181,8 +215,8 @@ enum intermediate_code_instr {
 	/*
 	 * Variable multiply operation with const
 	 *
-	 * tab_elem1: symbol var (dest)
-	 * tab_elem2: symbol var (src)
+	 * elem1: symbol var (dest)
+	 * elem2: symbol var (src)
 	 *
 	 * Example:
 	 * x *= 12
@@ -193,8 +227,8 @@ enum intermediate_code_instr {
 	/*
 	 * Variable divide operation with variable. Must be both int or float
 	 *
-	 * tab_elem1: symbol var
-	 * tab_elem2: symbol var
+	 * elem1: symbol var
+	 * elem2: symbol var
 	 *
 	 * Example:
 	 * x /= y
@@ -204,8 +238,8 @@ enum intermediate_code_instr {
 	/*
 	 * Variable divide operation with const. Must be both int or float
 	 *
-	 * tab_elem1: symbol var
-	 * tab_elem2: symbol var
+	 * elem1: symbol var
+	 * elem2: symbol var
 	 *
 	 * Example:
 	 * x /= 12
