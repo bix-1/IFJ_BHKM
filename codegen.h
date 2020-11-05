@@ -17,20 +17,20 @@
 
 enum intermediate_code_instr {
 	/*
-	 *  Variables are stored in symtable in format main:<num_of_call><function>:<variable>
-	 *  num_of_call and function can repeat with another function
+	 * Variables are stored in symtable in format main:<num_of_call><function>:<variable>
+	 * num_of_call and function can repeat with another function
 	 *
-	 *  num_of_call is need for multiple different function calls (different inputs)
+	 * num_of_call is need for multiple different function calls (different inputs)
 	 *
-	 *  Example for variable:
-	 *  main:0init:var
-	 *  main:0fun:0hello:var
+	 * Example for variable:
+	 * main:0init:var
+	 * main:0fun:0hello:var
 	 *
-	 *  Example for function:
-	 *  main:0some_fun:0another_fun
+	 * Example for function:
+	 * main:0some_fun:0another_fun
 	 *
-	 *  Example for recursive function:
-	 *  main:0hello:1hello:2hello
+	 * Example for recursive function:
+	 * main:0hello:1hello:2hello
 	 *
 	 */
 
@@ -47,8 +47,9 @@ enum intermediate_code_instr {
 	/*
 	 * Variable/variables declaration
 	 *
-	 * elem1: symbol var
-	 * elem2: NULL
+	 * elem_dest: symbol var
+	 * elem_1: NULL
+	 * elem_2: NULL
 	 *
 	 * Example:
 	 * var x int
@@ -73,8 +74,9 @@ enum intermediate_code_instr {
 	/*
 	 * Variable/variables definition/assign with another var/vars or/and const/consts
 	 *
-	 * elem1: symbol var_list (dest)
-	 * elem2: symbol var_list (src)
+	 * elem_dest: symbol var_list (dest)
+	 * elem_1: symbol var_list (src)
+	 * elem_2: NULL
 	 *
 	 * Example:
 	 * var x = a                // variable is also declared here
@@ -106,8 +108,9 @@ enum intermediate_code_instr {
 	/*
 	 * Function call with single/multiple values return
 	 *
-	 * elem1: symbol var_list
-	 * elem2: symbol func
+	 * elem_dest: symbol var_list
+	 * elem_1: symbol func
+	 * elem_2: NULL
 	 *
 	 * Example:
 	 * var x = some_fun()           // variable is also declared here
@@ -144,8 +147,9 @@ enum intermediate_code_instr {
 	/*
 	 * Function call without assigning return value/values
 	 *
-	 * elem1: symbol func
-	 * elem2: NULL
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
 	 *
 	 * Example:
 	 * some_fun()
@@ -155,96 +159,84 @@ enum intermediate_code_instr {
 	/*
 	 * Variable add operation with var
 	 *
-	 * elem1: symbol var (dest)
-	 * elem2: symbol var (src)
+	 * elem_dest: symbol var (dest)
+	 * elem_1: symbol var || symbol const (src1)
+	 * elem_2: symbol var || symbol const (src2)
 	 *
 	 * Example:
-	 * x += y
+	 * x = a + b
+	 * x = a + 42
+	 * x += c (x = x + c)
+	 *
+	 * ==========================
+	 * Note:
+	 *
+	 * If src elements are not same type (int, float) - Error
 	 *
 	 */
 	IC_ADD_VAR,
 
 	/*
-	 * Variable add operation with const
-	 *
-	 * elem1: symbol var (dest)
-	 * elem2: symbol const (src)
-	 *
-	 * Example:
-	 * x += 12
-	 *
-	 */
-	IC_ADD_CONST,
-
-	/*
 	 * Variable subtract operation with var
 	 *
-	 * elem1: symbol var (dest)
-	 * elem2: symbol var (src)
+	 * elem_dest: symbol var (dest)
+	 * elem_1: symbol var || symbol const (src1)
+	 * elem_2: symbol var || symbol const (src2)
 	 *
 	 * Example:
-	 * x -= y
+	 * x = a - b
+	 * x = a - 42
+	 * x -= c (x = x - c)
+	 *
+	 * ==========================
+	 * Note:
+	 *
+	 * If src elements are not same type (int, float) - Error
 	 *
 	 */
 	IC_SUB_VAR,
 
 	/*
-	 * Variable subtract operation with const
-	 *
-	 * elem1: symbol var (dest)
-	 * elem2: symbol var (src)
-	 *
-	 * Example:
-	 * x -= 12
-	 *
-	 */
-	IC_SUB_CONST,
-
-	/*
 	 * Variable multiply operation with var
 	 *
-	 * elem1: symbol var (dest)
-	 * elem2: symbol var (src)
+	 * elem_dest: symbol var (dest)
+	 * elem_1: symbol var || symbol const (src1)
+	 * elem_2: symbol var || symbol const (src2)
 	 *
 	 * Example:
-	 * x *= y
+	 * x = a * b
+	 * x = a * 42
+	 * x *= c (x = x * c)
+	 *
+	 * ==========================
+	 * Note:
+	 *
+	 * If src elements are not same type (int, float) - Error
 	 *
 	 */
 	IC_MUL_VAR,
 
 	/*
-	 * Variable multiply operation with const
-	 *
-	 * elem1: symbol var (dest)
-	 * elem2: symbol var (src)
-	 *
-	 * Example:
-	 * x *= 12
-	 *
-	 */
-	IC_MUL_CONST,
-
-	/*
 	 * Variable divide operation with variable. Must be both int or float
 	 *
-	 * elem1: symbol var
-	 * elem2: symbol var
+	 * elem_dest: symbol var (dest)
+	 * elem_1: symbol var || symbol const (src1)
+	 * elem_2: symbol var || symbol const (src2)
 	 *
 	 * Example:
-	 * x /= y
+	 * x = a / b
+	 * x = a / 42
+	 * x /= c (x = x / c)
+	 *
+	 * ==========================
+	 * Note:
+	 *
+	 * If both src elements are float - DIV instruction will be called
+	 * If both src elements are int - IDIV instruction will be called
+	 * If src elements are not same type (int, float) - Error
+	 *
 	 */
 	IC_DIV_VAR,
-
-	/*
-	 * Variable divide operation with const. Must be both int or float
-	 *
-	 * elem1: symbol var
-	 * elem2: symbol var
-	 *
-	 * Example:
-	 * x /= 12
-	 */
-	IC_DIV_CONST
 };
 
 #endif //CODEGEN_H
