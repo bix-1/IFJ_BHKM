@@ -348,7 +348,7 @@ int get_next_token(tToken *token) {
                 } else if (c == 'n') {
                     str_add_char(&attr, '\n');
                     scanner_state = s_string_tmp;
-                } else if (c == 'x') {
+                } else if (c == 'x' || c == 'X') {
                     scanner_state = s_hex_tmp;
                 } else if (c == '"') {
                     str_add_char(&attr, '\"');

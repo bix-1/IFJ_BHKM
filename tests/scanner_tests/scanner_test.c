@@ -11,7 +11,6 @@
  */
 
 #include "scanner.h"
-#include "str.h"
 
 FILE *f;
 extern int line_num;
@@ -41,7 +40,6 @@ void f_open(char *file) {
 }
 int main() {
     tToken tok;
-
 
     printf("[TEST01]\n");
     printf("Token pre integer literal : 118, value : 6542\n");
@@ -175,6 +173,128 @@ int main() {
     printf("Token string_abc : 120, value : abc\n");
     printf("~~~~~~~~~~~~~~~~~~~~\n");
     f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/string_abc");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST16]\n");
+    printf("Token pre identifikator : 127, value : test_identifikator\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/ident_test");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST17]\n");
+    printf("Token pre else : 122, value : else\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/else");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST18]\n");
+    printf("Token pre float64 : 119, value : float64\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/float64");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST19]\n");
+    printf("Token pre for : 125, value : for\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/for");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST20]\n");
+    printf("Token pre func : 123, value : func\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/func");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST21]\n");
+    printf("Token pre if : 121, value : if\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/if");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST22]\n");
+    printf("Token pre int : 118, value : int\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/int");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST23]\n");
+    printf("Token pre package : 126, value : package\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/package");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST24]\n");
+    printf("Token pre return : 124, value : return\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/return");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST25]\n");
+    printf("Token pre string : 120, value : string\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/string");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    //testy na string
+
+    printf("[TEST26]\n");
+    printf("Token pre string : 120, value : vole \\ \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/string_adv1");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST27]\n");
+    printf("Token pre string : 120, value : vole \\n novy riadok \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/string_adv2");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST28]\n");
+    printf("Token pre string : 120, value : testujem \\t tab \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/string_adv3");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST29]\n");
+    printf("Token pre string : 120, value : \"testujem \\\" uvodzovky a novy \\nriadok\" \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/string_adv4");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST30]\n");
+    printf("Token pre string : 120, value : \"testujem hex uvodzovky : \\x22 a male a : \\x61 a este velke A: \\X41\" \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/string_adv5");
     get_next_token(&tok);
     print_lex(&tok);
     fclose(f);
