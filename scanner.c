@@ -44,7 +44,7 @@ int get_next_token(tToken *token) {
     str_clear(&attr); // clears everything in string, if it is identifier we start storing data
 
     if (source == NULL) {
-        error(99,"scanner.c", "get_next_token(string *attr)", "Internal error in: %s", source);
+        error(99,"scanner.c", "get_next_token", "Invalid input stream");
     }
 
     scanner_state = s_start; // we set initial scanner state
