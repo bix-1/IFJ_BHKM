@@ -13,11 +13,19 @@
 #include "parser.h"
 #include <stdio.h>
 
+
 void parse()
 {
-
-    parsData.stack = malloc(sizeof(tokenStack));
+    parsData.stack = (tokenStack *)malloc(sizeof(struct tokenStack));
+    parsData.token = (tToken*)malloc(sizeof( tToken));
     stack_init(parsData.stack);
 
+    printf("PARS\t%d\t%d\n", parsData.stack->topToken->token.token_type);
+    
+    
     parse_expression();
+
+    stack_free(parsData.stack);
+    free(parsData.stack);
+    free(parsData.token);
 }
