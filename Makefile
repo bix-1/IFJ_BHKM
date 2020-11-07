@@ -9,7 +9,7 @@
 
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic
-TMPS = *.o *.a test_codegen test_ll test_error
+TMPS = *.o *.a ${wildcard test_*}
 AR = ar -csr
 LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a
 
