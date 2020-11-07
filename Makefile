@@ -11,6 +11,7 @@ CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic
 TMPS = *.o *.a test_codegen test_ll test_error
 AR = ar -csr
+LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a
 
 
 all: test_codegen
@@ -61,6 +62,10 @@ test_error: tests/test_error.c error.a ll.a symtable.a
 
 test_parser: tests/parser_tests/parser_test.c str.a parser.a
 	${CC} ${CFLAGS} $^ -o $@
+
+test_assignment: tests/test_assignment.c ${LIBS}
+	${CC} ${CFLAGS} $^ -o $@
+
 #------ end of Testing -----#
 
 clean:
