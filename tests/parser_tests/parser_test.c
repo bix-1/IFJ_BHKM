@@ -17,7 +17,7 @@
 FILE *f;
 extern int line_num;
 
-void print_lex(tToken *token) {
+/* void print_lex(tToken *token) {
     if (token->token_type == T_INT) {
         printf("Lexema : %d, ma hodnotu: %d", token->token_type, token->attr.int_lit);
     } else if (token->token_type == T_FLOAT64) {
@@ -29,25 +29,27 @@ void print_lex(tToken *token) {
     } else {
         printf("Lexema : %d, ma hodnotu: %d", token->token_type, token->attr.int_lit);
     }
-}
+} */
 
-void f_open(char *file) {
+void f_open(char *file)
+{
     f = fopen(file, "r");
-    if (f == NULL) {
-        fprintf(stderr, "Nepodarilo sa otvorit subor");
+    if (f == NULL)
+    {
+        fprintf(stderr, "Nepodarilo sa otvorit subor\n");
         return;
     }
 
     source_file_setup(f);
 }
-int main() {
+int main()
+{
     printf("[TEST01]\n");
     printf("Token pre integer literal\n");
     printf("~~~~~~~~~~~~~~~~~~~~\n");
-    f_open("/home/kostyo/3sm/ifj/IFJ_BHKM/tests/parser_tests/int_lit_test");
-    //tToken tok;
-    //get_next_token(&tok);
+    f_open("tests/parser_tests/int_lit_test");
     //print_lex(&tok);
     parse();
+
     fclose(f);
 }
