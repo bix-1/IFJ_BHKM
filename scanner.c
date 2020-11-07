@@ -73,8 +73,8 @@ int get_next_token(tToken *token) {
                         if (c == '.') {
                             str_add_char(&attr, (char) c);
                             scanner_state = s_decimal_tmp;
+                            break;
                         } else if (c == 'e' || c == 'E') {
-                            str_add_char(&attr, (char) c);
                             scanner_state = s_exp_tmp;
                         } else if (isdigit(c)) {
                             char_clear(&attr, c);

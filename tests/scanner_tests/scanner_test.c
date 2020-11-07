@@ -322,4 +322,20 @@ int main() {
     get_next_token(&tok);
     print_lex(&tok);
     fclose(f);
+
+    printf("[TEST34]\n");
+    printf("Token pre int val : 130, value : 0.5 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_lit_adv1");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST35]\n");
+    printf("Token pre int val : 130, value : 1.5 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_lit_adv2");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
 }
