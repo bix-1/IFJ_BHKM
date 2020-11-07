@@ -18,24 +18,31 @@ all: test_codegen
 
 ########## Static libraries ##########
 scanner.a: scanner.o error.o str.o
+	rm -f $@
 	${AR} $@ $^
 
 parser.a: parser.o scanner.a stack.o expression.a
+	rm -f $@
 	${AR} -T $@ $^
 
 error.a: error.o ll.o symtable.o scanner.a
+	rm -f $@
 	${AR} -T $@ $^
 
 ll.a: ll.o error.a
+	rm -f $@
 	${AR} -T $@ $^
 
 symtable.a: symtable.o
+	rm -f $@
 	${AR} -T $@ $^
 
 str.a: str.o error.a
+	rm -f $@
 	${AR} -T $@ $^
 
 expression.a: expression.o parser.a stack.o scanner.a
+	rm -f $@
 	${AR} -T $@ $^
 
 #------ end of Static libraries -----#
