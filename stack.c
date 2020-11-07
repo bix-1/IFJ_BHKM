@@ -15,31 +15,43 @@
 
 void stack_init(tokenStack *stack)
 {
+
     // Insterting the empty flag token
-    stackElemPtr newElem = (stackElemPtr)malloc(sizeof(stackElemPtr));
+    stackElemPtr newElem = (stackElemPtr)malloc(sizeof(struct stackElem));
+    if (!newElem)
+    {
+        // instert error call
+        printf("\nSTACK INIT ERROR\n");
+    }
 
     newElem->nextTok = NULL;
+
     newElem->token.token_type = T_EMPTY;
+    //newElem->token.attr.int_lit = 0; Not important ??
 
     stack->topToken = newElem;
+    printf("STACK INIT\t%p\t%p\t%d\n", newElem, stack->topToken, newElem->token.token_type);
 }
 
 void stack_push(tokenStack *stack, tToken tokPush)
 {
-    stackElemPtr newElem = (stackElemPtr)malloc(sizeof(stackElemPtr));
+    stackElemPtr newElem = (stackElemPtr)malloc(sizeof(struct stackElem));
 
     // Allocation error
     if (!newElem)
     {
         // instert error call
+        printf("\nSTACK PUSH ERROR\n");
     }
 
     newElem->token.token_type = tokPush.token_type;
     newElem->token.attr = tokPush.attr;
 
     // Push the token
+    //printf("STACK TOP\t%p\t%d\t%d\n", stack->topToken, stack->topToken->token.token_type);
     newElem->nextTok = stack->topToken;
     stack->topToken = newElem;
+    //printf("STACK PUSH\t%p\t%p\t%d\n", newElem, stack->topToken,newElem->token.token_type);
 }
 
 void stack_pop(tokenStack *stack)
@@ -55,6 +67,7 @@ void stack_pop(tokenStack *stack)
     else
     {
         //insert STACK_POP Error, trying to pop non-existent element
+        printf("\nT_EMPTY left on the stack\n");
     }
 }
 
@@ -77,7 +90,7 @@ void stack_free(tokenStack *stack)
 
     stackElemPtr tmp;
 
-    while (!stack->topToken)
+    while (stack->topToken != NULL)
     {
         tmp = stack->topToken;
         stack->topToken = stack->topToken->nextTok;
