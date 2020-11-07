@@ -25,7 +25,7 @@ typedef struct parserData
     tokenStack *stack;
 } tPData;
 
-extern tPData parsData;
+tPData parsData;
 
 void parse();
 

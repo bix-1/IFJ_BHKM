@@ -184,7 +184,7 @@ void parse_expression()
             shift();
             break;
         case Eq: /*=*/
-            equal(); 
+            equal();
             break;
         case Err: /* empty*/
             /*error*/
@@ -198,3 +198,6 @@ void parse_expression()
     }
 }
 
+void equal () {
+  return;
+}
