@@ -67,6 +67,25 @@ int get_next_token(tToken *token) {
                     str_add_char(&attr, (char) c); //save first char
                     scanner_state = s_identifier;
                 } else if (isdigit(c)) {
+                    if (c == '0') {
+                        str_add_char(&attr, (char) c);
+                        c = getc(source);
+                        if (c == '.') {
+                            str_add_char(&attr, (char) c);
+                            scanner_state = s_decimal_tmp;
+                        } else if (c == 'e' || c == 'E') {
+                            str_add_char(&attr, (char) c);
+                            scanner_state = s_exp_tmp;
+                        } else if (isdigit(c)) {
+                            char_clear(&attr, c);
+                            error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                        } else {
+                            token->token_type = T_INT_VALUE;
+                            token->attr.int_lit = strtol(attr.str, NULL, 10);
+                            char_clear(&attr, c);
+                            return L_SUCCESS;
+                        }
+                    }
                     str_add_char(&attr, (char) c); //save first char
                     scanner_state = s_int_lit;
                 } else if (c == '"') {
@@ -226,11 +245,9 @@ int get_next_token(tToken *token) {
                     str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_tmp;
                 } else {
-                    token->token_type = T_INT;
-                    token->attr.int_lit = atoi(attr.str);
-                    //str_clear(attr);
-                    ungetc(c, source);
-                    str_free(&attr);
+                    token->token_type = T_INT_VALUE;
+                    token->attr.int_lit = strtol(attr.str, NULL, 10);
+                    char_clear(&attr, c);
                     return L_SUCCESS;
                     // we dont need to check for conversion errors,
                     //because we know that just integer number literal
@@ -274,13 +291,8 @@ int get_next_token(tToken *token) {
                     scanner_state = s_exp_tmp;
                 } else {
                     ungetc(c, source);
-                    token->token_type = T_FLOAT64;
-                    token->attr.dec_lit = strtod(attr.str, &endptr);
-                    // conversion check
-                    if (*endptr != 0){
-                        char_clear(&attr, c);
-                        error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
-                    }
+                    token->token_type = T_DEC_VALUE;
+                    token->attr.dec_lit = strtod(attr.str, NULL);
                     return L_SUCCESS;
                 }
                 break;
@@ -289,13 +301,8 @@ int get_next_token(tToken *token) {
                     str_add_char(&attr, (char) c);
                 } else {
                     ungetc(c, source);
-                    token->token_type = T_FLOAT64;
-                    token->attr.dec_lit = strtod(attr.str, &endptr);
-                    // conversion check
-                    if (*endptr != 0){
-                        char_clear(&attr, c);
-                        error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
-                    }
+                    token->token_type = T_DEC_VALUE;
+                    token->attr.dec_lit = strtod(attr.str, NULL);
                     return L_SUCCESS;
                 }
                 break;
@@ -348,14 +355,13 @@ int get_next_token(tToken *token) {
                 } else if (c == 'n') {
                     str_add_char(&attr, '\n');
                     scanner_state = s_string_tmp;
-                } else if (c == 'x' || c == 'X') {
+                } else if (c == 'x') {
                     scanner_state = s_hex_tmp;
                 } else if (c == '"') {
                     str_add_char(&attr, '\"');
                     scanner_state = s_string_tmp;
                 } else {
-                    ungetc(c, source);
-                    str_free(&attr);
+                    char_clear(&attr, (char) c);
                     error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
                 }
                 break;
@@ -380,11 +386,6 @@ int get_next_token(tToken *token) {
                     c = (int) pars_tmp;
                     // conversion check
                     if (*endptr != 0){
-                        char_clear(&attr, c);
-                        error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
-                    }
-
-                    if (c < 32) {
                         char_clear(&attr, c);
                         error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
                     }

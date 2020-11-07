@@ -14,6 +14,7 @@
 #define IFJ_BHKM_SCANNER_H
 
 #include <stdio.h>
+#include <stdint.h>
 #include "str.h"
 
 // global variable for input file
@@ -62,10 +63,14 @@ FILE *source;
 #define T_FOR 125
 #define T_PACKAGE 126
 
+// identifier token
 #define T_IDENTIFIER 127
 
 #define T_EMPTY 128 // nevedel som do ktorej kat. to mam dat, popr. to zmen/uprav
 
+// value tokens
+#define T_INT_VALUE 129
+#define T_DEC_VALUE 130
 /*
  * Automatons states.
  */
@@ -117,7 +122,7 @@ enum scanner_state {
  * Only one member can contain a value at any given time.
  */
 typedef union {
-    int int_lit;
+    int64_t int_lit;
     double dec_lit;
     string str_lit;
 } Literal_attr;
