@@ -11,15 +11,74 @@
  */
 
 #include "parser.h"
+#include "scanner.h"
+#include "error.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#define T_MAIN 1000
+
+tToken next;
+
+void match(int term);
+void program();
+void prolog();
 
 
-void parse()
-{
+int64_t to_int(tToken *t) {
+  return t->attr.int_lit;
+}
+
+double to_double(tToken *t) {
+  return t->attr.dec_lit;
+}
+
+char * to_string(tToken *t) {
+  return t->attr.str_lit.str;
+}
+
+
+void parse() {
   // initialization
   source_file_setup(stdin);
-  tToken t;
+  get_next_token(&next);
+
+  program();
+}
 
 
+void program() {
+  prolog();
+  printf("Prolog matched\n");
+
+  // switch () {
+  //
+  //   default:
+  //     error("parser.c", "program", "_PLACEHOLDER_");
+  // }
+}
+
+void prolog() {
+  match(T_PACKAGE);
+  match(T_MAIN);
+  match(T_EOL);
+}
+
+void match(int term) {
+  if (term == T_MAIN) {
+    if (next.token_type == T_IDENTIFIER && !strcmp(to_string(&next), "main")) {
+      get_next_token(&next);
+      return;
+    }
+    else
+      error(99, "parser.c", "match", "main");
+  }
+
+  printf("---%d\n", next.token_type);
+
+  if (next.token_type == term)
+    get_next_token(&next);
+  else
+    error(99, "parser.c", "match", "_PLACEHOLDER_");
 }
