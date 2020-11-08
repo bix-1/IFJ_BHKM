@@ -61,6 +61,9 @@ test_error: tests/test_error.c error.a ll.a symtable.a
 
 test_parser: tests/parser_tests/parser_test.c str.a parser.a
 	${CC} ${CFLAGS} $^ -o $@
+
+t_parser: tests/test_parser.c parser.a
+	${CC} ${CFLAGS} $^ -o $@
 #------ end of Testing -----#
 
 clean:
