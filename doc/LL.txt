@@ -1,0 +1,56 @@
+%token PACKAGE MAIN VAR_ID FUNC_ID FUNC EOL EOF INT FLOAT64 STRING IF ELSE FOR RETURN EXPR COND INPUTS INPUTI INPUTF
+'(' ')' '{' '}' ':=' ';' ',' '='
+%%
+program : prolog FUNC func_list_pre MAIN '(' ')' '{' EOL body '}' EOL func_list EOF ;
+prolog: PACKAGE MAIN EOL;
+
+//------------List of Functions BEFORE main------------
+func_list_pre: /*eps*/ | FUNC_ID '(' param_list ')' func_def_type EOL FUNC func_list_pre;
+//------------List of functions AFTER main-------------
+func_list: /*eps*/ | func_def func_list;
+func_def: FUNC FUNC_ID '(' param_list ')' func_def_type EOL;
+
+//-----------PARAMETERS of function--------------------
+param_list: /*eps*/ | VAR_ID type next_param;
+next_param: /*eps*/ | ',' VAR_ID type next_param;
+
+//-----------Determining RETURN TYPE(s) of function----
+func_def_type: func_def_void | func_def_ret;
+func_def_void: '{' EOL body '}' | '(' func_def_ret;
+func_def_ret: ')' '{' EOL body '}' | ret_list ')' '{' EOL body RETURN expr_list'}';
+//-----------List of RETURN TYPES----------------------
+ret_list: type next_ret;
+next_ret: /*eps*/ | ',' type next_ret;
+
+
+//-----------BODY of functions-------------------------
+body: /*eps*/ | command EOL body;
+command: VAR_ID var_ | if | cycle | func_call;
+
+//-----------COMMANDS----------------------------------
+//--------VARIABLE definition & assignment-------------
+var_: var_def | var_move;
+var_def: ':=' EXPR;
+var_move: next_id '=' expr_list;
+next_id: /*eps*/ | ',' VAR_ID next_id;
+//--------IF-------------------------------------------
+if: IF COND '{' EOL body '}' ELSE '{' EOL body '}';
+//--------FOR------------------------------------------
+cycle: FOR for_def ';' COND ';' for_move '{' EOL body '}';
+for_def: /*eps*/ | VAR_ID var_def;
+for_move: /*eps*/ | VAR_ID var_move;
+//--------RETURN---------------------------------------
+return: RETURN ret;
+ret: /*eps*/ | expr_list;
+//--------FUNCTION CALLS-------------------------------
+func_call: FUNC_ID '(' expr_list ')';
+
+
+//--------EXPRESSIONS----------------------------------
+expr_list: EXPR next_expr | func_call;
+next_expr: /*eps*/ | ',' EXPR next_expr;
+
+//--------DATA TYPES-----------------------------------
+type: INT;
+type: FLOAT64;
+type: STRING;
