@@ -14,11 +14,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 void parse()
 {
+  // initialization
+  source_file_setup(stdin);
+  tToken t;
 
-    parsData.stack = malloc(sizeof(tokenStack));
-    stack_init(parsData.stack);
 
-    parse_expression();
 }
