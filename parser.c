@@ -64,7 +64,7 @@ void parse() {
 
 void program() {
   prolog();
-  // printf("Prolog matched\n");
+  printf("Prolog matched\n");
 
   // switch () {
   //
@@ -75,9 +75,7 @@ void program() {
 
 void prolog() {
   match(T_PACKAGE);
-  printf("Matched package\n");
   match(T_MAIN);
-  printf("Matched main\n");
   match(T_EOL);
 }
 
@@ -94,7 +92,5 @@ void match(int term) {
   if (next.token_type == term)
     get_next_token(&next);
   else
-    if (next.token_type == T_FUNC)
-      printf("Got: FUNC\n");
-    // error(99, "parser.c", "match", "_PLACEHOLDER_");
+    error(99, "parser.c", "match", "_PLACEHOLDER_");
 }
