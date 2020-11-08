@@ -162,7 +162,7 @@ int main() {
     fclose(f);
 
     printf("[TEST14]\n");
-    printf("Token dec_num : 119, value : 42,42\n");
+    printf("Token dec_num : 130, value : 42,42\n");
     printf("~~~~~~~~~~~~~~~~~~~~\n");
     f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_num");
     get_next_token(&tok);
@@ -319,6 +319,38 @@ int main() {
     printf("Token pre int val : 129, value : error \n");
     printf("~~~~~~~~~~~~~~~~~~~~\n");
     f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/int_lit_adv1");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST34]\n");
+    printf("Token pre dec val : 130, value : 0.5 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_lit_adv1");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST35]\n");
+    printf("Token pre dec val : 130, value : 1.5 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_lit_adv2");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST36]\n");
+    printf("Token pre dec val : 130, value : 400 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_lit_adv3");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST37]\n");
+    printf("Token pre dec val : 130, value : 0 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_lit_adv4");
     get_next_token(&tok);
     print_lex(&tok);
     fclose(f);
