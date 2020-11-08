@@ -60,6 +60,7 @@ int get_next_token(tToken *token) {
                     if (c == '\n') {
                         line_num++;
                         token->token_type = T_EOL;
+                        return L_SUCCESS;
                     }
 
                     scanner_state = s_start;
