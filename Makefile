@@ -21,7 +21,7 @@ scanner.a: scanner.o error.o str.o
 	rm -f $@
 	${AR} $@ $^
 
-parser.a: parser.o scanner.a stack.o expression.a
+parser.a: parser.o scanner.a stack.o expression.a error.a
 	rm -f $@
 	${AR} -T $@ $^
 
