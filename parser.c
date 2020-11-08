@@ -10,6 +10,12 @@
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
 
+/*
+TODO:
+  refactor func comments
+*/
+
+
 #include "parser.h"
 #include "scanner.h"
 #include "error.h"
@@ -21,11 +27,18 @@
 
 tToken next;
 
+// tests whether next_token matches next_term
+// either matches & gets_new_token or calls error
 void match(int term);
+
 void program();
 void prolog();
 
 
+/*
+  Functions for printing attributes of tokens
+  TODO: remove for final implementation
+*/
 int64_t to_int(tToken *t) {
   return t->attr.int_lit;
 }
@@ -37,6 +50,7 @@ double to_double(tToken *t) {
 char * to_string(tToken *t) {
   return t->attr.str_lit.str;
 }
+//-------------------------------------------
 
 
 void parse() {
@@ -50,7 +64,7 @@ void parse() {
 
 void program() {
   prolog();
-  printf("Prolog matched\n");
+  // printf("Prolog matched\n");
 
   // switch () {
   //
@@ -61,7 +75,9 @@ void program() {
 
 void prolog() {
   match(T_PACKAGE);
+  printf("Matched package\n");
   match(T_MAIN);
+  printf("Matched main\n");
   match(T_EOL);
 }
 
@@ -75,10 +91,10 @@ void match(int term) {
       error(99, "parser.c", "match", "main");
   }
 
-  printf("---%d\n", next.token_type);
-
   if (next.token_type == term)
     get_next_token(&next);
   else
-    error(99, "parser.c", "match", "_PLACEHOLDER_");
+    if (next.token_type == T_FUNC)
+      printf("Got: FUNC\n");
+    // error(99, "parser.c", "match", "_PLACEHOLDER_");
 }
