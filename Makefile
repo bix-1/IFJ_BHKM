@@ -9,8 +9,9 @@
 
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic
-TMPS = *.o *.a test_codegen test_ll test_error parser
+TMPS = *.o *.a ${wildcard test_*[^.][^c]} parser
 AR = ar -csr
+LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a
 
 .PHONY: run_parser
 
@@ -68,6 +69,9 @@ test_error: tests/test_error.c error.a ll.a symtable.a
 	${CC} ${CFLAGS} $^ -o $@
 
 test_parser: tests/parser_tests/parser_test.c str.a parser.a
+	${CC} ${CFLAGS} $^ -o $@
+
+test_assignment: tests/test_assignment.c ${LIBS}
 	${CC} ${CFLAGS} $^ -o $@
 
 parser: tests/test_parser.c parser.a expr_parser.a
