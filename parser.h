@@ -42,7 +42,6 @@ void func_def();
 void param_list();
 void next_param();
 void func_def_type();
-void func_def_void();
 void func_def_ret();
 void ret_list();
 void next_ret();
