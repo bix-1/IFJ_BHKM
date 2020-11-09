@@ -60,6 +60,8 @@ int get_next_token(tToken *token) {
                     if (c == '\n') {
                         line_num++;
                         token->token_type = T_EOL;
+                        while (isspace(c = getc(source)));
+                        ungetc(c, source);
                         return L_SUCCESS;
                     }
 
