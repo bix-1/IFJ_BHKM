@@ -71,6 +71,9 @@ FILE *source;
 // value tokens
 #define T_INT_VALUE 129
 #define T_DEC_VALUE 130
+
+#define T_LEFT_BRACE 131 //{
+#define T_RIGHT_BRACE 132 //}
 /*
  * Automatons states.
  */

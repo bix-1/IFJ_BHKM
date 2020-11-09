@@ -354,4 +354,20 @@ int main() {
     get_next_token(&tok);
     print_lex(&tok);
     fclose(f);
+
+    printf("[TEST39]\n");
+    printf("Token pre dec val : 131\n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/left_brace");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST40]\n");
+    printf("Token pre dec val : 132 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/right_brace");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
 }

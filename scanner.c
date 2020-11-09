@@ -179,6 +179,14 @@ int get_next_token(tToken *token) {
                         char_clear(&attr, c);
                         return L_SUCCESS;
                     }
+                } else if (c == '{') {
+                    token->token_type = T_LEFT_BRACE;
+                    str_free(&attr);
+                    return L_SUCCESS;
+                } else if (c == '}') {
+                    token->token_type = T_RIGHT_BRACE;
+                    str_free(&attr);
+                    return L_SUCCESS;
                 } else if (c == EOF) {
                     token->token_type = T_EOF;
                     str_free(&attr);
