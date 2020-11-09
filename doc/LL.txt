@@ -15,8 +15,7 @@ param_list: /*eps*/ | VAR_ID type next_param;
 next_param: /*eps*/ | ',' VAR_ID type next_param;
 
 //-----------Determining RETURN TYPE(s) of function----
-func_def_type: func_def_void | func_def_ret;
-func_def_void: '{' EOL body '}' | '(' func_def_ret;
+func_def_type: '{' EOL body '}' | '(' func_def_ret;
 func_def_ret: ')' '{' EOL body '}' | ret_list ')' '{' EOL body RETURN expr_list'}';
 //-----------List of RETURN TYPES----------------------
 ret_list: type next_ret;
