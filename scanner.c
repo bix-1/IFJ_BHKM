@@ -36,8 +36,7 @@ int get_next_token(tToken *token) {
     int c; // variable for input char
     char *endptr; // auxiliary variable for strtod and strtol function
     char hex[2]; // array that stores hex number for conversion
-    //Token token;
-    string attr;
+    string attr; // string struckt that stores identifers and number literals
 
     str_init(&attr);
 
@@ -50,7 +49,7 @@ int get_next_token(tToken *token) {
     scanner_state = s_start; // we set initial scanner state
 
     while (1) {
-        //we get another char from our source file
+        // we keep on getting our chars from source file until we get full token expression
         c = getc(source);
 
         switch (scanner_state) {
@@ -65,31 +64,32 @@ int get_next_token(tToken *token) {
 
                     scanner_state = s_start;
                 } else if (isalpha(c) || c == '_') {
-                    str_add_char(&attr, (char) c); //save first char
+                    str_add_char(&attr, (char) c); //saves first char
                     scanner_state = s_identifier;
                 } else if (isdigit(c)) {
+                    // we check for useless zeros, that may signal number in different number system
                     if (c == '0') {
                         str_add_char(&attr, (char) c);
                         c = getc(source);
-                        if (c == '.') {
+                        if (c == '.') { // it might be number like 0.1654
                             str_add_char(&attr, (char) c);
                             scanner_state = s_decimal_tmp;
                             break;
-                        } else if (c == 'e' || c == 'E') {
+                        } else if (c == 'e' || c == 'E') { // zero on something is just zero
                             str_add_char(&attr, (char) c);
                             scanner_state = s_exp_tmp;
                             break;
-                        } else if (isdigit(c)) {
+                        } else if (isdigit(c)) { // if there is more numbers after zero, that is error
                             char_clear(&attr, c);
                             error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
-                        } else {
+                        } else { // single zero
                             token->token_type = T_INT_VALUE;
                             token->attr.int_lit = strtol(attr.str, NULL, 10);
                             char_clear(&attr, c);
                             return L_SUCCESS;
                         }
                     }
-                    str_add_char(&attr, (char) c); //save first char
+                    str_add_char(&attr, (char) c); //save first number and switch state
                     scanner_state = s_int_lit;
                 } else if (c == '"') {
                     // we dont save first char '"', because we dont want it in the string attribute
@@ -98,9 +98,9 @@ int get_next_token(tToken *token) {
                     // we load another char so we can decide, whether it is comment or div
                     c = getc(source);
 
-                    if (c == '/') {
+                    if (c == '/') { // line comment
                         scanner_state = s_line_c;
-                    } else if (c == '*') {
+                    } else if (c == '*') { // block comment
                         scanner_state = s_block_c;
                     } else {
                         token->token_type = T_DIV;
@@ -134,13 +134,13 @@ int get_next_token(tToken *token) {
                 } else if (c == '=') {
                     c = getc(source);
 
-                    if (c == '=') {
+                    if (c == '=') { //
                         token->token_type = T_EQ;
                         str_free(&attr);
                         return L_SUCCESS;
                     } else {
                         token->token_type = T_ASSIGNMENT;
-                        char_clear(&attr, c);
+                        char_clear(&attr, c); // we have to go one char back, because we loaded one if front of the assignment
                         return L_SUCCESS;
                     }
                 } else if (c == '!') {
@@ -158,11 +158,11 @@ int get_next_token(tToken *token) {
                 } else if (c == '>') {
                     c = getc(source);
 
-                    if (c == '=') {
+                    if (c == '=') { // >=
                         token->token_type = T_GREATER_EQ;
                         str_free(&attr);
                         return L_SUCCESS;
-                    } else {
+                    } else { // one char back and it is >
                         token->token_type = T_GREATER;
                         char_clear(&attr, c);
                         return L_SUCCESS;
@@ -170,11 +170,11 @@ int get_next_token(tToken *token) {
                 } else if (c == '<') {
                     c = getc(source);
 
-                    if (c == '=') {
+                    if (c == '=') { // <=
                         token->token_type= T_LESS_EQ;
                         str_free(&attr);
                         return L_SUCCESS;
-                    } else {
+                    } else { // < and one char back
                         token->token_type = T_LESS;
                         char_clear(&attr, c);
                         return L_SUCCESS;
@@ -192,6 +192,7 @@ int get_next_token(tToken *token) {
                     str_free(&attr);
                     return L_SUCCESS;
                 } else {
+                    // wrong token
                     char_clear(&attr, c);
                     error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
                 }
@@ -249,10 +250,10 @@ int get_next_token(tToken *token) {
             case s_int_lit: //f16
                 if (isdigit(c)) {
                     str_add_char(&attr, (char) c);
-                } else if (c == 'e' || c == 'E') {
+                } else if (c == 'e' || c == 'E') { // exp number
                     str_add_char(&attr, (char) c);
                     scanner_state = s_exp_tmp;
-                } else if (c == '.') {
+                } else if (c == '.') { // decimal number
                     str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_tmp;
                 } else {
@@ -260,15 +261,14 @@ int get_next_token(tToken *token) {
                     token->attr.int_lit = strtol(attr.str, NULL, 10);
                     char_clear(&attr, c);
                     return L_SUCCESS;
-                    // we dont need to check for conversion errors,
-                    //because we know that just integer number literal
                 }
                 break;
             case s_exp_tmp: //q18
                 if (isdigit(c)) {
                     str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_lit;
-                } else if (c == '+' || c == '-') {
+                } else if (c == '+' || c == '-') { // signed exp number
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_exp_sig_tmp;
                 } else {
                     char_clear(&attr, c);
@@ -280,8 +280,7 @@ int get_next_token(tToken *token) {
                     str_add_char(&attr, (char) c);
                     scanner_state = s_exp_lit;
                 } else {
-                    ungetc(c, source);
-                    str_free(&attr);
+                    char_clear(&attr, c);
                     error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
                 }
                 break;
@@ -297,7 +296,7 @@ int get_next_token(tToken *token) {
             case s_decimal_lit: //f17
                 if (isdigit(c)) {
                     str_add_char(&attr, (char) c);
-                } else if (c == 'e' || c == 'E') {
+                } else if (c == 'e' || c == 'E') { // decimal exponential number
                     str_add_char(&attr, (char) c);
                     scanner_state = s_exp_tmp;
                 } else {
@@ -324,34 +323,34 @@ int get_next_token(tToken *token) {
                 }
                 break;
             case s_block_c: //p1
-                if (c == '*') {
+                if (c == '*') { // we loaded asterix and we check if it is end iwth */
                     c = getc(source);
 
-                    if (c == '/') {
+                    if (c == '/') { // end of block comment and we go to start state
                         scanner_state = s_start;
-                    } else if (c == '\n'){
+                    } else if (c == '\n'){ // we increment line number for error message
                         line_num++;
-                    } else {
+                    } else { // we just loaded asterix and we keep going
                         ungetc(c, source);
                         scanner_state = s_block_c;
                     }
                 } else if (c == EOF) { // block comment without end
                     char_clear(&attr, c);
                     error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
-                } else {
+                } else { // keeps going in block comment state
                     scanner_state = s_block_c;
                 }
                 break;
             case s_string_tmp: //q19
                 if (c > 31) {
-                    if (c == '"') {
+                    if (c == '"') { // end of string
                         scanner_state = s_string;
-                    } else if (c == '\\') {
+                    } else if (c == '\\') { // escape sequence
                         scanner_state = s_esc_seq;
                     } else {
                         str_add_char(&attr, (char) c);
                     }
-                } else {
+                } else { // chars less then 32 should be in escape sequence
                     char_clear(&attr, c);
                     error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
                 }
@@ -382,7 +381,7 @@ int get_next_token(tToken *token) {
                     isdigit(c)) {
                     hex[0] = (char) c; // stroring first hex number
                     scanner_state = s_hex_num;
-                } else {
+                } else { // wrong hex number
                     char_clear(&attr, c);
                     error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
                 }
@@ -395,15 +394,10 @@ int get_next_token(tToken *token) {
                     hex[1] = (char) c; // storing second hex number
                     pars_tmp = strtol(hex, &endptr, 16); // converting hex number into decimal number
                     c = (int) pars_tmp;
-                    // conversion check
-                    if (*endptr != 0){
-                        char_clear(&attr, c);
-                        error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
-                    }
                     // we are storing converted hex number as char into our string literal
                     str_add_char(&attr, (char) c);
-                    scanner_state = s_string_tmp;
-                } else {
+                    scanner_state = s_string_tmp; //goes back to string reading
+                } else { // wrong hex number
                     char_clear(&attr, c);
                     error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
                 }

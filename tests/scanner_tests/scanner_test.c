@@ -356,7 +356,7 @@ int main() {
     fclose(f);
 
     printf("[TEST39]\n");
-    printf("Token pre dec val : 131\n");
+    printf("Token pre left brace : 131\n");
     printf("~~~~~~~~~~~~~~~~~~~~\n");
     f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/left_brace");
     get_next_token(&tok);
@@ -364,9 +364,73 @@ int main() {
     fclose(f);
 
     printf("[TEST40]\n");
-    printf("Token pre dec val : 132 \n");
+    printf("Token pre right brace : 132 \n");
     printf("~~~~~~~~~~~~~~~~~~~~\n");
     f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/right_brace");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST41]\n");
+    printf("Test pre line comment 117 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/line_comment");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST42]\n");
+    printf("Test pre block comment 117 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/block_comment");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST43]\n");
+    printf("Test pre identifikator 127, value : _ \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/ident");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST44]\n");
+    printf("Test pre identifikator 127, value : som_ident_ifik_212_tor \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/ident_v1");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST45]\n");
+    printf("Test pre dec_value 130, value :  0E-3 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_lit_adv5");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST46]\n");
+    printf("Test pre dec_value 130, value :  0.5324524522 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_lit_adv6");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST47]\n");
+    printf("Test pre dec_value 130, value : 0.4e-03 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_lit_adv7");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST48]\n");
+    printf("Test pre dec_value 130, value : 0.4e-0+3 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("/home/jozef/3sm/ifj/IFJ_BHKM/tests/scanner_tests/dec_lit_adv8");
     get_next_token(&tok);
     print_lex(&tok);
     fclose(f);
