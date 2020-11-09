@@ -9,9 +9,10 @@
 
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic
-TMPS = *.o *.a test_codegen test_ll test_error
+TMPS = *.o *.a test_codegen test_ll test_error parser
 AR = ar -csr
 
+.PHONY: run_parser
 
 all: test_codegen
 # TODO : temp. Makefile default - change from test to final
@@ -21,7 +22,7 @@ scanner.a: scanner.o error.o str.o
 	rm -f $@
 	${AR} $@ $^
 
-parser.a: parser.o scanner.a stack.o expression.a error.a
+parser.a: parser.o expression.o scanner.a stack.o error.a
 	rm -f $@
 	${AR} -T $@ $^
 
@@ -41,7 +42,7 @@ str.a: str.o error.a
 	rm -f $@
 	${AR} -T $@ $^
 
-expression.a: expression.o parser.a stack.o scanner.a
+expr_parser.a: expression.o parser.o stack.o scanner.a
 	rm -f $@
 	${AR} -T $@ $^
 
@@ -69,8 +70,11 @@ test_error: tests/test_error.c error.a ll.a symtable.a
 test_parser: tests/parser_tests/parser_test.c str.a parser.a
 	${CC} ${CFLAGS} $^ -o $@
 
-t_parser: tests/test_parser.c parser.a
+parser: tests/test_parser.c parser.a expr_parser.a
 	${CC} ${CFLAGS} $^ -o $@
+
+run_parser: parser
+	@bash tests/parser_tests/test.sh
 #------ end of Testing -----#
 
 clean:
