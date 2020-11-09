@@ -450,13 +450,13 @@ enum intermediate_code_instr {
 	 *
 	 * If dest element is not string - Error
 	 * If src element is not int - Error
-	 * If src element int value out of interval <0,255> - Error
+	 * If src element int value is out of interval <0,255> - Error
 	 *
 	 */
 	IC_INT2CHAR_VAR,
 
 	/*
-	 * Get character from string on selected index
+	 * Get character (ascii 0-255) from string on selected index position
 	 *
 	 * elem_dest: symbol var (dest)
 	 * elem_1: symbol var || symbol const (src1)
@@ -472,8 +472,8 @@ enum intermediate_code_instr {
 	 * If dest element is not int - Error
 	 * If src1 element is not string - Error
 	 * If src2 element is not int - Error
-	 * If src2 int value is out of index of scr1 string - Error
-	 * If dest element int value out of interval <0,255> - Error
+	 * If src2 int value is out of index of src1 string - Error
+	 * If dest int value is out of interval <0,255> - Error
 	 *
 	 */
 	IC_STR2INT_VAR,
