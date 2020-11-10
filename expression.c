@@ -13,6 +13,8 @@
 #include "expression.h"
 #include "parser.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
 // Precedence table actions
 typedef enum
@@ -54,7 +56,10 @@ int precTable[7][7] = {
 #define T_DOLLAR 500
 #define T_EXPR 501
 
-tToken stackToken;
+tToken exprToken;
+tToken stopToken;
+tokenStack symbolStack;
+bool err = false;
 
 int get_index(tToken token)
 {
@@ -88,14 +93,20 @@ int get_index(tToken token)
     case T_STRING:
     case T_EXPR:
     case T_IDENTIFIER:
+    case T_INT_VALUE:
         return OP_value;
         break;
     case T_DOLLAR:
+    case T_EOL:
+    case T_EOF:
         return OP_dollar;
         break;
 
     default:
         // INSERT ERROR CALL
+        printf("\nGET INDEX ERROR\n");
+        err = true;
+        return;
         break;
     }
 
@@ -105,82 +116,178 @@ int get_index(tToken token)
 void shift()
 {
 
-    stack_push(parsData.stack, parsData.token);
-    get_next_token(&parsData.token);
+    stackElemPtr tmp;
+    if (get_index(*parsData.token) == OP_value)
+    {
+        stack_push(parsData.stack, *parsData.token);
+        tmp = parsData.stack->topToken;
+        while (tmp->token.token_type != T_EMPTY)
+        {
+            printf("\nTOKEN SHIFT STACK VALUES TOP\t%d", tmp->token.token_type);
+            tmp = tmp->nextTok;
+        }
+    }
+    else
+    {
+        stack_push(&symbolStack, *parsData.token);
+        tmp = symbolStack.topToken;
+        while (tmp->token.token_type != T_EMPTY)
+        {
+            printf("\nSYMBOL SHIFT VALUES TOP\t%d", tmp->token.token_type);
+            tmp = tmp->nextTok;
+        }
+    }
+    get_next_token(parsData.token);
 }
 
 void reduce()
 {
-
-    tToken tmp = parsData.stack->topToken->token;
-    if (tmp.token_type == T_INT || tmp.token_type == T_FLOAT64 || tmp.token_type == T_STRING || tmp.token_type == T_IDENTIFIER) /// E = id
+    stackElemPtr tmp2;
+    tmp2 = parsData.stack->topToken;
+    while (tmp2->token.token_type != T_EMPTY)
     {
-        tmp.token_type = T_EXPR;
-        stack_pop(parsData.stack);
-        stack_push(parsData.stack, tmp);
+        printf("\nREDUCE STACK VALUES TOP\t%d", tmp2->token.token_type);
+        tmp2 = tmp2->nextTok;
     }
-    else if (tmp.token_type == T_EXPR && (top() == OP_plus_minus || top() == OP_mult_div)) /// E = E+E || E = E-E || E = E*E || E = E/E
+
+    tToken *tokenTop = &(parsData.stack->topToken->token);
+    tToken *tokenAfterTop = &(parsData.stack->topToken->nextTok->token);
+    tToken symbolTop = symbolStack.topToken->token;
+    if (symbolTop.token_type == T_PLUS && parsData.stack->topToken->token.token_type != T_DOLLAR)
     {
-        for (int i = 0; i < 3; i++)
+        //IF
+        if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
         {
+            // TO DO INSERT INSTRUCTIONS
+            printf("\n\t\tRULE T_PLUS\tE = E+E\n");
+            exprToken.token_type = T_EXPR;
+            stack_pop(&symbolStack);
             stack_pop(parsData.stack);
-        }
-        tmp.token_type = T_EXPR;
-        stack_push(parsData.stack, tmp);
-    }
-    else if (tmp.token_type == T_R_BRACKET && top() == OP_parenth_open) /// (    E    )
-    {
-        do
-        {
             stack_pop(parsData.stack);
-        } while (parsData.stack->topToken->token.token_type != T_L_BRACKET);
+            stack_push(parsData.stack, exprToken);
+        }
+        else if (tokenAfterTop->token_type != T_EXPR)
+        {
+            // IF $+E IS ON STACK
+            if (tokenAfterTop->token_type == T_DOLLAR)
+            {
+                printf("\n\t\t\tERROR E= E+E expr1\n");
+                return;
+                // TODO ERROR
+            }
 
-        tmp.token_type = T_EXPR;
-        stack_push(parsData.stack, tmp);
+            printf("\n\t\tRULE\tE -> id\n");
+            tokenAfterTop->token_type = T_EXPR;
+        }
+        else if (tokenTop->token_type != T_EXPR)
+        {
+            // IF E+ IS ON STACK
+            if (tokenTop->token_type == T_DOLLAR)
+            {
+                printf("\n\t\t\tERROR E= E+E expr2\n");
+                return;
+                // TODO ERROR
+            }
+
+            // TO DO INSERT INSTRUCTIONS
+            printf("\n\t\tRULE\tE -> id\n");
+            tokenTop->token_type = T_EXPR;
+        }
     }
-}
-
-int top()
-{
-
-    stackElemPtr tmp;
-    tmp = parsData.stack->topToken;
-
-    while (1)
+    if (symbolTop.token_type == T_MINUS && parsData.stack->topToken->token.token_type != T_DOLLAR)
     {
-        if (get_index(tmp->token) == OP_value)
+        //IF
+        if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
         {
-            tmp = tmp->nextTok;
-            continue;
+            // TO DO INSERT INSTRUCTIONS
+            printf("\n\t\tRULE T_MINUS\tE = E - E\n");
+            exprToken.token_type = T_EXPR;
+            stack_pop(&symbolStack);
+            stack_pop(parsData.stack);
+            stack_pop(parsData.stack);
+            stack_push(parsData.stack, exprToken);
         }
-        else
+        else if (tokenAfterTop->token_type != T_EXPR)
         {
-            return get_index(tmp->token);
+            // IF $-E IS ON STACK
+            if (tokenAfterTop->token_type == T_DOLLAR)
+            {
+                printf("\n\t\t\tERROR E= E - E expr1\n");
+                return;
+                // TODO ERROR
+            }
+
+            printf("\n\t\tRULE\tE -> id\n");
+            tokenAfterTop->token_type = T_EXPR;
+        }
+        else if (tokenTop->token_type != T_EXPR)
+        {
+            // IF E- IS ON STACK
+            if (tokenTop->token_type == T_DOLLAR)
+            {
+                printf("\n\t\t\tERROR E= E+E expr2\n");
+                return;
+                // TODO ERROR
+            }
+
+            // TO DO INSERT INSTRUCTIONS
+            printf("\n\t\tRULE\tE -> id\n");
+            tokenTop->token_type = T_EXPR;
         }
     }
+    else
+    {
+        printf("\n\t\tPARS ERROR\n\n");
+        err = true;
+    }
+    // KONTROLA STACKU
+    tmp2 = parsData.stack->topToken;
+    while (tmp2->token.token_type != T_EMPTY)
+    {
+        printf("\nREDUCE STACK VALUES BOTTOM\t%d", tmp2->token.token_type);
+        tmp2 = tmp2->nextTok;
+    }
+
+    printf("\nEND REDUCE\n");
 }
 
 void parse_expression()
 {
 
+    int stop = 0;
+
+    parsData.stack = (tokenStack *)malloc(sizeof(struct tokenStack));
+    parsData.token = (tToken *)malloc(sizeof(tToken));
+    stack_init(parsData.stack);
+    stack_init(&symbolStack);
+
+    printf("PARS\t%d\n", parsData.stack->topToken->token.token_type);
+    printf("PARS\t%d\n", symbolStack.topToken->token.token_type);
+
     tToken token;
     token.token_type = T_DOLLAR;
     stack_push(parsData.stack, token);
+    stack_push(&symbolStack, token);
+    get_next_token(parsData.token);
+    printf("\nGET TOKEN\t %d", parsData.token->token_type);
 
     while (1)
     {
-        int indexStack;
-        int indexInput;
+        int indexStack, indexInput = 0;
 
-        indexStack = get_index(parsData.stack->topToken->token);
-        indexInput = get_index(parsData.token);
+        indexInput = get_index(*parsData.token);
+        indexStack = get_index(symbolStack.topToken->token);
+
+        printf("\nSTACK x INPUT:\t%d\t%d", indexStack, indexInput);
 
         switch (precTable[indexStack][indexInput])
         {
         case R: /*>*/
+            printf("\nREDUCE");
             reduce();
             break;
         case S: /*<*/
+            printf("\nSHIFT");
             shift();
             break;
         case Eq: /*=*/
@@ -188,16 +295,50 @@ void parse_expression()
             break;
         case Err: /* empty*/
             /*error*/
+            printf("\nExpression parse Error line 221\n");
             break;
         case A:
-            /*End while */
+            printf("\nParse end tok stack\t%d", parsData.stack->topToken->token.token_type);
+            printf("\nParse end symbol stack\t%d\n", symbolStack.topToken->token.token_type);
+            stackElemPtr tmp;
+            tmp = parsData.stack->topToken;
+            while (tmp->token.token_type != T_EMPTY)
+            {
+                printf("TOKEN STACK VALUES\t%d\n", tmp->token.token_type);
+                tmp = tmp->nextTok;
+            }
+            tmp = symbolStack.topToken;
+            while (tmp->token.token_type != T_EMPTY)
+            {
+                printf("SYMBOL STACK VALUES\t%d\n", tmp->token.token_type);
+                tmp = tmp->nextTok;
+            }
+
+            stack_free(&symbolStack);
+            stack_free(parsData.stack);
+            free(parsData.stack);
+            free(parsData.token);
+            return;
             break;
         default:
             break;
         }
+
+        if (err || stop == 25)
+        {
+            printf("\nERROR\n");
+
+            stack_free(&symbolStack);
+            stack_free(parsData.stack);
+            free(parsData.stack);
+            free(parsData.token);
+            return;
+        }
+        stop++;
     }
 }
 
-void equal () {
-  return;
+void equal()
+{
+    return;
 }
