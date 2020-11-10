@@ -155,7 +155,7 @@ void reduce()
     tToken symbolTop = symbolStack.topToken->token;
     if (symbolTop.token_type == T_PLUS && parsData.stack->topToken->token.token_type != T_DOLLAR)
     {
-        //IF
+        //IF E+E
         if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
         {
             // TO DO INSERT INSTRUCTIONS
@@ -324,7 +324,7 @@ void parse_expression()
             break;
         }
 
-        if (err || stop == 25)
+/*         if (err || stop == 25)
         {
             printf("\nERROR\n");
 
@@ -334,7 +334,7 @@ void parse_expression()
             free(parsData.token);
             return;
         }
-        stop++;
+        stop++; */
     }
 }
 
