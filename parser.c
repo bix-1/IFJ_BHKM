@@ -54,12 +54,13 @@ char * to_string(tToken *t) {
 // TODO remove
 // placeholder for expression parser
 void expr() {
-  printf("\texpr: %d", next.token_type);
-  while (next.token_type != T_EOL) {
+  while (
+    next.token_type != T_EOL &&
+    next.token_type != T_LEFT_BRACE  // cond in if
+  ) {
     get_next_token(&next);
-    printf("\texpr: %d", next.token_type);
   }
-  printf("Expression matched\n");
+  eps = false;
 }
 
 // functions representing LL grammar nonterminals
@@ -273,7 +274,6 @@ void next_ret() {
 }
 
 void body() {
-  eps = true;
   command();
   if (eps) {
     eps = false;
@@ -305,30 +305,29 @@ void command() {
       cycle();
       break;
 
+    // return
     case T_RETURN:
       return_();
       break;
 
-    default:
-      error(99, "parser", "command", "_PLACEHOLDER_");
+    // skip empty lines in body
+    case T_EOL:
+      get_next_token(&next);
       break;
-  }
 
-  if (eps) { // TODO delete the printf
-    printf("...No more commands\n");
-    return;
+    default:
+      eps = true;
+      break;
   }
 }
 
 void var_() {
-  // TODO add ':='
-  if (next.token_type == ':=') var_def();
+  if (next.token_type == T_DEF_IDENT) var_def();
   else var_move();
 }
 
 void var_def() {
-  // TODO add ':='
-  match(':=');
+  match(T_DEF_IDENT);
   expr();
 }
 
@@ -361,14 +360,15 @@ void if_() {
   match(T_EOL);
   body();
   match(T_RIGHT_BRACE);
+  printf("if matched\n");
 }
 
 void cycle() {
   match(T_FOR);
   for_def();
-  match(';');  // TODO fucking scanner fix
+  match(T_SEMICOLON);
   expr(); // expression parser call
-  match(';');  // TODO fucking scanner fix
+  match(T_SEMICOLON);
   for_move();
   match(T_LEFT_BRACE);
   match(T_EOL);
@@ -413,13 +413,15 @@ void expr_list() {
   expr(); // expression handling
   if (!eps) next_expr();  // expr matched
   else      func_call();
-  printf("expr_list matched\n");
 }
 
 void next_expr() {
   eps = true;
   match(T_COMMA);
-  if (eps) return;
+  if (eps) {
+    eps = false;
+    return;
+  }
   expr(); // expression handling
   next_expr();
 }
