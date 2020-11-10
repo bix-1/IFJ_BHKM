@@ -60,7 +60,7 @@ int get_next_token(tToken *token) {
                         line_num++;
                         token->token_type = T_EOL;
                         while (isspace(c = getc(source)));
-                        ungetc(c, source);
+                        char_clear(&attr, c);
                         return L_SUCCESS;
                     }
 
@@ -133,6 +133,21 @@ int get_next_token(tToken *token) {
                     token->token_type = T_R_BRACKET;
                     str_free(&attr);
                     return L_SUCCESS;
+                } else if (c == ';') {
+                    token->token_type = T_SEMICOLON;
+                    str_free(&attr);
+                    return L_SUCCESS;
+                } else if (c == ':') {
+                    c = getc(source);
+
+                    if (c == '=') {
+                        token->token_type = T_DEF_IDENT;
+                        str_free(&attr);
+                        return L_SUCCESS;
+                    } else {
+                        char_clear(&attr, c);
+                        error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                    }
                 } else if (c == '=') {
                     c = getc(source);
 
@@ -153,10 +168,10 @@ int get_next_token(tToken *token) {
                         token->token_type= T_NEQ;
                         str_free(&attr);
                         return L_SUCCESS;
+                    } else {
+                        char_clear(&attr, c);
+                        error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
                     }
-
-                    char_clear(&attr, c);
-                    error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
                 } else if (c == '>') {
                     c = getc(source);
 
@@ -209,43 +224,52 @@ int get_next_token(tToken *token) {
                     // we initialize string attribute for identifier
                     str_init(&token->attr.str_lit);
 
-                    ungetc(c, source); // we read all and we need to go one char back
+                   // ungetc(c, source); // we read all and we need to go one char back
 
                     // we check for keyword, if there is one we do not treat him as identifier, and
                     // we store his token and his string attribute
                     if (str_cmp_cons(&attr, "else") == 0) {
                         token->token_type = T_ELSE;
                         str_copy(&token->attr.str_lit, &attr);
+
                     } else if (str_cmp_cons(&attr, "float64") == 0) {
                         token->token_type = T_FLOAT64;
                         str_copy(&token->attr.str_lit, &attr);
+
                     } else if (str_cmp_cons(&attr, "for") == 0) {
                         token->token_type= T_FOR;
                         str_copy(&token->attr.str_lit, &attr);
+
                     } else if (str_cmp_cons(&attr, "func") == 0) {
                         token->token_type= T_FUNC;
                         str_copy(&token->attr.str_lit, &attr);
+
                     } else if (str_cmp_cons(&attr, "if") == 0) {
                         token->token_type = T_IF;
                         str_copy(&token->attr.str_lit, &attr);
+
                     } else if (str_cmp_cons(&attr, "int") == 0) {
                         token->token_type = T_INT;
                         str_copy(&token->attr.str_lit, &attr);
+
                     } else if (str_cmp_cons(&attr, "package") == 0) {
                         token->token_type= T_PACKAGE;
                         str_copy(&token->attr.str_lit, &attr);
+
                     } else if (str_cmp_cons(&attr, "return") == 0) {
                         token->token_type = T_RETURN;
                         str_copy(&token->attr.str_lit, &attr);
+
                     } else if (str_cmp_cons(&attr, "string") == 0) {
                         token->token_type = T_STRING;
                         str_copy(&token->attr.str_lit, &attr);
                     } else {
                         token->token_type= T_IDENTIFIER;
                         str_copy(&token->attr.str_lit, &attr);
+
                     }
 
-                    str_free(&attr);
+                    char_clear(&attr, c);
                     return L_SUCCESS;
                 }
                 break;
@@ -302,9 +326,9 @@ int get_next_token(tToken *token) {
                     str_add_char(&attr, (char) c);
                     scanner_state = s_exp_tmp;
                 } else {
-                    ungetc(c, source);
                     token->token_type = T_DEC_VALUE;
                     token->attr.dec_lit = strtod(attr.str, NULL);
+                    char_clear(&attr, c);
                     return L_SUCCESS;
                 }
                 break;
@@ -315,6 +339,7 @@ int get_next_token(tToken *token) {
                     ungetc(c, source);
                     token->token_type = T_DEC_VALUE;
                     token->attr.dec_lit = strtod(attr.str, NULL);
+                    char_clear(&attr, c);
                     return L_SUCCESS;
                 }
                 break;
@@ -405,15 +430,17 @@ int get_next_token(tToken *token) {
                 }
                 break;
             case s_string: //f19
-                ungetc(c, source);
                 // we initialize string attribute for string
+
                 str_init(&token->attr.str_lit);
                 token->token_type = T_STRING;
                 str_copy(&token->attr.str_lit, &attr);
                 str_free(&attr);
+                ungetc(c, source);
                 return L_SUCCESS;
                 break;
             default:
+                char_clear(&attr, c);
                 error(1,"scanner.c", "get_next_token(string *attr)","Default option in switch statement");
                 break;
         }
