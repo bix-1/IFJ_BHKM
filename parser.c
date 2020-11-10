@@ -25,10 +25,10 @@ TODO:
 #include <string.h>
 #include <stdbool.h>
 
+// additional terminals not necessary in scanner
 #define T_MAIN 1000
 #define T_FUNC_ID 1001
 #define T_VAR_ID 1002
-#define T_EXPR 1003
 
 tToken next;
 // for checking whether eps terminal is allowed
@@ -51,6 +51,18 @@ char * to_string(tToken *t) {
 }
 //-------------------------------------------
 
+// TODO remove
+// placeholder for expression parser
+void expr() {
+  printf("\texpr: %d", next.token_type);
+  while (next.token_type != T_EOL) {
+    get_next_token(&next);
+    printf("\texpr: %d", next.token_type);
+  }
+  printf("Expression matched\n");
+}
+
+// functions representing LL grammar nonterminals
 
 void parse() {
   // initialization
@@ -59,7 +71,6 @@ void parse() {
 
   program();
 }
-
 
 void match(int term) {
   switch (term) {
@@ -94,15 +105,6 @@ void match(int term) {
       get_next_token(&next);
       break;
 
-    case T_EXPR:
-      // TODO check validity of type
-      //      call expr_parser
-
-      // T_EXPR wasn't matched
-      if (!eps) error(99, "parser.c", "match", "main");
-      else return;  // eps == TRUE
-      break;
-
     default:
       if (next.token_type == term)
         get_next_token(&next);
@@ -121,10 +123,6 @@ void match(int term) {
   // eps == FALSE --> non-eps terminal matched
   eps = false;
 }
-
-
-//printf("88888888888888888888888\n");
-
 
 void program() {
   prolog();
@@ -155,7 +153,6 @@ void prolog() {
   match(T_MAIN);
   match(T_EOL);
 }
-
 
 void func_list_pre() {
   eps = true;
@@ -284,25 +281,125 @@ void body() {
   }
   match(T_EOL);
   body();
-  printf("body matched\n");
 }
 
 void command() {
-  // TODO
-  if (eps) return;
-  printf("Matched command\n");
+  switch (next.token_type) {
+    case T_IDENTIFIER:  // var_ OR func_call
+      eps = true;
+      match(T_VAR_ID);
+      if (!eps) var_();
+      else {
+        eps = false;
+        func_call();
+      }
+      break;
+
+    // if
+    case T_IF:
+      if_();
+      break;
+
+    // cycle
+    case T_FOR:
+      cycle();
+      break;
+
+    case T_RETURN:
+      return_();
+      break;
+
+    default:
+      error(99, "parser", "command", "_PLACEHOLDER_");
+      break;
+  }
+
+  if (eps) { // TODO delete the printf
+    printf("...No more commands\n");
+    return;
+  }
 }
 
-// void var_();
-// void var_def();
-// void var_move();
-// void next_id();
-// void if_();
-// void cycle();
-// void for_def();
-// void for_move();
-// void return_();
-// void ret();
+void var_() {
+  // TODO add ':='
+  if (next.token_type == ':=') var_def();
+  else var_move();
+}
+
+void var_def() {
+  // TODO add ':='
+  match(':=');
+  expr();
+}
+
+void var_move() {
+  next_id();
+  match(T_ASSIGNMENT);
+  expr_list();
+}
+
+void next_id() {
+  eps = true;
+  match(T_COMMA);
+  if (eps) {
+    eps = false;
+    return;
+  }
+  match(T_VAR_ID);
+  next_id();
+}
+
+void if_() {
+  match(T_IF);
+  expr(); // condition handling
+  match(T_LEFT_BRACE);
+  match(T_EOL);
+  body();
+  match(T_RIGHT_BRACE);
+  match(T_ELSE);
+  match(T_LEFT_BRACE);
+  match(T_EOL);
+  body();
+  match(T_RIGHT_BRACE);
+}
+
+void cycle() {
+  match(T_FOR);
+  for_def();
+  match(';');  // TODO fucking scanner fix
+  expr(); // expression parser call
+  match(';');  // TODO fucking scanner fix
+  for_move();
+  match(T_LEFT_BRACE);
+  match(T_EOL);
+  body();
+  match(T_RIGHT_BRACE);
+}
+
+void for_def() {
+  eps = true;
+  match(T_VAR_ID);
+  if (eps) {
+    eps = false;
+    return;
+  }
+  var_def();
+}
+
+void for_move() {
+  eps = true;
+  match(T_VAR_ID);
+  if (eps) {
+    eps = false;
+    return;
+  }
+  var_move();
+}
+
+void return_() {
+  match(T_RETURN);
+  expr_list();
+}
 
 void func_call() {
   match(T_FUNC_ID);
@@ -313,8 +410,8 @@ void func_call() {
 
 void expr_list() {
   eps = true;
-  match(T_EXPR);
-  if (!eps) next_expr();  // T_EXPR matched
+  expr(); // expression handling
+  if (!eps) next_expr();  // expr matched
   else      func_call();
   printf("expr_list matched\n");
 }
@@ -323,7 +420,7 @@ void next_expr() {
   eps = true;
   match(T_COMMA);
   if (eps) return;
-  match(T_EXPR);
+  expr(); // expression handling
   next_expr();
 }
 
