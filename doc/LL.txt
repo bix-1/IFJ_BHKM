@@ -24,7 +24,7 @@ next_ret: /*eps*/ | ',' type next_ret;
 
 //-----------BODY of functions-------------------------
 body: /*eps*/ | command EOL body;
-command: VAR_ID var_ | if | cycle | func_call;
+command: VAR_ID var_ | func_call | if | cycle | return;
 
 //-----------COMMANDS----------------------------------
 //--------VARIABLE definition & assignment-------------
