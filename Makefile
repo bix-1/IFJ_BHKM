@@ -23,7 +23,7 @@ scanner.a: scanner.o error.o str.o
 	rm -f $@
 	${AR} $@ $^
 
-parser.a: parser.o expression.o scanner.a stack.o error.a
+parser.a: parser.o scanner.a error.a # expression.o
 	rm -f $@
 	${AR} -T $@ $^
 
@@ -77,7 +77,7 @@ test_scanner: tests/scanner_tests/scanner_test.c error.a scanner.a
 test_assignment: tests/test_assignment.c ${LIBS}
 	${CC} ${CFLAGS} $^ -o $@
 
-parser: tests/test_parser.c parser.a expr_parser.a
+parser: tests/test_parser.c parser.a # expr_parser.a
 	${CC} ${CFLAGS} $^ -o $@
 
 run_parser: parser
