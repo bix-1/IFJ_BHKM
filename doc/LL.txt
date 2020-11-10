@@ -39,8 +39,7 @@ cycle: FOR for_def ';' COND ';' for_move '{' EOL body '}';
 for_def: /*eps*/ | VAR_ID var_def;
 for_move: /*eps*/ | VAR_ID var_move;
 //--------RETURN---------------------------------------
-return: RETURN ret;
-ret: /*eps*/ | expr_list;
+return: RETURN expr_list;
 //--------FUNCTION CALLS-------------------------------
 func_call: FUNC_ID '(' expr_list ')';
 
