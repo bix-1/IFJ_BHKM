@@ -142,7 +142,7 @@ int get_next_token(tToken *token) {
 
                     if (c == '=') {
                         token->token_type = T_DEF_IDENT;
-                        str_free(&attr);
+                        char_clear(&attr, c);
                         return L_SUCCESS;
                     } else {
                         char_clear(&attr, c);
