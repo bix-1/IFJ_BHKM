@@ -142,7 +142,7 @@ int get_next_token(tToken *token) {
 
                     if (c == '=') {
                         token->token_type = T_DEF_IDENT;
-                        char_clear(&attr, c);
+                        str_free(&attr);
                         return L_SUCCESS;
                     } else {
                         char_clear(&attr, c);
@@ -433,7 +433,7 @@ int get_next_token(tToken *token) {
                 // we initialize string attribute for string
 
                 str_init(&token->attr.str_lit);
-                token->token_type = T_STRING;
+                token->token_type = T_STRING_VALUE;
                 str_copy(&token->attr.str_lit, &attr);
                 str_free(&attr);
                 ungetc(c, source);
