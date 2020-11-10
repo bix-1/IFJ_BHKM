@@ -13,6 +13,7 @@
 /*
 TODO:
   refactor func comments
+  crossreference LL.pdf & implemented rules
   REMOVE RULE 13 IN DOC
 */
 
