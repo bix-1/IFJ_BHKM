@@ -15,16 +15,15 @@
 
 #include "scanner.h"
 
-typedef struct stackElem *stackElemPtr;
 
 /*
  * Structure which is element of stack, holds token and pointer to next token
  */
 typedef struct stackElem
 {
+    struct stackElem *nextTok;
     tToken token;
-    stackElemPtr nextTok;
-} stackElem;
+} *stackElemPtr;
 
 /*
  * Structure, that holds top element and next element on stack
