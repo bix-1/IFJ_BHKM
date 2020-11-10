@@ -77,6 +77,8 @@ FILE *source;
 
 #define T_DEF_IDENT 133 // :=
 #define T_SEMICOLON 134 // ;
+
+#define T_STRING_VALUE 135
 /*
  * Automatons states.
  */
