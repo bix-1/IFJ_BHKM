@@ -56,7 +56,6 @@ void cycle();
 void for_def();
 void for_move();
 void return_();
-void ret();
 void func_call();
 void expr_list();
 void next_expr();
