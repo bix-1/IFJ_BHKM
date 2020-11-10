@@ -29,3 +29,13 @@ echo
 ./parser <${DIR}/in3
 
 echo
+echo
+echo "****************************"
+
+echo "__________File in4__________"
+cat ${DIR}/in4
+echo "__________[TEST04]__________"
+echo
+./parser <${DIR}/in4
+
+echo
