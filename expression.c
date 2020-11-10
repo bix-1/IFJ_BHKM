@@ -194,7 +194,7 @@ void reduce()
             tokenTop->token_type = T_EXPR;
         }
     }
-    if (symbolTop.token_type == T_MINUS && parsData.stack->topToken->token.token_type != T_DOLLAR)
+    else if (symbolTop.token_type == T_MINUS && parsData.stack->topToken->token.token_type != T_DOLLAR)
     {
         //IF
         if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
@@ -324,7 +324,7 @@ void parse_expression()
             break;
         }
 
-/*         if (err || stop == 25)
+        /*         if (err || stop == 25)
         {
             printf("\nERROR\n");
 
