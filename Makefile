@@ -71,6 +71,9 @@ test_error: tests/test_error.c error.a ll.a symtable.a
 test_parser: tests/parser_tests/parser_test.c str.a parser.a
 	${CC} ${CFLAGS} $^ -o $@
 
+test_scanner: tests/scanner_tests/scanner_test.c error.a scanner.a
+	${CC} ${CFLAGS} $^ -o $@
+
 test_assignment: tests/test_assignment.c ${LIBS}
 	${CC} ${CFLAGS} $^ -o $@
 

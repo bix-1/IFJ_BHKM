@@ -15,13 +15,12 @@
 #define PARSER_H
 
 #include "scanner.h"
-#include "stack.h"
 #include "expression.h"
 
 
 typedef struct parserData
 {
-    tToken token;
+    tToken *token;
     tokenStack *stack;
 } tPData;
 

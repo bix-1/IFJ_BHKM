@@ -25,7 +25,7 @@ void str_init(string *s) {
 
     s->str[0] = '\0';
     s->str_lenght = 0;
-    s->str_alloc_size = 0;
+    s->str_alloc_size = STR_LEN_INC;
 }
 
 void str_free(string *s) {

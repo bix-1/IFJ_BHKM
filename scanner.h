@@ -32,7 +32,7 @@ FILE *source;
 #define T_PLUS 100          // +
 #define T_MINUS 101         // -
 #define T_MUL 102           // *
-#define T_DIV 103           // :
+#define T_DIV 103           // /
 #define T_LESS 104          // <
 #define T_LESS_EQ 105       // <=
 #define T_GREATER 106       // >
@@ -74,6 +74,9 @@ FILE *source;
 
 #define T_LEFT_BRACE 131 //{
 #define T_RIGHT_BRACE 132 //}
+
+#define T_DEF_IDENT 133 // :=
+#define T_SEMICOLON 134 // ;
 /*
  * Automatons states.
  */
