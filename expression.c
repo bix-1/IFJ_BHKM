@@ -55,10 +55,11 @@ int precTable[7][7] = {
 };
 
 #define T_DOLLAR 500 // STACK BOTTOM
-#define T_EXPR 501 // EXPRESSION
+#define T_EXPR 501   // EXPRESSION
 
-tToken exprToken; // Expression token
+tToken exprToken;       // Expression token
 tokenStack symbolStack; // Symbol stack
+tokenStack tokStack;    // Token stack
 bool err = false;
 
 int get_index(tToken token)
@@ -121,21 +122,21 @@ void shift()
     // IF WE WANT TO PUSH NUMBERS
     if (get_index(*parsData.token) == OP_value)
     {
-        stack_push(parsData.stack, *parsData.token);
+        stack_push(&tokStack, *parsData.token);
 
-        /*         // kontrola elementov nastacku
-        tmp = parsData.stack->topToken;
+        /*                  // kontrola elementov nastacku
+        tmp = tokStack.topToken;
         while (tmp->token.token_type != T_EMPTY)
         {
             printf("\nTOKEN SHIFT STACK VALUES TOP\t%d", tmp->token.token_type);
             tmp = tmp->nextTok;
-        } */
+        }  */
     }
     else // IF WE WANT TO PUSH SYMBOLS
     {
         stack_push(&symbolStack, *parsData.token);
 
-        /*         // kontrola elementov nastacku
+        /*                // kontrola elementov nastacku
         tmp = symbolStack.topToken;
         while (tmp->token.token_type != T_EMPTY)
         {
@@ -150,194 +151,437 @@ void reduce()
 {
     /*     // Vypis elementov na stacku
     stackElemPtr tmp2;
-    tmp2 = parsData.stack->topToken;
+    tmp2 = tokStack.topToken;
     while (tmp2->token.token_type != T_EMPTY)
     {
         printf("\nREDUCE STACK VALUES TOP\t%d", tmp2->token.token_type);
         tmp2 = tmp2->nextTok;
     } */
 
-    tToken *tokenTop = &(parsData.stack->topToken->token); // Top member on VALUE stack
-    tToken *tokenAfterTop = &(parsData.stack->topToken->nextTok->token); // Second from the top member on VALUE stack
-    tToken symbolTop = symbolStack.topToken->token; // Top member on SYMBOL stack
+    tToken *tokenTop = &tokStack.topToken->token;               // Top member on VALUE stack
+    tToken *tokenAfterTop = &tokStack.topToken->nextTok->token; // Second from the top member on VALUE stack
+    tToken symbolTop = symbolStack.topToken->token;             // Top member on SYMBOL stack
 
-    if (symbolTop.token_type == T_PLUS && parsData.stack->topToken->token.token_type != T_DOLLAR)
+    if (tokStack.topToken->token.token_type != T_DOLLAR)
     {
-        //IF E + E IS ON STACK
-        if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+        switch (symbolTop.token_type)
         {
-            // TO DO INSERT INSTRUCTIONS
-            printf("\n\t\tRULE T_PLUS\tE = E+E\n");
-            exprToken.token_type = T_EXPR;
-            stack_pop(&symbolStack);
-            stack_pop(parsData.stack);
-            stack_pop(parsData.stack);
-            stack_push(parsData.stack, exprToken);
-        } //IF 5 + E IS ON STACK
-        else if (tokenAfterTop->token_type != T_EXPR)
-        {
-            // IF $+E IS ON STACK
-            if (tokenAfterTop->token_type == T_DOLLAR)
+        case T_PLUS:
+            //IF E + E IS ON STACK
+            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
             {
-                printf("\n\t\t\tERROR E= E+E expr1\n");
-                return;
-                // TODO ERROR
-            }
-
-            printf("\n\t\tRULE\tE -> id\n");
-            tokenAfterTop->token_type = T_EXPR;
-        } //IF E + 5 IS ON STACK
-        else if (tokenTop->token_type != T_EXPR)
-        {
-            // IF E+ IS ON STACK
-            if (tokenTop->token_type == T_DOLLAR)
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE T_PLUS\tE = E+E\n");
+                exprToken.token_type = T_EXPR;
+                stack_pop(&symbolStack);
+                stack_pop(&tokStack);
+                stack_pop(&tokStack);
+                stack_push(&tokStack, exprToken);
+            } //IF 5 + E IS ON STACK
+            else if (tokenAfterTop->token_type != T_EXPR)
             {
-                printf("\n\t\t\tERROR E= E+E expr2\n");
-                return;
-                // TODO ERROR
-            }
+                // IF $+E IS ON STACK
+                if (tokenAfterTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E+E expr1\n");
+                    return;
+                    // TODO ERROR
+                }
 
-            // TO DO INSERT INSTRUCTIONS
-            printf("\n\t\tRULE\tE -> id\n");
-            tokenTop->token_type = T_EXPR;
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->token_type = T_EXPR;
+            } //IF E + 5 IS ON STACK
+            else if (tokenTop->token_type != T_EXPR)
+            {
+                // IF E+ IS ON STACK
+                if (tokenTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E+E expr2\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE\tE -> id\n");
+
+                tokenTop->token_type = T_EXPR;
+            }
+            break;
+        case T_MINUS:
+            //IF E - E IS ON STACK
+            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            {
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE T_MINUS\tE = E - E\n");
+                exprToken.token_type = T_EXPR;
+                stack_pop(&symbolStack);
+                stack_pop(&tokStack);
+                stack_pop(&tokStack);
+                stack_push(&tokStack, exprToken);
+            } //IF 5 - E IS ON STACK
+            else if (tokenAfterTop->token_type != T_EXPR)
+            {
+                // IF $-E IS ON STACK
+                if (tokenAfterTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E - E expr1\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->token_type = T_EXPR;
+            } //IF E - 5 IS ON STACK
+            else if (tokenTop->token_type != T_EXPR)
+            {
+                // IF E- IS ON STACK
+                if (tokenTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E+E expr2\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->token_type = T_EXPR;
+            }
+            break;
+        case T_MUL:
+            //IF E * E IS ON STACK
+            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            {
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE T_MINUS\tE = E * E\n");
+                exprToken.token_type = T_EXPR;
+                stack_pop(&symbolStack);
+                stack_pop(&tokStack);
+                stack_pop(&tokStack);
+                stack_push(&tokStack, exprToken);
+            } //IF 5 * E IS ON STACK
+            else if (tokenAfterTop->token_type != T_EXPR)
+            {
+                // IF $*E IS ON STACK
+                if (tokenAfterTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E * E expr1\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->token_type = T_EXPR;
+            } //IF E * 5 IS ON STACK
+            else if (tokenTop->token_type != T_EXPR)
+            {
+                // IF E* IS ON STACK
+                if (tokenTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E+E expr2\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->token_type = T_EXPR;
+            }
+            break;
+        case T_DIV:
+            //IF E / E IS ON STACK
+            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            {
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE T_MINUS\tE = E / E\n");
+                exprToken.token_type = T_EXPR;
+                stack_pop(&symbolStack);
+                stack_pop(&tokStack);
+                stack_pop(&tokStack);
+                stack_push(&tokStack, exprToken);
+            } //IF 5 / E IS ON STACK
+            else if (tokenAfterTop->token_type != T_EXPR)
+            {
+                // IF $/E IS ON STACK
+                if (tokenAfterTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E / E expr1\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->token_type = T_EXPR;
+            } //IF E / 5 IS ON STACK
+            else if (tokenTop->token_type != T_EXPR)
+            {
+                // IF E/ IS ON STACK
+                if (tokenTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E+E expr2\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->token_type = T_EXPR;
+            }
+            break;
+        case T_LESS:
+            //IF E < E IS ON STACK
+            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            {
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE T_LESS\tE < E\n");
+                exprToken.token_type = T_EXPR;
+                stack_pop(&symbolStack);
+                stack_pop(&tokStack);
+                stack_pop(&tokStack);
+                stack_push(&tokStack, exprToken);
+            } //IF 5 < E IS ON STACK
+            else if (tokenAfterTop->token_type != T_EXPR)
+            {
+                // IF $<E IS ON STACK
+                if (tokenAfterTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E < E expr1\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->token_type = T_EXPR;
+            } //IF E < 5 IS ON STACK
+            else if (tokenTop->token_type != T_EXPR)
+            {
+                // IF E< IS ON STACK
+                if (tokenTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E < E expr2\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->token_type = T_EXPR;
+            }
+            break;
+        case T_LESS_EQ:
+            //IF E <= E IS ON STACK
+            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            {
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE T_LESS_EQ\tE <= E\n");
+                exprToken.token_type = T_EXPR;
+                stack_pop(&symbolStack);
+                stack_pop(&tokStack);
+                stack_pop(&tokStack);
+                stack_push(&tokStack, exprToken);
+            } //IF 5 <= E IS ON STACK
+            else if (tokenAfterTop->token_type != T_EXPR)
+            {
+                // IF $/E IS ON STACK
+                if (tokenAfterTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E <= E expr1\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->token_type = T_EXPR;
+            } //IF E <= 5 IS ON STACK
+            else if (tokenTop->token_type != T_EXPR)
+            {
+                // IF E<= IS ON STACK
+                if (tokenTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E <= E expr2\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->token_type = T_EXPR;
+            }
+            break;
+        case T_GREATER:
+            //IF E > E IS ON STACK
+            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            {
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE T_GREATER\tE > E\n");
+                exprToken.token_type = T_EXPR;
+                stack_pop(&symbolStack);
+                stack_pop(&tokStack);
+                stack_pop(&tokStack);
+                stack_push(&tokStack, exprToken);
+            } //IF 5 > E IS ON STACK
+            else if (tokenAfterTop->token_type != T_EXPR)
+            {
+                // IF $>E IS ON STACK
+                if (tokenAfterTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E > E expr1\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->token_type = T_EXPR;
+            } //IF E > 5 IS ON STACK
+            else if (tokenTop->token_type != T_EXPR)
+            {
+                // IF E > IS ON STACK
+                if (tokenTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E > E expr2\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->token_type = T_EXPR;
+            }
+            break;
+        case T_GREATER_EQ:
+            //IF E >= E IS ON STACK
+            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            {
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE T_GREATER_EQ\tE >= E\n");
+                exprToken.token_type = T_EXPR;
+                stack_pop(&symbolStack);
+                stack_pop(&tokStack);
+                stack_pop(&tokStack);
+                stack_push(&tokStack, exprToken);
+            } //IF 5 >= E IS ON STACK
+            else if (tokenAfterTop->token_type != T_EXPR)
+            {
+                // IF $>=E IS ON STACK
+                if (tokenAfterTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E >= E expr1\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->token_type = T_EXPR;
+            } //IF E >= 5 IS ON STACK
+            else if (tokenTop->token_type != T_EXPR)
+            {
+                // IF E >= IS ON STACK
+                if (tokenTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E >= E expr2\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->token_type = T_EXPR;
+            }
+            break;
+        case T_EQ:
+            //IF E == E IS ON STACK
+            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            {
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE T_EQ\tE == E\n");
+                exprToken.token_type = T_EXPR;
+                stack_pop(&symbolStack);
+                stack_pop(&tokStack);
+                stack_pop(&tokStack);
+                stack_push(&tokStack, exprToken);
+            } //IF 5 == E IS ON STACK
+            else if (tokenAfterTop->token_type != T_EXPR)
+            {
+                // IF $ == E IS ON STACK
+                if (tokenAfterTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E == E expr1\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->token_type = T_EXPR;
+            } //IF E == 5 IS ON STACK
+            else if (tokenTop->token_type != T_EXPR)
+            {
+                // IF E == IS ON STACK
+                if (tokenTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E == E expr2\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->token_type = T_EXPR;
+            }
+            break;
+        case T_NEQ:
+            //IF E != E IS ON STACK
+            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            {
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE T_NEQ\tE != E\n");
+                exprToken.token_type = T_EXPR;
+                stack_pop(&symbolStack);
+                stack_pop(&tokStack);
+                stack_pop(&tokStack);
+                stack_push(&tokStack, exprToken);
+            } //IF 5 != E IS ON STACK
+            else if (tokenAfterTop->token_type != T_EXPR)
+            {
+                // IF $ != E IS ON STACK
+                if (tokenAfterTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E != E expr1\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->token_type = T_EXPR;
+            } //IF E != 5 IS ON STACK
+            else if (tokenTop->token_type != T_EXPR)
+            {
+                // IF E != IS ON STACK
+                if (tokenTop->token_type == T_DOLLAR)
+                {
+                    printf("\n\t\t\tERROR E= E != E expr2\n");
+                    return;
+                    // TODO ERROR
+                }
+
+                // TO DO INSERT INSTRUCTIONS
+                printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->token_type = T_EXPR;
+            }
+            break;
+
+        default:
+            printf("\n\t\tPARS ERROR\n\n");
+            err = true;
+            break;
         }
     }
-    else if (symbolTop.token_type == T_MINUS && parsData.stack->topToken->token.token_type != T_DOLLAR)
-    {
-        //IF E - E IS ON STACK
-        if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
-        {
-            // TO DO INSERT INSTRUCTIONS
-            printf("\n\t\tRULE T_MINUS\tE = E - E\n");
-            exprToken.token_type = T_EXPR;
-            stack_pop(&symbolStack);
-            stack_pop(parsData.stack);
-            stack_pop(parsData.stack);
-            stack_push(parsData.stack, exprToken);
-        } //IF 5 - E IS ON STACK
-        else if (tokenAfterTop->token_type != T_EXPR)
-        {
-            // IF $-E IS ON STACK
-            if (tokenAfterTop->token_type == T_DOLLAR)
-            {
-                printf("\n\t\t\tERROR E= E - E expr1\n");
-                return;
-                // TODO ERROR
-            }
 
-            printf("\n\t\tRULE\tE -> id\n");
-            tokenAfterTop->token_type = T_EXPR;
-        } //IF E - 5 IS ON STACK
-        else if (tokenTop->token_type != T_EXPR)
-        {
-            // IF E- IS ON STACK
-            if (tokenTop->token_type == T_DOLLAR)
-            {
-                printf("\n\t\t\tERROR E= E+E expr2\n");
-                return;
-                // TODO ERROR
-            }
-
-            // TO DO INSERT INSTRUCTIONS
-            printf("\n\t\tRULE\tE -> id\n");
-            tokenTop->token_type = T_EXPR;
-        }
-    }
-    else if (symbolTop.token_type == T_MUL && parsData.stack->topToken->token.token_type != T_DOLLAR)
-    {
-        //IF E / E IS ON STACK
-        if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
-        {
-            // TO DO INSERT INSTRUCTIONS
-            printf("\n\t\tRULE T_MINUS\tE = E * E\n");
-            exprToken.token_type = T_EXPR;
-            stack_pop(&symbolStack);
-            stack_pop(parsData.stack);
-            stack_pop(parsData.stack);
-            stack_push(parsData.stack, exprToken);
-        } //IF 5 / E IS ON STACK
-        else if (tokenAfterTop->token_type != T_EXPR)
-        {
-            // IF $*E IS ON STACK
-            if (tokenAfterTop->token_type == T_DOLLAR)
-            {
-                printf("\n\t\t\tERROR E= E * E expr1\n");
-                return;
-                // TODO ERROR
-            }
-
-            printf("\n\t\tRULE\tE -> id\n");
-            tokenAfterTop->token_type = T_EXPR;
-        } //IF E / 5 IS ON STACK
-        else if (tokenTop->token_type != T_EXPR)
-        {
-            // IF E* IS ON STACK
-            if (tokenTop->token_type == T_DOLLAR)
-            {
-                printf("\n\t\t\tERROR E= E+E expr2\n");
-                return;
-                // TODO ERROR
-            }
-
-            // TO DO INSERT INSTRUCTIONS
-            printf("\n\t\tRULE\tE -> id\n");
-            tokenTop->token_type = T_EXPR;
-        }
-    }
-    else if (symbolTop.token_type == T_DIV && parsData.stack->topToken->token.token_type != T_DOLLAR)
-    {
-        //IF E * E IS ON STACK
-        if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
-        {
-            // TO DO INSERT INSTRUCTIONS
-            printf("\n\t\tRULE T_MINUS\tE = E / E\n");
-            exprToken.token_type = T_EXPR;
-            stack_pop(&symbolStack);
-            stack_pop(parsData.stack);
-            stack_pop(parsData.stack);
-            stack_push(parsData.stack, exprToken);
-        } //IF 5 * E IS ON STACK
-        else if (tokenAfterTop->token_type != T_EXPR)
-        {
-            // IF $/E IS ON STACK
-            if (tokenAfterTop->token_type == T_DOLLAR)
-            {
-                printf("\n\t\t\tERROR E= E / E expr1\n");
-                return;
-                // TODO ERROR
-            }
-
-            printf("\n\t\tRULE\tE -> id\n");
-            tokenAfterTop->token_type = T_EXPR;
-        } //IF E * 5 IS ON STACK
-        else if (tokenTop->token_type != T_EXPR)
-        {
-            // IF E/ IS ON STACK
-            if (tokenTop->token_type == T_DOLLAR)
-            {
-                printf("\n\t\t\tERROR E= E+E expr2\n");
-                return;
-                // TODO ERROR
-            }
-
-            // TO DO INSERT INSTRUCTIONS
-            printf("\n\t\tRULE\tE -> id\n");
-            tokenTop->token_type = T_EXPR;
-        }
-    }
-    else
-    {
-        printf("\n\t\tPARS ERROR\n\n");
-        err = true;
-    }
-    // KONTROLA STACKU
-    /*     tmp2 = parsData.stack->topToken;
+    /*     // KONTROLA STACKU
+    tmp2 = tokStack.topToken;
     while (tmp2->token.token_type != T_EMPTY)
     {
         printf("\nREDUCE STACK VALUES BOTTOM\t%d", tmp2->token.token_type);
         tmp2 = tmp2->nextTok;
     }
-
     printf("\nEND REDUCE\n"); */
 }
 
@@ -351,23 +595,19 @@ void equal()
 
 void parse_expression()
 {
-
-    int stop = 0;
-
-    parsData.stack = (tokenStack *)malloc(sizeof(struct tokenStack));
     parsData.token = (tToken *)malloc(sizeof(tToken));
-    stack_init(parsData.stack);
+    stack_init(&tokStack);
     stack_init(&symbolStack);
 
-    printf("PARS\t%d\n", parsData.stack->topToken->token.token_type);
-    printf("PARS\t%d\n", symbolStack.topToken->token.token_type);
+    //printf("PARS\t%d\n", tokStack.topToken->token.token_type);
+    //printf("PARS\t%d\n", symbolStack.topToken->token.token_type);
 
     tToken token;
     token.token_type = T_DOLLAR;
-    stack_push(parsData.stack, token);
+    stack_push(&tokStack, token);
     stack_push(&symbolStack, token);
-    get_next_token(parsData.token);
-    printf("\nGET TOKEN\t %d", parsData.token->token_type);
+    get_next_token(parsData.token); // TODO REMOVE IF IMPLEMENTED IN PARSER
+    //printf("\nGET TOKEN\t %d", parsData.token->token_type);
 
     while (1)
     {
@@ -396,10 +636,10 @@ void parse_expression()
             printf("\nExpression parse Error line 221\n");
             break;
         case A:
-            printf("\nParse end tok stack\t%d", parsData.stack->topToken->token.token_type);
+            printf("\nParse end tok stack\t%d", tokStack.topToken->token.token_type);
             printf("\nParse end symbol stack\t%d\n", symbolStack.topToken->token.token_type);
             stackElemPtr tmp;
-            tmp = parsData.stack->topToken;
+            tmp = tokStack.topToken;
             while (tmp->token.token_type != T_EMPTY)
             {
                 printf("TOKEN STACK VALUES\t%d\n", tmp->token.token_type);
@@ -413,8 +653,7 @@ void parse_expression()
             }
 
             stack_free(&symbolStack);
-            stack_free(parsData.stack);
-            free(parsData.stack);
+            stack_free(&tokStack);
             free(parsData.token);
             return;
             break;
@@ -422,16 +661,14 @@ void parse_expression()
             break;
         }
 
-        /*         if (err || stop == 25)
+        if (err)
         {
             printf("\nERROR\n");
 
             stack_free(&symbolStack);
-            stack_free(parsData.stack);
-            free(parsData.stack);
+            stack_free(&tokStack);
             free(parsData.token);
             return;
         }
-        stop++; */
     }
 }
