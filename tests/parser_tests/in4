@@ -18,3 +18,16 @@ func main {
   b = a
   a,b = 0   ,     1
 }
+
+func fee () (int) {
+  a := 0
+
+  for ; 0 > 1; {
+  }
+
+  for i := 0; i < 5; i = i + 1 {
+    foo()
+  }
+
+  return a
+}
