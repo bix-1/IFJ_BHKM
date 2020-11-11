@@ -42,5 +42,6 @@ void error(
   const char * msg, ...
 );
 
+const char * code_to_name(int);
 
 #endif

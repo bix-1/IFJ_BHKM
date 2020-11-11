@@ -20,6 +20,45 @@
 #include <stdarg.h>     // va_start, va_end
 
 
+const char * code_to_name(int in) {
+  switch (in) {
+    case T_COMMA:
+      return ",";
+    break;
+    case T_L_BRACKET:
+      return "(";
+    break;
+    case T_R_BRACKET:
+      return ")";
+    break;
+    case T_EOL:
+      return "EOL";
+    break;
+    case T_ELSE:
+      return "else";
+    break;
+    case T_FUNC:
+      return "func";
+    break;
+    case T_PACKAGE:
+      return "package";
+    break;
+    case T_LEFT_BRACE:
+      return "{";
+    break;
+    case T_RIGHT_BRACE:
+      return "}";
+    break;
+    case T_SEMICOLON:
+      return ";";
+    break;
+
+    default:
+      return "NOT IMPLEMENTED";
+    break;
+  }
+}
+
 // Prints error message
 void error(
   int errCode,
@@ -55,18 +94,27 @@ void error(
 
   fprintf(
     stderr,
-    "ERROR:%d\t\t%s -- with exit code %d\n%s:\t%s:\n\t\t",
+    "ERROR:\t__line %d__\t%s -- with exit code %d\n%s:\t%s:\n\t\t",
     errLine, tmp, errCode, file, func
   );
 
   // Handling error msg
-  if ( msg != NULL )
-  {
-    // handling format & its arguments
+  if ( msg != NULL ){
     va_list pArg;
     va_start( pArg, msg );
-    vfprintf( stderr, msg, pArg );
-    va_end( pArg );
+
+    if (errCode == 2) {
+      // Argument handling -- type_code --> type_name
+      int exp_in = va_arg(pArg, int);
+      int real_in = va_arg(pArg, int);
+      const char * exp_out = code_to_name(exp_in);
+      const char * real_out = code_to_name(real_in);
+      fprintf(stderr, msg, exp_out, real_out);
+    } else{
+      // handling format & its arguments
+      vfprintf( stderr, msg, pArg );
+      va_end( pArg );
+    }
   }
   // for neat spacing
   fprintf( stderr, "\n" );
