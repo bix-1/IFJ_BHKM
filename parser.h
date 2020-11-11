@@ -30,7 +30,12 @@ void parse();
 
 // tests whether next_token matches next_term
 // either matches & gets_new_token or calls error
+// -- contains all error calls that are not context-specific
 void match(int term);
+
+// skip all empty spaces
+// TODO & comments
+void skip_empty();
 
 // LL grammar nonterminals
 void program();
