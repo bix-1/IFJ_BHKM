@@ -56,6 +56,9 @@ const char * code_to_name(int in) {
     case T_MAIN:
       return "main";
     break;
+    case T_IDENTIFIER:
+      return "identifier";  // TODO add actual ID name
+    break;
 
     default:
       return "NOT IMPLEMENTED";
