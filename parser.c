@@ -15,6 +15,7 @@ TODO:
   refactor func comments
   crossreference LL.pdf & implemented rules
   REMOVE RULE 13 IN DOC
+  ADD COMMENT RULES
 */
 
 
@@ -26,10 +27,6 @@ TODO:
 #include <string.h>
 #include <stdbool.h>
 
-// additional terminals not necessary in scanner
-#define T_MAIN 1000
-#define T_FUNC_ID 1001
-#define T_VAR_ID 1002
 
 tToken next;
 // for checking whether eps terminal is allowed
@@ -57,21 +54,13 @@ char * to_string(tToken *t) {
 void expr() {
   while (
     next.token_type != T_EOL &&
-    next.token_type != T_LEFT_BRACE  // cond in if
+    next.token_type != T_LEFT_BRACE &&  // cond in if
+    next.token_type != T_SEMICOLON &&   // for cycle
+    next.token_type != T_R_BRACKET      // func_call
   ) {
     get_next_token(&next);
   }
   eps = false;
-}
-
-// functions representing LL grammar nonterminals
-
-void parse() {
-  // initialization
-  source_file_setup(stdin);
-  get_next_token(&next);
-
-  program();
 }
 
 void match(int term) {
@@ -83,8 +72,16 @@ void match(int term) {
       }
       else
         // check whether syntax error or matched terminal eps
-        if (!eps) error(99, "parser.c", "match", "main");
+        if (!eps) error(3, "parser", "match", "Missing main function");
         else return;  // eps == TRUE
+      break;
+
+    case T_FUNC:
+      if (next.token_type != T_FUNC) {
+        if (!eps) error( 3, "parser", "program", "Missing function main" );
+        else return;
+      }
+      get_next_token(&next);
       break;
 
     case T_FUNC_ID:
@@ -104,6 +101,12 @@ void match(int term) {
         else return;  // eps == TRUE
       }
       // TODO var definition handling
+      int x = fgetc(source);
+      if (x == '(') {
+        ungetc(x, source);
+        return;
+      }
+      ungetc(x, source);
       get_next_token(&next);
       break;
 
@@ -114,8 +117,8 @@ void match(int term) {
         // check whether syntax error or matched terminal eps
         if (!eps)
           error(
-            99, "parser.c", "match",
-            "Wanted: %d -- Got: %d", term, next.token_type
+            2, "parser.c", "match",
+            "Expected: '%s' -- Got: '%s'", term, next.token_type
           );
         else return;  // eps == TRUE
       break;
@@ -126,16 +129,51 @@ void match(int term) {
   eps = false;
 }
 
+void skip_empty() {
+  eps = true;
+  match(T_EOL);
+  eps = false;
+}
+
+void parse() {
+  // initialization
+  source_file_setup(stdin);
+  get_next_token(&next);
+
+  program();
+}
+
+// functions representing LL grammar nonterminals
+
 void program() {
   prolog();
   printf("Prolog matched\n");
+
+  if (next.token_type == T_EOF)
+    error(3, "parser", "program", "Missing function main");
 
   match(T_FUNC);
   func_list_pre();
 
   match(T_MAIN);
+  // parameters
   match(T_L_BRACKET);
+  if (next.token_type != T_R_BRACKET)
+    error(6, "parser", "program", "Function main cannot take parameters");
   match(T_R_BRACKET);
+
+  // returns
+  eps = true;
+  match(T_L_BRACKET);
+  if (!eps) {
+    if (next.token_type != T_R_BRACKET)
+      error(
+        6, "parser", "program",
+        "Function main cannot have return types"
+      );
+    match(T_R_BRACKET);
+  }
+
   match(T_LEFT_BRACE);
   match(T_EOL);
   body();
@@ -151,7 +189,16 @@ void program() {
 }
 
 void prolog() {
+  // skip all empty space to T_PACKAGE
+  skip_empty();
+
   match(T_PACKAGE);
+  skip_empty();
+  if (next.token_type != T_IDENTIFIER || strcat(to_string(&next), "main"))
+    error(
+      2, "parser.c", "match",
+      "Expected: '%s' -- Got: '%s'", T_MAIN, next.token_type
+    );
   match(T_MAIN);
   match(T_EOL);
 }
@@ -159,7 +206,10 @@ void prolog() {
 void func_list_pre() {
   eps = true;
   match(T_FUNC_ID);
-  if (eps) return;
+  if (eps) {
+    eps = false;
+    return;
+  }
 
   // for debugging purposes TODO delete
   char s[50] = "";

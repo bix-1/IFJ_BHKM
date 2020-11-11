@@ -27,7 +27,7 @@ parser.a: parser.o scanner.a error.a # expression.o
 	rm -f $@
 	${AR} -T $@ $^
 
-error.a: error.o ll.o symtable.o scanner.a
+error.a: error.o ll.o symtable.o scanner.a parser.o
 	rm -f $@
 	${AR} -T $@ $^
 

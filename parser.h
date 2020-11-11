@@ -17,6 +17,10 @@
 #include "scanner.h"
 #include "expression.h"
 
+// additional terminals not necessary in scanner
+#define T_MAIN 1000
+#define T_FUNC_ID 1001
+#define T_VAR_ID 1002
 
 typedef struct parserData
 {

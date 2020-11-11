@@ -15,6 +15,7 @@
 #include "ll.h"         // cleaning up linked list
 #include "symtable.h"   // cleaning up hash table
 #include "scanner.h"    // get_err_line
+#include "parser.h"     // free(next), T_MAIN
 #include <stdio.h>
 #include <string.h>     // string operations
 #include <stdarg.h>     // va_start, va_end
@@ -51,6 +52,9 @@ const char * code_to_name(int in) {
     break;
     case T_SEMICOLON:
       return ";";
+    break;
+    case T_MAIN:
+      return "main";
     break;
 
     default:
@@ -94,8 +98,8 @@ void error(
 
   fprintf(
     stderr,
-    "ERROR:\t__line %d__\t%s -- with exit code %d\n%s:\t%s:\n\t\t",
-    errLine, tmp, errCode, file, func
+    "ERROR:\t__line %d__\t%s -- with exit code %d\n%s:\t%s:\n\t",
+    errLine+1, tmp, errCode, file, func
   );
 
   // Handling error msg
