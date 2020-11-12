@@ -155,6 +155,7 @@ void error(
   // clean-up of linked list and hash table
   list_destroy( &list );
   htab_free( symtable );
+  token_cleanup();
 
   exit( errCode );
 }

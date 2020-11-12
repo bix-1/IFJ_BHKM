@@ -30,6 +30,8 @@ typedef struct parserData
 
 tPData parsData;
 
+void token_cleanup();
+
 void parse();
 
 // tests whether next_token matches next_term
