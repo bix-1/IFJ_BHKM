@@ -226,7 +226,7 @@ void reduce()
                     error(2, "expression parser", "reduce", "Missing expression at substaction");
                 }
 
-                printf("\n\t\tRULE\tE -> id\n");
+                //printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token_type = T_EXPR;
             } //IF E - 5 IS ON STACK
             else if (tokenTop->token_type != T_EXPR)
