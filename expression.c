@@ -12,6 +12,7 @@
 
 #include "expression.h"
 #include "parser.h"
+#include "error.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -141,6 +142,11 @@ void shift()
             tmp = tmp->nextTok;
         } */
     }
+    if (parsData.token->token_type == T_IDENTIFIER)
+    {
+        printf("\nTOKEN %s\n", parsData.token->attr.str_lit.str);
+        free(parsData.token->attr.str_lit.str);
+    }
     get_next_token(parsData.token);
 }
 
@@ -170,6 +176,7 @@ void reduce()
             {
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_PLUS\tE = E+E\n");
+
                 exprToken.token_type = T_EXPR;
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
@@ -513,7 +520,7 @@ void reduce()
                     error(2, "expression parser", "reduce", "Missing expression when comparing expressions ==");
                 }
 
-                printf("\n\t\tRULE\tE -> id\n");
+                //printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token_type = T_EXPR;
             } //IF E == 5 IS ON STACK
             else if (tokenTop->token_type != T_EXPR)
