@@ -83,13 +83,10 @@ test_scanner: tests/scanner_tests/scanner_test.c error.a scanner.a
 test_assignment: tests/test_assignment.c ${LIBS}
 	${CC} ${CFLAGS} $^ -o $@
 
-parser: parser.a expr_parser.a
+test_parser2: tests/test_parser.c parser.a expr_parser.a
 	${CC} ${CFLAGS} $^ -o $@
 
-test_parser2: tests/parser_tests/test_parser.c parser
-	${CC} ${CFLAGS} $^ -o $@
-
-run_parser: parser test_parser2
+run_parser: test_parser2
 	@bash tests/parser_tests/test.sh
 #------ end of Testing -----#
 
