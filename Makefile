@@ -77,7 +77,7 @@ test_scanner: tests/scanner_tests/scanner_test.c error.a scanner.a
 test_assignment: tests/test_assignment.c ${LIBS}
 	${CC} ${CFLAGS} $^ -o $@
 
-parser: tests/test_parser.c parser.a # expr_parser.a
+parser: tests/test_parser.c parser.a expr_parser.a
 	${CC} ${CFLAGS} $^ -o $@
 
 run_parser: parser
