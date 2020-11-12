@@ -9,14 +9,16 @@
 
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic
-TMPS = *.o *.a ${wildcard test_*[^.][^c]} parser
+TMPS = *.o *.a *.tgz ${wildcard test_*[^.][^c]} parser
 AR = ar -csr
 LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a
 
-.PHONY: run_parser
+.PHONY: run_parser pack
 
-all: test_codegen
-# TODO : temp. Makefile default - change from test to final
+all: parser
+
+pack:
+	tar -czvf xhladk15.tgz *.c *.h Makefile
 
 ########## Static libraries ##########
 scanner.a: scanner.o error.o str.o
