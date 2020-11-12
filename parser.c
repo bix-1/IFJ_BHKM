@@ -184,7 +184,7 @@ void parse() {
 
 void program() {
   prolog();
-  printf("Prolog matched\n");
+  // printf("Prolog matched\n");
 
   if (next.token_type == T_EOF)
     error(3, "parser", "program", "Missing function main");
@@ -218,7 +218,7 @@ void program() {
   match(T_EOL);
 
   // for debugging purposes TODO delete
-  printf("Main matched\n");
+  // printf("Main matched\n");
 
   func_list();
   skip_empty();
@@ -448,7 +448,7 @@ void if_() {
   match(T_EOL);
   body();
   match(T_RIGHT_BRACE);
-  printf("if matched\n");
+  // printf("if matched\n");
 }
 
 void cycle() {
@@ -498,6 +498,9 @@ void func_call() {
 
 void expr_list() {
   eps = true;
+
+  // TODO check whether expr || func
+
   expr(); // expression handling
   if (!eps) next_expr();  // expr matched
   else      func_call();
