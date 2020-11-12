@@ -69,6 +69,7 @@ void for_def();
 void for_move();
 void return_();
 void func_call();
+void func_args();
 void expr_list();
 void next_expr();
 void type();

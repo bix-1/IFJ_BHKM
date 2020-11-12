@@ -15,9 +15,8 @@ TODO:
   refactor func comments
   crossreference LL.pdf & implemented rules
   REMOVE RULE 13 IN DOC
-  ADD COMMENT RULES
 
-  built-in funcs
+``  built-in funcs
 
   handle errors from assignment in:
   - 4.1.1 (4, 3)
@@ -223,7 +222,7 @@ void program() {
   func_list();
   skip_empty();
   match(T_EOF);
-  printf("Program matched\n");
+  // printf("Program matched\n");
 }
 
 void prolog() {
@@ -416,12 +415,14 @@ void var_() {
 
 void var_def() {
   match(T_DEF_IDENT);
+  // printf("matched := \n");
   parse_expression();
 }
 
 void var_move() {
   next_id();
   match(T_ASSIGNMENT);
+  // printf("matched = \n");
   expr_list();
 }
 
@@ -492,12 +493,26 @@ void return_() {
 void func_call() {
   match(T_FUNC_ID);
   match(T_L_BRACKET);
-  expr_list();
+  func_args();
   match(T_R_BRACKET);
 }
 
+void func_args() {
+  if (
+    next.token_type == T_L_BRACKET ||
+    next.token_type == T_IDENTIFIER ||
+    next.token_type == T_INT_VALUE ||
+    next.token_type == T_DEC_VALUE ||
+    next.token_type == T_STRING_VALUE
+  ) {
+    parse_expression();
+    next_expr();
+  }
+}
+
 void expr_list() {
-  eps = true;
+  // eps = true;
+  eps = false;  // TODO unfuck this
 
   // TODO check whether expr || func
 
