@@ -224,7 +224,6 @@ int get_next_token(tToken *token) {
                     str_add_char(&attr, (char) c);
                 } else {
                     // we initialize string attribute for identifier
-                    str_init(&token->attr.str_lit);
 
                    // ungetc(c, source); // we read all and we need to go one char back
 
@@ -232,43 +231,35 @@ int get_next_token(tToken *token) {
                     // we store his token and his string attribute
                     if (str_cmp_cons(&attr, "else") == 0) {
                         token->token_type = T_ELSE;
-                        str_copy(&token->attr.str_lit, &attr);
 
                     } else if (str_cmp_cons(&attr, "float64") == 0) {
                         token->token_type = T_FLOAT64;
-                        str_copy(&token->attr.str_lit, &attr);
 
                     } else if (str_cmp_cons(&attr, "for") == 0) {
                         token->token_type= T_FOR;
-                        str_copy(&token->attr.str_lit, &attr);
 
                     } else if (str_cmp_cons(&attr, "func") == 0) {
                         token->token_type= T_FUNC;
-                        str_copy(&token->attr.str_lit, &attr);
 
                     } else if (str_cmp_cons(&attr, "if") == 0) {
                         token->token_type = T_IF;
-                        str_copy(&token->attr.str_lit, &attr);
 
                     } else if (str_cmp_cons(&attr, "int") == 0) {
                         token->token_type = T_INT;
-                        str_copy(&token->attr.str_lit, &attr);
 
                     } else if (str_cmp_cons(&attr, "package") == 0) {
                         token->token_type= T_PACKAGE;
-                        str_copy(&token->attr.str_lit, &attr);
 
                     } else if (str_cmp_cons(&attr, "return") == 0) {
                         token->token_type = T_RETURN;
-                        str_copy(&token->attr.str_lit, &attr);
 
                     } else if (str_cmp_cons(&attr, "string") == 0) {
                         token->token_type = T_STRING;
-                        str_copy(&token->attr.str_lit, &attr);
+
                     } else {
+                        str_init(&token->attr.str_lit);
                         token->token_type= T_IDENTIFIER;
                         str_copy(&token->attr.str_lit, &attr);
-
                     }
 
                     char_clear(&attr, c);
