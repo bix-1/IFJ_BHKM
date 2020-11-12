@@ -21,7 +21,7 @@ void stack_init(tokenStack *stack)
     if (!newElem)
     {
         // instert error call
-        printf("\nSTACK INIT ERROR\n");
+        error(99, "stack", "stack_init", "Allocation error");
     }
 
     newElem->nextTok = NULL;
@@ -30,7 +30,7 @@ void stack_init(tokenStack *stack)
     //newElem->token.attr.int_lit = 0; Not important ??
 
     stack->topToken = newElem;
-    printf("STACK INIT\t%p\t%p\t%d\n", newElem, stack->topToken, newElem->token.token_type);
+    //printf("STACK INIT\t%p\t%p\t%d\n", newElem, stack->topToken, newElem->token.token_type);
 }
 
 void stack_push(tokenStack *stack, tToken tokPush)
@@ -41,6 +41,7 @@ void stack_push(tokenStack *stack, tToken tokPush)
     if (!newElem)
     {
         // instert error call
+        error(99, "stack", "stack_push", "Allocation error");
         printf("\nSTACK PUSH ERROR\n");
     }
 
@@ -67,7 +68,7 @@ void stack_pop(tokenStack *stack)
     else
     {
         //insert STACK_POP Error, trying to pop non-existent element
-        printf("\nT_EMPTY left on the stack\n");
+        error(99, "stack", "stack_pop", "Trying to access non-existent element"); // or "trying to pop non-existent element"
     }
 }
 
@@ -85,6 +86,7 @@ void stack_free(tokenStack *stack)
 
     if (stack->topToken == NULL)
     {
+        // MAYBE ERROR ? TRYING TO FREE UNALLOCATED 
         return;
     }
 
