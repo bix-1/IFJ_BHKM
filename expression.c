@@ -98,7 +98,8 @@ int get_index(tToken token)
         break;
     case T_DOLLAR:
     case T_EOL:
-    case T_EOF:
+    case T_COMMA:
+    case T_LEFT_BRACE:
         return OP_dollar;
         break;
 
