@@ -22,47 +22,73 @@
 
 
 const char * code_to_name(int in) {
+  if (in >= 100 && in <= 103) return "arithmetic operator";
+  if (in >= 104 && in <= 109) return "relational operator";
+  if (in >= 118 && in <= 120) return "data type";
+
   switch (in) {
+    case T_ASSIGNMENT:
+      return "=";
+
     case T_COMMA:
       return ",";
-    break;
+
     case T_L_BRACKET:
       return "(";
-    break;
+
     case T_R_BRACKET:
       return ")";
-    break;
+
     case T_EOL:
       return "EOL";
-    break;
+
+    case T_EOF:
+      return "EOF";
+
+    case T_IF:
+      return "if";
+
     case T_ELSE:
       return "else";
-    break;
+
     case T_FUNC:
       return "func";
-    break;
+
+    case T_RETURN:
+      return "return";  // return: return return haha
+
     case T_PACKAGE:
       return "package";
-    break;
+
+    case T_IDENTIFIER:
+      return "identifier";  // TODO add actual ID's name
+
     case T_LEFT_BRACE:
       return "{";
-    break;
+
     case T_RIGHT_BRACE:
       return "}";
-    break;
+
+    case T_DEF_IDENT:
+      return ":=";
+
     case T_SEMICOLON:
       return ";";
-    break;
+
+    case T_STRING_VALUE:
+      return "string"; // TODO add actual string
+
     case T_MAIN:
       return "main";
-    break;
-    case T_IDENTIFIER:
-      return "identifier";  // TODO add actual ID name
-    break;
+
+    case T_VAR_ID:
+      return "variable ID";
+
+    case T_FUNC_ID:
+      return "function ID";
 
     default:
-      return "NOT IMPLEMENTED";
-    break;
+      return "_TYPE NOT IMPLEMENTED_";
   }
 }
 
