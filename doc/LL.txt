@@ -41,7 +41,8 @@ for_move: /*eps*/ | VAR_ID var_move;
 //--------RETURN---------------------------------------
 return: RETURN expr_list;
 //--------FUNCTION CALLS-------------------------------
-func_call: FUNC_ID '(' expr_list ')';
+func_call: FUNC_ID '(' func_args ')';
+func_args: /*eps*/ | expr_list;
 
 
 //--------EXPRESSIONS----------------------------------
