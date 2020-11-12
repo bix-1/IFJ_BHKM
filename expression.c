@@ -290,6 +290,13 @@ void reduce()
             {
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_MINUS\tE = E / E\n");
+
+                if (tokenTop->attr.int_lit == 0)
+                {
+                    release_resources();
+                    error(9, "expression parser", "reduce", "Division by ZERO");
+                }
+
                 exprToken.token_type = T_EXPR;
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
