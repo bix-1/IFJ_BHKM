@@ -17,12 +17,34 @@
 #include "stack.h"
 #include "scanner.h"
 
+/*
+*   Function returns index of the symbol to choose action from precedence table
+*/
 int get_index(tToken token);
-int top();
-void getToken();
-void reduce();
+
+/*
+*   Function shifts the current token to stack and gets next token
+*/
 void shift();
+
+/*
+*   Function reduces the expression with rule based on the precedence table 
+*/
+void reduce();
+
+/*
+*   Function removes parenthesis
+*/
 void equal();
+
+/*
+*   Function which free's the memory
+*/
+void release_resources();
+
+/*
+*   Main function which parses the expression
+*/
 void parse_expression();
 
 #endif //IFJ_BHKM_EXPRESSION_H
