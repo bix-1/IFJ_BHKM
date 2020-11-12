@@ -477,6 +477,120 @@ enum intermediate_code_instr {
 	 *
 	 */
 	IC_STR2INT_VAR,
+
+	// ===================== I/O INSTRUCTIONS =====================
+
+	/*
+	 * Read variable from build in functions
+	 *
+	 * elem_dest: symbol var (dest)
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * Example:
+	 * x = read(22)
+	 * x = read("Hello world1")
+	 *
+	 *
+	 */
+	IC_READ_VAR,
+
+	/*
+	 * Write variables to output from build in functions
+	 *
+	 * elem_dest: symbol var_list
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * Example:
+	 * x = print("Hello world!")
+	 * x = print("Result number: ", some_var, "\n")
+	 *
+	 *
+	 */
+	IC_WRITE_VAR,
+
+	// ===================== STRING INSTRUCTIONS =====================
+
+	/*
+	 * Concatenate two strings to one
+	 *
+	 * elem_dest: symbol var (dest)
+	 * elem_1: symbol var || symbol const (src1)
+	 * elem_2: symbol var || symbol const (src1)
+	 *
+	 * Example:
+	 * x = concat("Hello ", "world!")
+	 * x = concat(a, b)
+	 *
+	 *
+	 */
+	IC_CONCAT_STR,
+
+	/*
+	 * Get length of string
+	 *
+	 * elem_dest: symbol var (dest)
+	 * elem_1: symbol var || symbol const (src1)
+	 * elem_2: NULL
+	 *
+	 * Example:
+	 * x = strlen("Hello")
+	 * x = strlen(a)
+	 *
+	 * ==========================
+	 * Note:
+	 *
+	 * If dest element is not int - Error
+	 * If src1 element is not string - Error
+	 *
+	 */
+	IC_STRLEN_STR,
+
+	/*
+	 * Get char from string on specific index
+	 *
+	 * elem_dest: symbol var (dest)
+	 * elem_1: symbol var || symbol const (src1)
+	 * elem_2: symbol var || symbol const (src1)
+	 *
+	 * Example:
+	 * x = getc("Hello", 2)
+	 * x = getc(a, 2)
+	 *
+	 * ==========================
+	 * Note:
+	 *
+	 * If dest element is not string (1 char) - Error
+	 * If src1 element is not string - Error
+	 * If src2 element is not int - Error
+	 * If src2 int value is out of index of src1 string - Error
+	 *
+	 */
+	IC_GETCHAR_STR,
+
+	/*
+	 * Set char in string on specific index
+	 *
+	 * elem_dest: symbol var (dest)
+	 * elem_1: symbol var || symbol const (src1)
+	 * elem_2: symbol var || symbol const (src1)
+	 *
+	 * Example:
+	 * x = setc("c", 2)
+	 * x = setc("x", 0)
+	 *
+	 * ==========================
+	 * Note:
+	 *
+	 * If dest element is not string (1 char) - Error
+	 * If src1 element is not string - Error
+	 * If src2 element is not int - Error
+	 * If src2 int value is out of index of dest string - Error
+	 *
+	 */
+	IC_SETCHAR_STR,
+
 };
 
 #endif //CODEGEN_H
