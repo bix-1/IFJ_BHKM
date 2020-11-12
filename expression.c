@@ -100,6 +100,7 @@ int get_index(tToken token)
     case T_EOL:
     case T_COMMA:
     case T_LEFT_BRACE:
+    case T_SEMICOLON:
         return OP_dollar;
         break;
 
@@ -145,7 +146,7 @@ void shift()
     }
     if (parsData.token->token_type == T_IDENTIFIER)
     {
-        printf("\nTOKEN %s\n", parsData.token->attr.str_lit.str);
+        // printf("\nTOKEN %s\n", parsData.token->attr.str_lit.str);
         free(parsData.token->attr.str_lit.str);
     }
     get_next_token(parsData.token);
@@ -154,13 +155,13 @@ void shift()
 void reduce()
 {
          // Vypis elementov na stacku
-    stackElemPtr tmp2;
-    tmp2 = tokStack.topToken;
-    while (tmp2->token.token_type != T_EMPTY)
-    {
-        printf("\nREDUCE STACK VALUES TOP\t%d", tmp2->token.token_type);
-        tmp2 = tmp2->nextTok;
-    }
+    // stackElemPtr tmp2;
+    // tmp2 = tokStack.topToken;
+    // while (tmp2->token.token_type != T_EMPTY)
+    // {
+    //     printf("\nREDUCE STACK VALUES TOP\t%d\n", tmp2->token.token_type);
+    //     tmp2 = tmp2->nextTok;
+    // }
 
     tToken *tokenTop = &tokStack.topToken->token;               // Top member on VALUE stack
     tToken *tokenAfterTop = &tokStack.topToken->nextTok->token; // Second from the top member on VALUE stack
@@ -375,7 +376,7 @@ void reduce()
                 }
 
                 // TO DO INSERT INSTRUCTIONS
-                printf("\n\t\tRULE\tE -> id\n");
+                // printf("\n\t\tRULE\tE -> id\n");
                 tokenTop->token_type = T_EXPR;
             }
             break;
@@ -401,7 +402,7 @@ void reduce()
                     error(2, "expression parser", "reduce", "Missing expression when comparing expressions <=");
                 }
 
-                printf("\n\t\tRULE\tE -> id\n");
+                // printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token_type = T_EXPR;
             } //IF E <= 5 IS ON STACK
             else if (tokenTop->token_type != T_EXPR)
@@ -441,7 +442,7 @@ void reduce()
                     error(2, "expression parser", "reduce", "Missing expression when comparing expressions >");
                 }
 
-                printf("\n\t\tRULE\tE -> id\n");
+                // printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token_type = T_EXPR;
             } //IF E > 5 IS ON STACK
             else if (tokenTop->token_type != T_EXPR)
@@ -481,7 +482,7 @@ void reduce()
                     error(2, "expression parser", "reduce", "Missing expression when comparing expressions >=");
                 }
 
-                printf("\n\t\tRULE\tE -> id\n");
+                // printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token_type = T_EXPR;
             } //IF E >= 5 IS ON STACK
             else if (tokenTop->token_type != T_EXPR)
@@ -495,7 +496,7 @@ void reduce()
                 }
 
                 // TO DO INSERT INSTRUCTIONS
-                printf("\n\t\tRULE\tE -> id\n");
+                // printf("\n\t\tRULE\tE -> id\n");
                 tokenTop->token_type = T_EXPR;
             }
             break;
@@ -561,7 +562,7 @@ void reduce()
                     error(2, "expression parser", "reduce", "Missing expression when comparing expressions !=");
                 }
 
-                printf("\n\t\tRULE\tE -> id\n");
+                // printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token_type = T_EXPR;
             } //IF E != 5 IS ON STACK
             else if (tokenTop->token_type != T_EXPR)
