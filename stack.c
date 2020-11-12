@@ -12,6 +12,7 @@
 
 #include <stdlib.h>
 #include "stack.h"
+#include "error.h"
 
 void stack_init(tokenStack *stack)
 {
@@ -86,7 +87,7 @@ void stack_free(tokenStack *stack)
 
     if (stack->topToken == NULL)
     {
-        // MAYBE ERROR ? TRYING TO FREE UNALLOCATED 
+        // MAYBE ERROR ? TRYING TO FREE UNALLOCATED
         return;
     }
 
