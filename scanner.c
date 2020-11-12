@@ -62,6 +62,18 @@ int get_next_token(tToken *token) {
                         while (isspace(c = getc(source))) {
                           if (c == '\n') line_num++;
                         }
+                        if (c == '/') {
+                          c = fgetc(source);
+                          if (c == '/') {
+                            scanner_state = s_line_c;
+                            continue;
+                          }
+                          else if (c == '*') {
+                            scanner_state = s_block_c;
+                            continue;
+                          }
+                          else ungetc(c, source);
+                        }
                         char_clear(&attr, c);
                         return L_SUCCESS;
                     }
@@ -85,7 +97,7 @@ int get_next_token(tToken *token) {
                             break;
                         } else if (isdigit(c)) { // if there is more numbers after zero, that is error
                             char_clear(&attr, c);
-                            error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                            error(1,"scanner", "get_next_token", "Lexical error");
                         } else { // single zero
                             token->token_type = T_INT_VALUE;
                             token->attr.int_lit = strtol(attr.str, NULL, 10);
@@ -104,8 +116,10 @@ int get_next_token(tToken *token) {
 
                     if (c == '/') { // line comment
                         scanner_state = s_line_c;
+                        continue;
                     } else if (c == '*') { // block comment
                         scanner_state = s_block_c;
+                        continue;     // TODO
                     } else {
                         token->token_type = T_DIV;
                         char_clear(&attr, c);
@@ -148,7 +162,7 @@ int get_next_token(tToken *token) {
                         return L_SUCCESS;
                     } else {
                         char_clear(&attr, c);
-                        error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                        error(1,"scanner", "get_next_token", "Lexical error");
                     }
                 } else if (c == '=') {
                     c = getc(source);
@@ -172,7 +186,7 @@ int get_next_token(tToken *token) {
                         return L_SUCCESS;
                     } else {
                         char_clear(&attr, c);
-                        error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                        error(1,"scanner", "get_next_token", "Lexical error");
                     }
                 } else if (c == '>') {
                     c = getc(source);
@@ -213,7 +227,7 @@ int get_next_token(tToken *token) {
                 } else {
                     // wrong token
                     char_clear(&attr, c);
-                    error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                    error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
             // if we are reading correct char from source, then we are adding him into our string
@@ -291,7 +305,7 @@ int get_next_token(tToken *token) {
                     scanner_state = s_exp_sig_tmp;
                 } else {
                     char_clear(&attr, c);
-                    error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                    error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
             case s_exp_sig_tmp: //r18
@@ -300,7 +314,7 @@ int get_next_token(tToken *token) {
                     scanner_state = s_exp_lit;
                 } else {
                     char_clear(&attr, c);
-                    error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                    error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
             case s_decimal_tmp: //q17
@@ -309,7 +323,7 @@ int get_next_token(tToken *token) {
                     scanner_state = s_decimal_lit;
                 } else {
                     char_clear(&attr, c);
-                    error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                    error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
             case s_decimal_lit: //f17
@@ -337,10 +351,11 @@ int get_next_token(tToken *token) {
                 }
                 break;
             case s_line_c: //p2
-                if (c == EOF || c == '\n') {
-                    ungetc(c, source);
-                    scanner_state = s_start;
+                while (c != EOF && c != '\n') {
+                  c = fgetc(source);
                 }
+                ungetc(c, source);
+                scanner_state = s_start;
                 break;
             case s_block_c: //p1
                 if (c == '*') { // we loaded asterix and we check if it is end iwth */
@@ -348,17 +363,14 @@ int get_next_token(tToken *token) {
 
                     if (c == '/') { // end of block comment and we go to start state
                         scanner_state = s_start;
-                    } else if (c == '\n'){ // we increment line number for error message
-                        line_num++;
-                    } else { // we just loaded asterix and we keep going
+                    } else {
                         ungetc(c, source);
-                        scanner_state = s_block_c;
                     }
+                } else if (c == '\n'){ // we increment line number for error message
+                   line_num++;
                 } else if (c == EOF) { // block comment without end
                     char_clear(&attr, c);
-                    error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
-                } else { // keeps going in block comment state
-                    scanner_state = s_block_c;
+                    error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
             case s_string_tmp: //q19
@@ -372,7 +384,7 @@ int get_next_token(tToken *token) {
                     }
                 } else { // chars less then 32 should be in escape sequence
                     char_clear(&attr, c);
-                    error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                    error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
             case s_esc_seq: //r19
@@ -392,7 +404,7 @@ int get_next_token(tToken *token) {
                     scanner_state = s_string_tmp;
                 } else {
                     char_clear(&attr, (char) c);
-                    error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                    error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
             case s_hex_tmp: //t19
@@ -403,7 +415,7 @@ int get_next_token(tToken *token) {
                     scanner_state = s_hex_num;
                 } else { // wrong hex number
                     char_clear(&attr, c);
-                    error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                    error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
             case s_hex_num: //u19
@@ -419,7 +431,7 @@ int get_next_token(tToken *token) {
                     scanner_state = s_string_tmp; //goes back to string reading
                 } else { // wrong hex number
                     char_clear(&attr, c);
-                    error(1,"scanner.c", "get_next_token(string *attr)", "Syntax error in: %s", source);
+                    error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
             case s_string: //f19
