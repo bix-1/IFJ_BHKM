@@ -9,16 +9,20 @@
 
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic
-TMPS = *.o *.a *.tgz ${wildcard test_*[^.][^c]} parser
+TMPS = *.o *.a *.tgz ${wildcard test_*[^.][^c]} parser ifj20
 AR = ar -csr
 LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a
 
 .PHONY: run_parser pack
 
-all: parser
+all: ifj20
 
 pack:
 	tar -czvf xhladk15.tgz *.c *.h Makefile
+
+ifj20: ifj20.c parser.a expr_parser.a
+	${CC} ${CFLAGS} $^ -o $@
+
 
 ########## Static libraries ##########
 scanner.a: scanner.o error.o str.o
@@ -79,10 +83,13 @@ test_scanner: tests/scanner_tests/scanner_test.c error.a scanner.a
 test_assignment: tests/test_assignment.c ${LIBS}
 	${CC} ${CFLAGS} $^ -o $@
 
-parser: tests/test_parser.c parser.a expr_parser.a
+parser: parser.a expr_parser.a
 	${CC} ${CFLAGS} $^ -o $@
 
-run_parser: parser
+test_parser2: tests/parser_tests/test_parser.c parser
+	${CC} ${CFLAGS} $^ -o $@
+
+run_parser: parser test_parser2
 	@bash tests/parser_tests/test.sh
 #------ end of Testing -----#
 

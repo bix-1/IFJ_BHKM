@@ -6,7 +6,7 @@ echo "__________File in1__________"
 cat ${DIR}/in1
 echo "__________[TEST01]__________"
 echo
-./parser <${DIR}/in1
+./test_parser2 <${DIR}/in1
 
 echo
 echo
@@ -16,7 +16,7 @@ echo "__________File in2__________"
 cat ${DIR}/in2
 echo "__________[TEST02]__________"
 echo
-./parser <${DIR}/in2
+./test_parser2 <${DIR}/in1
 
 echo
 echo
@@ -26,7 +26,7 @@ echo "__________File in3__________"
 cat ${DIR}/in3
 echo "__________[TEST03]__________"
 echo
-./parser <${DIR}/in3
+./test_parser2 <${DIR}/in1
 
 echo
 echo
@@ -36,6 +36,6 @@ echo "__________File in4__________"
 cat ${DIR}/in4
 echo "__________[TEST04]__________"
 echo
-./parser <${DIR}/in4
+./test_parser2 <${DIR}/in1
 
 echo
