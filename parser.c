@@ -416,7 +416,7 @@ void var_() {
 
 void var_def() {
   match(T_DEF_IDENT);
-  expr();
+  parse_expression();
 }
 
 void var_move() {
@@ -438,7 +438,7 @@ void next_id() {
 
 void if_() {
   match(T_IF);
-  expr(); // condition handling
+  parse_expression(); // condition handling
   match(T_LEFT_BRACE);
   match(T_EOL);
   body();
@@ -455,7 +455,7 @@ void cycle() {
   match(T_FOR);
   for_def();
   match(T_SEMICOLON);
-  expr(); // expression parser call
+  parse_expression(); // expression parser call
   match(T_SEMICOLON);
   for_move();
   match(T_LEFT_BRACE);
@@ -501,7 +501,7 @@ void expr_list() {
 
   // TODO check whether expr || func
 
-  expr(); // expression handling
+  parse_expression(); // expression handling
   if (!eps) next_expr();  // expr matched
   else      func_call();
 }
@@ -513,7 +513,7 @@ void next_expr() {
     eps = false;
     return;
   }
-  expr(); // expression handling
+  parse_expression(); // expression handling
   next_expr();
 }
 
