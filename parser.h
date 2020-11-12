@@ -30,6 +30,8 @@ typedef struct parserData
 
 tPData parsData;
 
+extern tToken next;
+
 void token_cleanup();
 
 void parse();

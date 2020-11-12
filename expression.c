@@ -153,14 +153,14 @@ void shift()
 
 void reduce()
 {
-    /*     // Vypis elementov na stacku
+         // Vypis elementov na stacku
     stackElemPtr tmp2;
     tmp2 = tokStack.topToken;
     while (tmp2->token.token_type != T_EMPTY)
     {
         printf("\nREDUCE STACK VALUES TOP\t%d", tmp2->token.token_type);
         tmp2 = tmp2->nextTok;
-    } */
+    }
 
     tToken *tokenTop = &tokStack.topToken->token;               // Top member on VALUE stack
     tToken *tokenAfterTop = &tokStack.topToken->nextTok->token; // Second from the top member on VALUE stack
@@ -617,6 +617,8 @@ void equal()
 
 void release_resources()
 {
+    next.token_type = parsData.token->token_type;
+    next.attr = parsData.token->attr;
     stack_free(&symbolStack);
     stack_free(&tokStack);
     free(parsData.token);
@@ -625,6 +627,9 @@ void release_resources()
 void parse_expression()
 {
     parsData.token = (tToken *)malloc(sizeof(tToken));
+    // *(parsData.token) = next;
+    parsData.token->token_type = next.token_type;
+    parsData.token->attr = next.attr;
     stack_init(&tokStack);
     stack_init(&symbolStack);
 
@@ -635,7 +640,7 @@ void parse_expression()
     token.token_type = T_DOLLAR;
     stack_push(&tokStack, token);
     stack_push(&symbolStack, token);
-    get_next_token(parsData.token); // TODO REMOVE IF IMPLEMENTED IN PARSER
+    // get_next_token(parsData.token); // TODO REMOVE IF IMPLEMENTED IN PARSER
     //printf("\nGET TOKEN\t %d", parsData.token->token_type);
 
     while (1)
