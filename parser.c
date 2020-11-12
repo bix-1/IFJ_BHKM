@@ -16,6 +16,17 @@ TODO:
   crossreference LL.pdf & implemented rules
   REMOVE RULE 13 IN DOC
   ADD COMMENT RULES
+
+  built-in funcs
+
+  handle errors from assignment in:
+  - 4.1.1 (4, 3)
+  - 4.2   (3,6)
+  - 4.3   var_def - 3
+          ?? if - 5 (only basic version I think)
+          func_call - 6 (2x)
+          return - 6
+  - 6     (6)
 */
 
 
@@ -58,75 +69,101 @@ void expr() {
     next.token_type != T_SEMICOLON &&   // for cycle
     next.token_type != T_R_BRACKET      // func_call
   ) {
+
+    token_cleanup();
+
     get_next_token(&next);
   }
   eps = false;
 }
 
+void token_cleanup() {
+  if (
+    ( next.token_type == T_IDENTIFIER ||
+      next.token_type == T_MAIN ||
+      next.token_type == T_VAR_ID ||
+      next.token_type == T_FUNC_ID
+    ) && next.attr.str_lit.str != NULL
+  ) {
+    free(next.attr.str_lit.str);
+  }
+}
+
 void match(int term) {
   switch (term) {
     case T_MAIN:
-      if (next.token_type == T_IDENTIFIER && !strcmp(to_string(&next), "main")) {
-        get_next_token(&next);
-        return;
+      if (next.token_type != T_IDENTIFIER) {
+        if (eps) return;
+        goto default_err;
       }
-      else
-        // check whether syntax error or matched terminal eps
-        if (!eps) error(3, "parser", "match", "Missing main function");
-        else return;  // eps == TRUE
+      if (strcmp(to_string(&next), "main")) {
+        if (eps) return;
+        error(3, "parser", "match", "Missing main function");
+      }
       break;
 
     case T_FUNC:
       if (next.token_type != T_FUNC) {
-        if (!eps) error( 3, "parser", "program", "Missing function main" );
-        else return;
+        if (eps) return;
+        if (next.token_type != T_EOF) goto default_err;
+        else
+          error( 3, "parser", "program", "Missing function main" );
       }
-      get_next_token(&next);
       break;
 
     case T_FUNC_ID:
-      if (next.token_type != T_IDENTIFIER || !strcmp( to_string(&next), "main")) {
-        // check whether syntax error or matched terminal eps
-        if (!eps) error(99, "parser.c", "match", "main");
-        else return;  // eps == TRUE
+      if (next.token_type != T_IDENTIFIER) {
+        if (eps) return;
+        goto default_err;
       }
+      if (!strcmp( to_string(&next), "main")) {
+        if (eps) return;
+        next.token_type = T_MAIN;
+        goto default_err;
+      }
+
       // TODO function definition handling
-      get_next_token(&next);
+
       break;
 
     case T_VAR_ID:
       if (next.token_type != T_IDENTIFIER) {
-        // check whether syntax error or matched terminal eps
-        if (!eps) error(99, "parser.c", "match", "main");
-        else return;  // eps == TRUE
+        if (eps) return;
+        next.token_type = T_VAR_ID;
+        goto default_err;
       }
+
       // TODO var definition handling
+      //      remove placeholder functionality below
+
       int x = fgetc(source);
-      if (x == '(') {
+      if (x == '(') {   // func_call
         ungetc(x, source);
         return;
       }
       ungetc(x, source);
-      get_next_token(&next);
       break;
 
     default:
-      if (next.token_type == term)
-        get_next_token(&next);
-      else
-        // check whether syntax error or matched terminal eps
-        if (!eps)
-          error(
-            2, "parser.c", "match",
-            "Expected: '%s' -- Got: '%s'", term, next.token_type
-          );
-        else return;  // eps == TRUE
+      if (next.token_type != term) {
+        if (eps) return;
+        default_err:
+        error(
+          2, "parser.c", "match",
+          "Expected: '%s' -- Got: '%s'", term, next.token_type
+        );
+      }
       break;
   }
   // for checking in nonterminals whether
   // eps == TRUE  --> terminal eps
   // eps == FALSE --> non-eps terminal matched
   eps = false;
+
+  // TODO delete
+  token_cleanup();
+
+  get_next_token(&next);
 }
 
 void skip_empty() {
@@ -184,7 +221,8 @@ void program() {
   printf("Main matched\n");
 
   func_list();
-  match(T_EOL);
+  skip_empty();
+  match(T_EOF);
   printf("Program matched\n");
 }
 
@@ -194,7 +232,7 @@ void prolog() {
 
   match(T_PACKAGE);
   skip_empty();
-  if (next.token_type != T_IDENTIFIER || strcat(to_string(&next), "main"))
+  if (next.token_type != T_IDENTIFIER || strcmp(to_string(&next), "main"))
     error(
       2, "parser.c", "match",
       "Expected: '%s' -- Got: '%s'", T_MAIN, next.token_type
@@ -212,8 +250,8 @@ void func_list_pre() {
   }
 
   // for debugging purposes TODO delete
-  char s[50] = "";
-  strcat(s, to_string(&next));
+  // char s[50] = "";
+  // strcat(s, to_string(&next));
 
   match(T_L_BRACKET);
   param_list();
@@ -222,14 +260,17 @@ void func_list_pre() {
   match(T_EOL);
   match(T_FUNC);
   // for debugging purposes TODO delete
-  printf("---Func %s matched\n", s);
+  // printf("---Func %s matched\n", s);
   func_list_pre();
 }
 
 void func_list() {
   eps = true;
   func_def();
-  if (eps) return;
+  if (eps) { // test of func_def
+    eps = false;
+    return;
+  }
   func_list();
 }
 
@@ -240,8 +281,8 @@ void func_def() {
 
   // TODO delete
   // for debugging purposes
-  char s[50] = "";
-  strcat(s, to_string(&next));
+  // char s[50] = "";
+  // strcat(s, to_string(&next));
 
   match(T_L_BRACKET);
   param_list();
@@ -250,7 +291,7 @@ void func_def() {
   match(T_EOL);
 
   // for debugging purposes TODO delete
-  printf("---Func %s matched\n", s);
+  // printf("---Func %s matched\n", s);
 }
 
 void param_list() {
@@ -325,6 +366,7 @@ void next_ret() {
 }
 
 void body() {
+  skip_empty();
   command();
   if (eps) {
     eps = false;
@@ -359,11 +401,6 @@ void command() {
     // return
     case T_RETURN:
       return_();
-      break;
-
-    // skip empty lines in body
-    case T_EOL:
-      get_next_token(&next);
       break;
 
     default:
@@ -492,10 +529,7 @@ void type() {
       break;
 
     default:
-      error(
-        99, "parser.c", "match",
-        "Wanted: int, float or string -- Got: %d", next.token_type
-      );
+      error(1, "parser", "type", "Invalid variable type");
       break;
   }
   get_next_token(&next);
