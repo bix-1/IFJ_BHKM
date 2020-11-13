@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <assert.h>
 
+#include "codegen.h"
+
 // Table:
 struct htab {
 	// content is private
@@ -31,8 +33,64 @@ struct htab {
 typedef struct htab htab_t;
 
 // Types:
+typedef enum sym_type {
+	SYM_FUNC,
+	SYM_CONST,
+	SYM_VAR
+} sym_type_t;
+
+typedef enum var_type {
+	VAR_INT,
+	VAR_FLOAT64,
+	VAR_STRING,
+	VAR_BOOL
+} var_type_t;
+
+typedef union variable {
+	int int_t;
+	double float64_t;
+	char *string_t;
+} variable_t;
+
+typedef struct sym_var_item {
+	char *name;
+	var_type_t type;
+	variable_t data;
+	variable_t default_data;
+} sym_var_item_t;
+
+typedef struct sym_var_list {
+	sym_var_item_t *first;
+	sym_var_item_t *active;
+} sym_var_list_t;
+
+typedef struct sym_func {
+	char *name;
+	sym_var_list_t *params;
+	sym_var_list_t *returns;
+} sym_func_t;
+
+typedef union symbol {
+	sym_func_t *sym_func;
+	sym_var_item_t *sym_var_item;
+	sym_var_list_t *sym_var_list;
+} symbol_t;
+
+typedef struct instruction {
+	ic_instr_t type;
+	char *elem_dest_key;
+	char *elem1_key;
+	char *elem2_key;
+} instruction_t;
+
+typedef struct elem {
+	char *key;
+	sym_type_t sym_type;
+	symbol_t symbol;
+} elem_t;
+
 typedef const char *htab_key_t;        // key
-typedef int htab_value_t;              // value
+typedef elem_t htab_value_t;           // value
 
 // Iterator to table:
 struct htab_item {
@@ -58,7 +116,7 @@ size_t htab_size(const htab_t *t);             // number of items in table
 size_t htab_bucket_count(const htab_t *t);     // number of items in bucket
 
 htab_iterator_t htab_find(htab_t *t, htab_key_t key);           // search
-htab_iterator_t htab_lookup_add(htab_t *t, htab_key_t key);     // search and add
+htab_iterator_t htab_lookup_add(htab_t *t, htab_key_t key, htab_value_t data);     // search and add
 
 void htab_erase(htab_t *t, htab_iterator_t it);  // delete specified entry
 
