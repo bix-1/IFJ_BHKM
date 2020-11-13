@@ -14,6 +14,7 @@
 #include "symtable.h"
 
 extern bool htab_iterator_valid(htab_iterator_t it);
+
 extern bool htab_iterator_equal(htab_iterator_t it1, htab_iterator_t it2);
 
 htab_t *htab_init(size_t n) {
@@ -21,7 +22,7 @@ htab_t *htab_init(size_t n) {
 
 	htab_t *htab = malloc(sizeof(htab_t) + sizeof(struct htab_item) * n);
 
-	if(htab == NULL)
+	if (htab == NULL)
 		return NULL;
 
 	memset(htab, 0, sizeof(htab_t) + sizeof(struct htab_item) * n);
@@ -33,14 +34,14 @@ htab_t *htab_init(size_t n) {
 }
 
 size_t htab_size(const htab_t *t) {
-	if(t == NULL)
+	if (t == NULL)
 		return 0;
 
 	return t->size;
 }
 
 size_t htab_bucket_count(const htab_t *t) {
-	if(t == NULL)
+	if (t == NULL)
 		return 0;
 
 	return t->arr_size;
@@ -56,10 +57,10 @@ size_t htab_hash_fun(const char *str) {
 
 htab_iterator_t htab_find(htab_t *t, htab_key_t key) {
 
-	if(t == NULL)
+	if (t == NULL)
 		return htab_end(t);
 
-	if(key == NULL)
+	if (key == NULL)
 		return htab_end(t);
 
 	struct htab_iterator iterator;
@@ -73,28 +74,29 @@ htab_iterator_t htab_find(htab_t *t, htab_key_t key) {
 	struct htab_item *next = t->item[index];
 
 	// Try to find existing
-	if(next != NULL) {
+	if (next != NULL) {
 		do {
-			if(strcmp(next->key, key) == 0){
+			if (strcmp(next->key, key) == 0) {
 				iterator.ptr = next;
 				return iterator;
 			}
 			else {
 				next = next->next;
 			}
-		}while (next != NULL);
+		} while (next != NULL);
 	}
 
 	iterator = htab_end(t);
 	return iterator;
 }
 
-htab_iterator_t htab_lookup_add(htab_t *t, htab_key_t key) {
+// Todo: change to insert
+htab_iterator_t htab_lookup_add(htab_t *t, htab_key_t key, htab_value_t data) {
 
-	if(t == NULL)
+	if (t == NULL)
 		return htab_end(t);
 
-	if(key == NULL)
+	if (key == NULL)
 		return htab_end(t);
 
 	struct htab_iterator iterator;
@@ -108,33 +110,53 @@ htab_iterator_t htab_lookup_add(htab_t *t, htab_key_t key) {
 	struct htab_item *next = t->item[index];
 
 	// Try to find existing entry
-	if(next != NULL) {
+	if (next != NULL) {
 		do {
-			if(strcmp(next->key, key) == 0){
+			if (strcmp(next->key, key) == 0) {
 				iterator.ptr = next;
 				return iterator;
 			}
 			else {
 				next = next->next;
 			}
-		}while (next != NULL);
+		} while (next != NULL);
 	}
 
 	// Create new entry
 	iterator.ptr = malloc(sizeof(struct htab_item));
 
-	if(iterator.ptr == NULL){
+	if (iterator.ptr == NULL) {
 		return htab_end(t);
 	}
 
 	iterator.ptr->key = malloc(strlen(key) + 1);
 
-	if(iterator.ptr->key == NULL){
+	if (iterator.ptr->key == NULL) {
 		return htab_end(t);
 	}
 
+	/*
+	elem_t *elem = malloc(sizeof(struct elem));
+
+	if (elem == NULL) {
+	   return htab_end(t);
+	}
+
+	elem->key = malloc(strlen(key) + 1);
+
+	if (elem->key == NULL) {
+	   return htab_end(t);
+	}
+
+	elem->sym_type = undefined
+	elem->symbol = undefined
+	strcpy((char *) elem->key, key);
+	*/
+	//elem_t *elem = NULL;
+
 	strcpy((char *) iterator.ptr->key, key);
-	htab_iterator_set_value(iterator, 0);
+
+	htab_iterator_set_value(iterator, data);
 
 	// New entry will in start of the current bucket (list)
 	iterator.ptr->next = t->item[index];
@@ -195,12 +217,12 @@ htab_iterator_t htab_begin(const htab_t *t) {
 	iterator.ptr = NULL;
 	iterator.idx = 0;
 
-	if(t == NULL){
+	if (t == NULL) {
 		return iterator;
 	}
 
 	for (size_t i = 0; i < t->arr_size; i++) {
-		if(t->item[i] != NULL){
+		if (t->item[i] != NULL) {
 			iterator.ptr = t->item[i];
 			iterator.idx = i;
 			break;
@@ -216,12 +238,12 @@ htab_iterator_t htab_end(const htab_t *t) {
 	iterator.ptr = NULL;
 	iterator.idx = 0;
 
-	if(t == NULL){
+	if (t == NULL) {
 		return iterator;
 	}
 
 	for (size_t i = t->arr_size - 1; i > 0; i--) {
-		if(t->item[i] != NULL){
+		if (t->item[i] != NULL) {
 			iterator.idx = i + 1;
 			break;
 		}
@@ -285,7 +307,7 @@ htab_value_t htab_iterator_set_value(htab_iterator_t it, htab_value_t val) {
 }
 
 void htab_clear(htab_t *t) {
-	if(t == NULL)
+	if (t == NULL)
 		return;
 
 	struct htab_item *next;
