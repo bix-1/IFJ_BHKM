@@ -15,7 +15,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-enum intermediate_code_instr {
+// Define intermediate code instructions
+typedef enum ic_instr {
 	/*
 	 * Variables are stored in symtable in format main:<num_of_call><function>:<variable>
 	 * num_of_call and function can repeat with another function
@@ -591,6 +592,6 @@ enum intermediate_code_instr {
 	 */
 	IC_SETCHAR_STR,
 
-};
+} ic_instr_t;
 
 #endif //CODEGEN_H
