@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include "codegen.h"
+#include "codegen.h"    // instr_type
 
 // Table:
 struct symtable {
@@ -36,7 +36,8 @@ typedef struct symtable symtable_t;
 typedef enum sym_type {
 	SYM_FUNC,
 	SYM_CONST,
-	SYM_VAR
+	SYM_VAR,
+	SYM_VAR_LIST
 } sym_type_t;
 
 typedef enum var_type {
@@ -50,6 +51,7 @@ typedef union variable {
 	int int_t;
 	double float64_t;
 	char *string_t;
+	bool bool_t;
 } variable_t;
 
 typedef struct sym_var_item sym_var_item_t;
@@ -88,13 +90,17 @@ struct instruction {
 };
 
 typedef struct elem {
-	char *key;
+	// Key is auto assigned on creating table entry
+	char **key;
 	sym_type_t sym_type;
 	symbol_t symbol;
 } elem_t;
 
-typedef const char *symtable_key_t;        // key
-typedef elem_t symtable_value_t;           // value
+// key
+typedef const char *symtable_key_t;
+
+// value
+typedef elem_t *symtable_value_t;
 
 // Iterator to table:
 struct symtable_item {
@@ -111,23 +117,35 @@ typedef struct symtable_iterator {
 	size_t idx;                 // in which bucket
 } symtable_iterator_t;
 
-//hash function
+// hash function
 size_t symtable_hash_fun(symtable_key_t str);
 
-// basic functions to work with table
-symtable_t *symtable_init(size_t n);                   // constructor
-size_t symtable_size(const symtable_t *t);             // number of items in table
-size_t symtable_bucket_count(const symtable_t *t);     // number of items in bucket
+// constructor
+symtable_t *symtable_init(size_t n);
 
-symtable_iterator_t symtable_find(symtable_t *t, symtable_key_t key);           // search
-symtable_iterator_t symtable_lookup_add(symtable_t *t, symtable_key_t key, symtable_value_t data);     // search and add
+// number of items in table
+size_t symtable_size(const symtable_t *t);
 
-void symtable_erase(symtable_t *t, symtable_iterator_t it);  // delete specified entry
+// number of items in bucket
+size_t symtable_bucket_count(const symtable_t *t);
 
-symtable_iterator_t symtable_begin(const symtable_t *t);   // iterator TO first entry
-symtable_iterator_t symtable_end(const symtable_t *t);     // iterator AFTER last entry
+// search
+symtable_iterator_t symtable_find(symtable_t *t, symtable_key_t key);
 
-symtable_iterator_t symtable_iterator_next(symtable_iterator_t it); // iterator++
+// search and add
+symtable_iterator_t symtable_insert(symtable_t *t, symtable_key_t key, symtable_value_t data);
+
+// delete specified entry
+void symtable_erase(symtable_t *t, symtable_iterator_t it);
+
+// iterator TO first entry
+symtable_iterator_t symtable_begin(const symtable_t *t);
+
+// iterator AFTER last entry
+symtable_iterator_t symtable_end(const symtable_t *t);
+
+// iterator++
+symtable_iterator_t symtable_iterator_next(symtable_iterator_t it);
 
 // test: iterator != end()
 inline bool symtable_iterator_valid(symtable_iterator_t it) { return it.ptr != NULL; }
@@ -141,10 +159,64 @@ inline bool symtable_iterator_equal(symtable_iterator_t it1, symtable_iterator_t
 symtable_key_t symtable_iterator_get_key(symtable_iterator_t it);
 
 symtable_value_t symtable_iterator_get_value(symtable_iterator_t it);
+
 symtable_value_t symtable_iterator_set_value(symtable_iterator_t it, symtable_value_t val);
 
-void symtable_clear(symtable_t *t);    // clear all entries
-void symtable_free(symtable_t *t);     // destructor
+// clear all entries
+void symtable_clear(symtable_t *t);
+
+// destructor
+void symtable_free(symtable_t *t);
+
+// Symbols functions:
+
+// constructor of whole element
+elem_t *elem_init(sym_type_t sym_type, symbol_t symbol);
+
+// constructor of symbol func
+sym_func_t *sym_func_init(char *name, sym_var_list_t *params, sym_var_list_t *returns);
+
+// constructor of symbol var item
+sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data);
+
+// constructor of symbol var list
+sym_var_list_t *sym_var_list_init();
+
+// destructor of symbol func
+void sym_func_free(sym_func_t *sym_func);
+
+// destructor of symbol var item
+void sym_var_item_free(sym_var_item_t *sym_var_item);
+
+// destructor of symbol var list
+void sym_var_list_free(sym_var_list_t *sym_var_list);
+
+// get element key
+symtable_key_t elem_key(elem_t *elem);
+
+// append symbol var item to list
+void sym_var_list_add(sym_var_list_t *sym_var_list, sym_var_item_t *sym_var_item);
+
+// size of symbol var list
+size_t sym_var_list_size(sym_var_list_t *sym_var_list);
+
+// remove symbol var item from end of the list
+void sym_var_list_pop(sym_var_list_t *sym_var_list);
+
+// get item after active and change it to new active
+sym_var_item_t *sym_var_list_next(sym_var_list_t *sym_var_list);
+
+// get active item
+sym_var_item_t *sym_var_list_get_active(sym_var_list_t *sym_var_list);
+
+// clear all items in list
+void sym_var_list_clear(sym_var_list_t *sym_var_list);
+
+// set item variable value, cant change type
+void sym_var_item_set(sym_var_item_t *sym_var_item, variable_t data);
+
+// reset data value to default data
+void sym_var_item_reset(sym_var_item_t *sym_var_item);
 
 // Global variables
 symtable_t *symtable;
