@@ -107,8 +107,8 @@ instr_t * instr_create ()
     error( 99, "ll.c", "instr_create", "Failed to create instruction" );
   // initialize instruction
   i->type   = -1;
-  i->elem1  = NULL;
-  i->elem2  = NULL;
+  i->elem1_key  = NULL;
+  i->elem2_key  = NULL;
   i->next   = NULL;
 
   return i;
@@ -129,21 +129,21 @@ int instr_get_type ( instr_t *i )
 void instr_add_elem ( instr_t * i, const char * e )
 {
   // invalid or full
-  if ( i == NULL || i->elem2 != NULL ) return;
-  if ( i->elem1 == NULL ) // first free
-    i->elem1 = e;
+  if ( i == NULL || i->elem2_key != NULL ) return;
+  if ( i->elem1_key == NULL ) // first free
+    i->elem1_key = (char *)e;
   else
-    i->elem2 = e;
+    i->elem2_key = (char *)e;
 }
 
 const char * instr_get_elem1 ( instr_t * i )
 {
-  if ( i != NULL ) return i->elem1;
+  if ( i != NULL ) return i->elem1_key;
   return NULL;
 }
 
 const char * instr_get_elem2 ( instr_t * i )
 {
-  if ( i != NULL ) return i->elem2;
+  if ( i != NULL ) return i->elem2_key;
   return NULL;
 }

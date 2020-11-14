@@ -14,14 +14,7 @@
 #ifndef LL_H
 #define LL_H
 
-
-typedef struct instruction instr_t;
-struct instruction {
-  int type;
-  const char * elem1;
-  const char * elem2;
-  instr_t * next;
-};
+#include "symtable.h" // instr_t
 
 typedef struct {
   instr_t * first;

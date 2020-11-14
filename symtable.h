@@ -76,12 +76,14 @@ typedef union symbol {
 	sym_var_list_t *sym_var_list;
 } symbol_t;
 
-typedef struct instruction {
+typedef struct instruction instr_t;
+struct instruction {
 	instr_type_t type;
 	char *elem_dest_key;
 	char *elem1_key;
 	char *elem2_key;
-} instruction_t;
+	instr_t *next;
+};
 
 typedef struct elem {
 	char *key;
