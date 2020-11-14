@@ -33,7 +33,9 @@ var_def: ':=' EXPR;
 var_move: next_id '=' expr_list;
 next_id: /*eps*/ | ',' VAR_ID next_id;
 //--------IF-------------------------------------------
-if: IF COND '{' EOL body '}' ELSE '{' EOL body '}';
+if: IF COND '{' EOL body '}' if_cont;
+if_cont: /*eps*/ | ELSE else_;
+else_: '{' EOL body '}' | if;
 //--------FOR------------------------------------------
 cycle: FOR for_def ';' COND ';' for_move '{' EOL body '}';
 for_def: /*eps*/ | VAR_ID var_def;
