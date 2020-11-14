@@ -33,11 +33,11 @@ parser.a: parser.o scanner.a error.a # expression.o
 	rm -f $@
 	${AR} -T $@ $^
 
-error.a: error.o ll.o symtable.o scanner.a parser.o
+error.a: error.o ll.o symtable.o scanner.o parser.o expression.o str.o stack.o
 	rm -f $@
 	${AR} -T $@ $^
 
-ll.a: ll.o error.a
+ll.a: ll.o error.a symtable.a
 	rm -f $@
 	${AR} -T $@ $^
 
@@ -61,9 +61,15 @@ expr_parser.a: expression.o parser.o stack.o scanner.a
 
 ########## Testing ##########
 tests: test_codegen test_ll test_error
+	@echo
+	@echo
 	-./test_error
 	./test_codegen
+	@echo "*****************************"
+	@echo
 	./test_ll
+	@echo "*****************************"
+	@echo
 
 test_codegen: tests/test_codegen.c
 	${CC} ${CFLAGS} $^ -o $@
