@@ -141,26 +141,26 @@ void instr_add_elem2 (instr_t * i, const char * e)
   if (i != NULL) i->elem2_key = (char *)e;
 }
 
-elem_t instr_get_dest (instr_t * i)
+elem_t * instr_get_dest (instr_t * i)
 {
   if (i == NULL || i->elem_dest_key == NULL || symtable == NULL) return NULL;
   symtable_iterator_t tmp = symtable_find(symtable, i->elem_dest_key);
   if (tmp.ptr == NULL) return NULL;
-  return tmp.ptr->data;
+  return &(tmp.ptr->data);
 }
 
-elem_t instr_get_elem1 (instr_t * i)
+elem_t * instr_get_elem1 (instr_t * i)
 {
   if (i == NULL || i->elem1_key == NULL || symtable == NULL) return NULL;
   symtable_iterator_t tmp = symtable_find(symtable, i->elem1_key);
   if (tmp.ptr == NULL) return NULL;
-  return symtable_iterator_get_value(tmp);
+  return &(tmp.ptr->data);
 }
 
-elem_t instr_get_elem2 (instr_t * i)
+elem_t * instr_get_elem2 (instr_t * i)
 {
   if (i == NULL || i->elem2_key == NULL || symtable == NULL) return NULL;
   symtable_iterator_t tmp = symtable_find(symtable, i->elem2_key);
   if (tmp.ptr == NULL) return NULL;
-  return tmp.ptr->data;
+  return &(tmp.ptr->data);
 }

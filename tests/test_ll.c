@@ -31,9 +31,9 @@ int main() {
 
 	printf( "Adding 1st element...\n" );
 	instr_add_elem1( i, "first_elem" );
-	struct elem e1;
+	elem_t e1;
 	e1.key = i->elem1_key;
-	symtable_lookup_add(symtable, i->elem1_key, &e1);
+	symtable_lookup_add(symtable, i->elem1_key, e1);
 
 
 	printf( "The 1st elem now is: %s\n", instr_get_elem1(i)->key );
@@ -41,9 +41,9 @@ int main() {
 		printf( "2nd element is empty...\n" );
 	printf( "Adding 2nd element...\n" );
 	instr_add_elem2( i, "second_elem" );
-	struct elem e2;
+	elem_t e2;
 	e2.key = i->elem2_key;
-	symtable_lookup_add(symtable, i->elem2_key, &e2);
+	symtable_lookup_add(symtable, i->elem2_key, e2);
 	if ( instr_get_elem1(i) != NULL && instr_get_elem2(i) != NULL )
 		printf(
 			"Elements of instruction now are: %s & %s\n\n",
@@ -58,11 +58,11 @@ int main() {
 	instr_set_type( j, 2 );
 	instr_add_elem1( j, "third_elem" );
 	instr_add_elem2( j, "fourth_elem" );
-	struct elem e3, e4;
+	elem_t e3, e4;
 	e3.key = j->elem1_key;
 	e4.key = j->elem2_key;
-	symtable_lookup_add(symtable, j->elem1_key, &e3);
-	symtable_lookup_add(symtable, j->elem2_key, &e4);
+	symtable_lookup_add(symtable, j->elem1_key, e3);
+	symtable_lookup_add(symtable, j->elem2_key, e4);
 	list_add( l, j );
 
 	printf( "Contents of list:\n" );
