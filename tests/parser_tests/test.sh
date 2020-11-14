@@ -12,7 +12,12 @@ do
   echo
   ./test_parser2 <${DIR}/in${i}
 
-  echo "---Passed"
+  if [ $? -eq 0 ]
+  then
+    echo "---PASSED"
+  else
+    echo "---FAILED"
+  fi
   echo
 done
 
