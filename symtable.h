@@ -52,12 +52,14 @@ typedef union variable {
 	char *string_t;
 } variable_t;
 
-typedef struct sym_var_item {
+typedef struct sym_var_item sym_var_item_t;
+struct sym_var_item {
 	char *name;
 	var_type_t type;
 	variable_t data;
 	variable_t default_data;
-} sym_var_item_t;
+	sym_var_item_t *next;
+};
 
 typedef struct sym_var_list {
 	sym_var_item_t *first;
@@ -87,7 +89,7 @@ typedef struct elem {
 	char *key;
 	sym_type_t sym_type;
 	symbol_t symbol;
-} *elem_t;
+} elem_t;
 
 typedef const char *symtable_key_t;        // key
 typedef elem_t symtable_value_t;           // value
