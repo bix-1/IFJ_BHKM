@@ -23,8 +23,8 @@
 
 int main() {
 	//initialization
-	symtable = htab_init(ARR_SIZE);
-	htab_iterator_t iterator;
+	symtable = symtable_init(ARR_SIZE);
+	symtable_iterator_t iterator;
 
 	if (symtable == NULL) {
 		printf("Error: Memory allocation\n");
@@ -115,7 +115,7 @@ int main() {
 	t1symbol_func.sym_func->params = t1symbol_arr_param.sym_var_list;
 	t1symbol_func.sym_func->returns = t1symbol_arr_ret.sym_var_list;
 
-	elem_t *t1e = malloc(sizeof(elem_t));
+	elem_t t1e = malloc(sizeof(elem_t));
 
 	if (t1e == NULL) {
 		printf("Error: Memory allocation\n");
@@ -133,14 +133,14 @@ int main() {
 	t1e->sym_type = t1symt;
 	t1e->symbol = t1symbol_func;
 
-	htab_lookup_add(symtable, t1key, *t1e);
-	iterator = htab_find(symtable, t1key);
+	symtable_lookup_add(symtable, t1key, t1e);
+	iterator = symtable_find(symtable, t1key);
 
 	printf("Size of symbtable: %zu\n", symtable->arr_size);
 	printf("Find inserted element by %s: %zu (index)\n", t1key, iterator.idx);
-	printf("Inserted element key: %s\n", iterator.ptr->data.key);
-	printf("Inserted element symbol, function name: %s\n", iterator.ptr->data.symbol.sym_func->name);
-	printf("Inserted element symbol, 1st parm name: %s\n", iterator.ptr->data.symbol.sym_func->params->first->name);
+	//printf("Inserted element key: %s\n", iterator.ptr->data->key);
+	printf("Inserted element symbol, function name: %s\n", iterator.ptr->data->symbol.sym_func->name);
+	printf("Inserted element symbol, 1st parm name: %s\n", iterator.ptr->data->symbol.sym_func->params->first->name);
 
 	// Clean up test1
 	free(t1symbol_item1.sym_var_item->name);
@@ -153,7 +153,7 @@ int main() {
 	free(t1e->key);
 	free(t1e);
 
-	htab_clear(symtable);
+	symtable_free(symtable);
 
 	return EXIT_SUCCESS;
 }
