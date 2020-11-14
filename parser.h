@@ -64,6 +64,8 @@ void var_def();
 void var_move();
 void next_id();
 void if_();
+void if_cont();
+void else_();
 void cycle();
 void for_def();
 void for_move();

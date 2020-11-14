@@ -439,17 +439,33 @@ void next_id() {
 
 void if_() {
   match(T_IF);
+  // printf("matched IF\t%d\n", get_err_line()+1);
   parse_expression(); // condition handling
   match(T_LEFT_BRACE);
   match(T_EOL);
   body();
   match(T_RIGHT_BRACE);
+  // printf("matched ENDIF\t%d\t%d\n", get_err_line()+1, next.token_type);
+  if_cont();
+  // printf("if matched\n");
+}
+
+void if_cont() {
+  if (next.token_type != T_ELSE) return;
   match(T_ELSE);
+  // printf("matched else\n");
+  else_();
+}
+
+void else_() {
+  if (next.token_type != T_LEFT_BRACE) {
+    if_();
+    return;
+  }
   match(T_LEFT_BRACE);
   match(T_EOL);
   body();
   match(T_RIGHT_BRACE);
-  // printf("if matched\n");
 }
 
 void cycle() {
@@ -545,6 +561,10 @@ void type() {
     case T_STRING:
       // printf("Matched string\n");
       break;
+
+    // case T_BOOL:
+    //   // printf("Matched bool\n");
+    //   break;
 
     default:
       error(1, "parser", "type", "Invalid variable type");

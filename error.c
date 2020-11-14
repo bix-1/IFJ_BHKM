@@ -55,7 +55,7 @@ const char * code_to_name(int in) {
       return "func";
 
     case T_RETURN:
-      return "return";  // return: return return haha
+      return "return";  // return: return "return" haha
 
     case T_PACKAGE:
       return "package";
@@ -75,9 +75,6 @@ const char * code_to_name(int in) {
     case T_SEMICOLON:
       return ";";
 
-    case T_STRING_VALUE:
-      return "string"; // TODO add actual string
-
     case T_MAIN:
       return "main";
 
@@ -86,6 +83,15 @@ const char * code_to_name(int in) {
 
     case T_FUNC_ID:
       return "function ID";
+
+    case T_INT_VALUE: // TODO add actual value
+      return "int value";
+
+    case T_DEC_VALUE: // TODO add actual value
+      return "float value";
+
+    case T_STRING_VALUE:
+      return "string"; // TODO add actual string
 
     default:
       return "_TYPE NOT IMPLEMENTED_";
