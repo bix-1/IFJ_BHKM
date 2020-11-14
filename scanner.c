@@ -185,8 +185,9 @@ int get_next_token(tToken *token) {
                         str_free(&attr);
                         return L_SUCCESS;
                     } else {
+                        token->token_type = T_NEG;
                         char_clear(&attr, c);
-                        error(1,"scanner", "get_next_token", "Lexical error");
+                        return L_SUCCESS;
                     }
                 } else if (c == '>') {
                     c = getc(source);
@@ -220,7 +221,29 @@ int get_next_token(tToken *token) {
                     token->token_type = T_RIGHT_BRACE;
                     str_free(&attr);
                     return L_SUCCESS;
-                } else if (c == EOF) {
+                } else if (c == '&') {
+                    c = getc(source); // loads another &, otherwise it is lex error
+
+                    if (c == '&') {
+                        token->token_type = T_AND;
+                        str_free(&attr);
+                        return L_SUCCESS;
+                    } else {
+                        char_clear(&attr, c);
+                        error(1,"scanner", "get_next_token", "Lexical error");
+                    }
+                } else if (c == '|') {
+                    c = getc(source); // loads another |, otherwise it is lex error
+
+                    if (c == '|') {
+                        token->token_type = T_OR;
+                        str_free(&attr);
+                        return L_SUCCESS;
+                    } else {
+                        char_clear(&attr, c);
+                        error(1,"scanner", "get_next_token", "Lexical error");
+                    }
+                }else if (c == EOF) {
                     token->token_type = T_EOF;
                     str_free(&attr);
                     return L_SUCCESS;

@@ -79,6 +79,12 @@ FILE *source;
 #define T_SEMICOLON 134 // ;
 
 #define T_STRING_VALUE 135
+
+// boolthen
+#define T_NEG 136 // !
+#define T_AND 137 // &&
+#define T_OR 138 // ||
+
 /*
  * Automatons states.
  */

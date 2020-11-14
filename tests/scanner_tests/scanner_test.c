@@ -177,7 +177,7 @@ int main() {
      print_lex(&tok);
      fclose(f);
 
-    /* printf("[TEST16]\n");
+     printf("[TEST16]\n");
      printf("Token pre identifikator : 127, value : test_identifikator\n");
      printf("~~~~~~~~~~~~~~~~~~~~\n");
      f_open("tests/scanner_tests/ident_test");
@@ -433,5 +433,29 @@ int main() {
      f_open("tests/scanner_tests/dec_lit_adv8");
      get_next_token(&tok);
      print_lex(&tok);
-     fclose(f);*/
+     fclose(f);
+
+    printf("[TEST49]\n");
+    printf("Test pre neg 136, value : ! \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("tests/scanner_tests/neg");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST50]\n");
+    printf("Test pre and 137, value : && \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("tests/scanner_tests/and");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST51]\n");
+    printf("Test pre or 138, value : || \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("tests/scanner_tests/or");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
 }
