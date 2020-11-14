@@ -5,9 +5,9 @@
 
 int main ()
 {
-	// testing ll and htab cleanup
+	// testing ll and symtable cleanup
 	list = list_create();
-	symtable = htab_init(1);
+	symtable = symtable_init(1);
 
 	// error(99, NULL, NULL, NULL);
 	const char s[] = "msg";

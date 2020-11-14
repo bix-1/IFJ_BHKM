@@ -13,41 +13,41 @@
 
 #include "symtable.h"
 
-extern bool htab_iterator_valid(htab_iterator_t it);
+extern bool symtable_iterator_valid(symtable_iterator_t it);
 
-extern bool htab_iterator_equal(htab_iterator_t it1, htab_iterator_t it2);
+extern bool symtable_iterator_equal(symtable_iterator_t it1, symtable_iterator_t it2);
 
-htab_t *htab_init(size_t n) {
+symtable_t *symtable_init(size_t n) {
 	assert(n > 0);
 
-	htab_t *htab = malloc(sizeof(htab_t) + sizeof(struct htab_item) * n);
+	symtable_t *symtable = malloc(sizeof(symtable_t) + sizeof(struct symtable_item) * n);
 
-	if (htab == NULL)
+	if (symtable == NULL)
 		return NULL;
 
-	memset(htab, 0, sizeof(htab_t) + sizeof(struct htab_item) * n);
+	memset(symtable, 0, sizeof(symtable_t) + sizeof(struct symtable_item) * n);
 
-	htab->arr_size = n;
-	htab->size = 0;
+	symtable->arr_size = n;
+	symtable->size = 0;
 
-	return htab;
+	return symtable;
 }
 
-size_t htab_size(const htab_t *t) {
+size_t symtable_size(const symtable_t *t) {
 	if (t == NULL)
 		return 0;
 
 	return t->size;
 }
 
-size_t htab_bucket_count(const htab_t *t) {
+size_t symtable_bucket_count(const symtable_t *t) {
 	if (t == NULL)
 		return 0;
 
 	return t->arr_size;
 }
 
-size_t htab_hash_fun(const char *str) {
+size_t symtable_hash_fun(const char *str) {
 	uint32_t h = 0;
 	const unsigned char *p;
 	for (p = (const unsigned char *) str; *p != '\0'; p++)
@@ -55,23 +55,23 @@ size_t htab_hash_fun(const char *str) {
 	return h;
 }
 
-htab_iterator_t htab_find(htab_t *t, htab_key_t key) {
+symtable_iterator_t symtable_find(symtable_t *t, symtable_key_t key) {
 
 	if (t == NULL)
-		return htab_end(t);
+		return symtable_end(t);
 
 	if (key == NULL)
-		return htab_end(t);
+		return symtable_end(t);
 
-	struct htab_iterator iterator;
+	struct symtable_iterator iterator;
 
 	// Get index from hash function
-	size_t index = (htab_hash_fun(key) % t->arr_size);
+	size_t index = (symtable_hash_fun(key) % t->arr_size);
 
 	iterator.t = t;
 	iterator.idx = index;
 
-	struct htab_item *next = t->item[index];
+	struct symtable_item *next = t->item[index];
 
 	// Try to find existing
 	if (next != NULL) {
@@ -86,28 +86,28 @@ htab_iterator_t htab_find(htab_t *t, htab_key_t key) {
 		} while (next != NULL);
 	}
 
-	iterator = htab_end(t);
+	iterator = symtable_end(t);
 	return iterator;
 }
 
 // Todo: change to insert
-htab_iterator_t htab_lookup_add(htab_t *t, htab_key_t key, htab_value_t data) {
+symtable_iterator_t symtable_lookup_add(symtable_t *t, symtable_key_t key, symtable_value_t data) {
 
 	if (t == NULL)
-		return htab_end(t);
+		return symtable_end(t);
 
 	if (key == NULL)
-		return htab_end(t);
+		return symtable_end(t);
 
-	struct htab_iterator iterator;
+	struct symtable_iterator iterator;
 
 	// Get index from hash function
-	size_t index = (htab_hash_fun(key) % t->arr_size);
+	size_t index = (symtable_hash_fun(key) % t->arr_size);
 
 	iterator.t = t;
 	iterator.idx = index;
 
-	struct htab_item *next = t->item[index];
+	struct symtable_item *next = t->item[index];
 
 	// Try to find existing entry
 	if (next != NULL) {
@@ -123,29 +123,29 @@ htab_iterator_t htab_lookup_add(htab_t *t, htab_key_t key, htab_value_t data) {
 	}
 
 	// Create new entry
-	iterator.ptr = malloc(sizeof(struct htab_item));
+	iterator.ptr = malloc(sizeof(struct symtable_item));
 
 	if (iterator.ptr == NULL) {
-		return htab_end(t);
+		return symtable_end(t);
 	}
 
 	iterator.ptr->key = malloc(strlen(key) + 1);
 
 	if (iterator.ptr->key == NULL) {
-		return htab_end(t);
+		return symtable_end(t);
 	}
 
 	/*
 	elem_t *elem = malloc(sizeof(struct elem));
 
 	if (elem == NULL) {
-	   return htab_end(t);
+	   return symtable(t);
 	}
 
 	elem->key = malloc(strlen(key) + 1);
 
 	if (elem->key == NULL) {
-	   return htab_end(t);
+	   return symtable_end(t);
 	}
 
 	elem->sym_type = undefined
@@ -156,7 +156,7 @@ htab_iterator_t htab_lookup_add(htab_t *t, htab_key_t key, htab_value_t data) {
 
 	strcpy((char *) iterator.ptr->key, key);
 
-	htab_iterator_set_value(iterator, data);
+	symtable_iterator_set_value(iterator, data);
 
 	// New entry will in start of the current bucket (list)
 	iterator.ptr->next = t->item[index];
@@ -167,20 +167,20 @@ htab_iterator_t htab_lookup_add(htab_t *t, htab_key_t key, htab_value_t data) {
 	return iterator;
 }
 
-void htab_erase(htab_t *t, htab_iterator_t it) {
+void symtable_erase(symtable_t *t, symtable_iterator_t it) {
 	if (t == NULL)
 		return;
 
-	if (!htab_iterator_valid(it))
+	if (!symtable_iterator_valid(it))
 		return;
 
 	// Check if entry is on start of bucket
-	struct htab_iterator start;
+	struct symtable_iterator start;
 	start.t = t;
 	start.ptr = t->item[it.idx];
 	start.idx = it.idx;
 
-	if (htab_iterator_equal(it, start)) {
+	if (symtable_iterator_equal(it, start)) {
 
 		// Check if entry is alone in bucket
 		if (start.ptr->next == NULL) {
@@ -211,8 +211,8 @@ void htab_erase(htab_t *t, htab_iterator_t it) {
 	free(it.ptr);
 }
 
-htab_iterator_t htab_begin(const htab_t *t) {
-	struct htab_iterator iterator;
+symtable_iterator_t symtable_begin(const symtable_t *t) {
+	struct symtable_iterator iterator;
 	iterator.t = t;
 	iterator.ptr = NULL;
 	iterator.idx = 0;
@@ -232,8 +232,8 @@ htab_iterator_t htab_begin(const htab_t *t) {
 	return iterator;
 }
 
-htab_iterator_t htab_end(const htab_t *t) {
-	struct htab_iterator iterator;
+symtable_iterator_t symtable_end(const symtable_t *t) {
+	struct symtable_iterator iterator;
 	iterator.t = t;
 	iterator.ptr = NULL;
 	iterator.idx = 0;
@@ -252,13 +252,13 @@ htab_iterator_t htab_end(const htab_t *t) {
 	return iterator;
 }
 
-htab_iterator_t htab_iterator_next(htab_iterator_t it) {
-	struct htab_iterator iterator;
+symtable_iterator_t symtable_iterator_next(symtable_iterator_t it) {
+	struct symtable_iterator iterator;
 	iterator.t = NULL;
 	iterator.ptr = NULL;
 	iterator.idx = 0;
 
-	if (!htab_iterator_valid(it))
+	if (!symtable_iterator_valid(it))
 		return iterator;
 
 	iterator.t = it.t;
@@ -282,35 +282,35 @@ htab_iterator_t htab_iterator_next(htab_iterator_t it) {
 		}
 	}
 
-	iterator = htab_end(it.t);
+	iterator = symtable_end(it.t);
 	return iterator;
 }
 
-htab_key_t htab_iterator_get_key(htab_iterator_t it) {
-	assert(htab_iterator_valid(it));
+symtable_key_t symtable_iterator_get_key(symtable_iterator_t it) {
+	assert(symtable_iterator_valid(it));
 
 	return it.ptr->key;
 }
 
-htab_value_t htab_iterator_get_value(htab_iterator_t it) {
-	assert(htab_iterator_valid(it));
+symtable_value_t symtable_iterator_get_value(symtable_iterator_t it) {
+	assert(symtable_iterator_valid(it));
 
 	return it.ptr->data;
 }
 
-htab_value_t htab_iterator_set_value(htab_iterator_t it, htab_value_t val) {
-	assert(htab_iterator_valid(it));
+symtable_value_t symtable_iterator_set_value(symtable_iterator_t it, symtable_value_t val) {
+	assert(symtable_iterator_valid(it));
 
 	it.ptr->data = val;
 
 	return val;
 }
 
-void htab_clear(htab_t *t) {
+void symtable_clear(symtable_t *t) {
 	if (t == NULL)
 		return;
 
-	struct htab_item *next;
+	struct symtable_item *next;
 	for (size_t i = 0; i < t->arr_size; ++i) {
 
 		while (t->item[i] != NULL) {
@@ -323,7 +323,7 @@ void htab_clear(htab_t *t) {
 	t->size = 0;
 }
 
-void htab_free(htab_t *t) {
-	htab_clear(t);
+void symtable_free(symtable_t *t) {
+	symtable_clear(t);
 	free(t);
 }
