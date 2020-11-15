@@ -29,7 +29,7 @@ scanner.a: scanner.o error.o str.o
 	rm -f $@
 	${AR} $@ $^
 
-parser.a: parser.o scanner.a error.a # expression.o
+parser.a: parser.o scanner.a error.a ll.a symtable.a
 	rm -f $@
 	${AR} -T $@ $^
 

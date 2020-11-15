@@ -14,9 +14,8 @@
 TODO:
   refactor func comments
   crossreference LL.pdf & implemented rules
-  REMOVE RULE 13 IN DOC
 
-``  built-in funcs
+  built-in funcs
 
   handle errors from assignment in:
   - 4.1.1 (4, 3)
@@ -30,14 +29,18 @@ TODO:
 
 
 #include "parser.h"
-#include "scanner.h"
 #include "error.h"
+#include "scanner.h"
+#include "symtable.h"
+#include "ll.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 
 
+extern list_t * list;
+extern symtable_t * symtable;
 tToken next;
 // for checking whether eps terminal is allowed
 bool eps = false;
@@ -99,6 +102,7 @@ void match(int term) {
         if (eps) return;
         error(3, "parser", "match", "Missing main function");
       }
+      token_cleanup();
       break;
 
     case T_FUNC:
@@ -123,6 +127,22 @@ void match(int term) {
 
       // TODO function definition handling
 
+      // check for duplicate
+      if (symtable_iterator_valid(symtable_find(symtable, to_string(&next))))
+        error(3, "parser", "match", "Redefinition of func \"%s\"", to_string(&next));
+      else {
+        // first definition
+        sym_func_t * func_sym = malloc(sizeof(sym_func_t));
+        if (func_sym == NULL) error(99, "parser", "", "Memory allocation failed");;
+        // init function symbol
+        func_sym->name = to_string(&next);
+        func_sym->params = NULL; func_sym->returns = NULL;
+        // add to symtable
+        symbol_t func = {.sym_func = func_sym};
+        elem_t * func_data = elem_init(SYM_FUNC, func);
+        symtable_insert(symtable, to_string(&next), func_data);
+        printf("Added ---%s\n", to_string(&next));
+      }
       break;
 
     case T_VAR_ID:
@@ -160,7 +180,7 @@ void match(int term) {
   eps = false;
 
   // TODO delete
-  token_cleanup();
+  // token_cleanup();
 
   get_next_token(&next);
 }
@@ -175,8 +195,13 @@ void parse() {
   // initialization
   source_file_setup(stdin);
   get_next_token(&next);
-
+  list = list_create();
+  symtable = symtable_init(100);
+  // parsing
   program();
+  // termination
+  list_destroy(&list);
+  symtable_free(symtable);
 }
 
 // functions representing LL grammar nonterminals
