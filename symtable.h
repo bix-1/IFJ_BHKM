@@ -35,7 +35,7 @@ typedef struct symtable symtable_t;
 // Types:
 typedef enum sym_type {
 	SYM_FUNC,
-	SYM_VAR,
+	SYM_VAR_ITEM,
 	SYM_VAR_LIST
 } sym_type_t;
 

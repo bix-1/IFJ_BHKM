@@ -200,7 +200,7 @@ void symtable_erase(symtable_t *t, symtable_iterator_t it) {
 		case SYM_FUNC:
 			sym_func_free(it.ptr->data->symbol.sym_func);
 			break;
-		case SYM_VAR:
+		case SYM_VAR_ITEM:
 			sym_var_item_free(it.ptr->data->symbol.sym_var_item);
 			break;
 		case SYM_VAR_LIST:
@@ -328,7 +328,7 @@ void symtable_clear(symtable_t *t) {
 				case SYM_FUNC:
 					sym_func_free(t->item[i]->data->symbol.sym_func);
 					break;
-				case SYM_VAR:
+				case SYM_VAR_ITEM:
 					sym_var_item_free(t->item[i]->data->symbol.sym_var_item);
 					break;
 				case SYM_VAR_LIST:
