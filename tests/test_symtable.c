@@ -47,8 +47,8 @@ int main() {
 	variable_t t1var_ret = {.int_t = 1};
 
 	sym_type_t t1symt = SYM_FUNC;
-	sym_var_item_t *t1symbol_item0 = sym_var_item_init(t1param_name, VAR_INT, t1var_param, true);
-	sym_var_item_t *t1symbol_item1 = sym_var_item_init(t1param_name, VAR_INT, t1var_ret, true);
+	sym_var_item_t *t1symbol_item0 = sym_var_item_init(t1param_name, VAR_INT, t1var_param, true, true);
+	sym_var_item_t *t1symbol_item1 = sym_var_item_init(t1param_name, VAR_INT, t1var_ret, true, true);
 
 	sym_var_list_t *t1symbol_arr_param = sym_var_list_init();
 	sym_var_list_add(t1symbol_arr_param, t1symbol_item0);

@@ -390,7 +390,7 @@ sym_func_t *sym_func_init(char *name, sym_var_list_t *params, sym_var_list_t *re
 	return sym_func;
 }
 
-sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data, bool is_const) {
+sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data, bool is_const, bool is_global) {
 	sym_var_item_t *sym_var_item = malloc(sizeof(sym_var_item_t));
 
 	if (sym_var_item == NULL) {
@@ -406,6 +406,7 @@ sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data, 
 	strcpy(sym_var_item->name, name);
 	sym_var_item->type = type;
 	sym_var_item->is_const = is_const;
+	sym_var_item->is_global = is_global;
 
 	if (type == VAR_STRING) {
 		// name, data, default data
