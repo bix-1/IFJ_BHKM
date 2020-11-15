@@ -13,6 +13,7 @@
 
 #include "ll.h"
 #include "error.h"
+#include "symtable.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -28,6 +29,7 @@ list_t * list_create()
   // init list
   l->first = NULL;
   l->active = NULL;
+  l->last = NULL;
 
   return l;
 }
@@ -50,6 +52,13 @@ void list_destroy (list_t ** l)
 }
 
 
+bool list_is_empty(list_t *l)
+{
+  if (l == NULL || l->first == NULL) return true;
+  return false;
+}
+
+
 int list_size (list_t * l)
 {
   if (l == NULL) return -1;
@@ -68,14 +77,15 @@ void list_add (list_t *l, instr_t * i)
   if (l == NULL || i == NULL) return;
 
   if (l->first == NULL) {   // list empty
-    l->first = i; l->active = i;
+    l->first = i;
+    l->active = i;
+    l->last = i;
     return;
   }
-  // get to last element
-  instr_t * tmp = l->first;
-  while (tmp->next != NULL)
-    tmp = tmp->next;
-  tmp->next = i;  // append to end of list
+
+  if (l->last == NULL) return;
+  l->last->next = i;
+  l->last = i;
 }
 
 
@@ -107,17 +117,33 @@ instr_t * instr_create()
     error(99, "ll", "instr_create", "Failed to create instruction");
   // initialize instruction
   i->type = -1;
-  i->elem_dest_key = NULL;
-  i->elem1_key = NULL;
-  i->elem2_key = NULL;
+  i->elem_dest_ptr = NULL;
+  i->elem1_ptr = NULL;
+  i->elem2_ptr = NULL;
   i->next = NULL;
 
   return i;
 }
 
-void instr_set_type (instr_t * i, instr_type_t t)
+void instr_init(instr_t **i, instr_type_t t)
 {
-  if (i != NULL)  i->type = t;
+  if (i == NULL) return;
+  if (*i == NULL) {
+    *i = malloc(sizeof(instr_t));
+    if (*i == NULL)
+      error(99, "ll", "instr_init", "Failed to create instruction");
+  }
+  // initialize instruction
+  (*i)->type = t;
+  (*i)->elem_dest_ptr = NULL;
+  (*i)->elem1_ptr = NULL;
+  (*i)->elem2_ptr = NULL;
+  (*i)->next = NULL;
+}
+
+void instr_set_type (instr_t *i, instr_type_t t)
+{
+  if (i != NULL) i->type = t;
 }
 
 int instr_get_type (instr_t *i)
@@ -126,41 +152,35 @@ int instr_get_type (instr_t *i)
   return i->type;
 }
 
-void instr_add_dest (instr_t *i, const char *dest) {
+void instr_add_dest (instr_t *i, elem_t *dest) {
   if (i != NULL)
-    i->elem_dest_key = (char *)dest;
+    i->elem_dest_ptr = dest;
 }
 
-void instr_add_elem1 (instr_t * i, const char * e)
+void instr_add_elem1 (instr_t * i, elem_t * e)
 {
-  if (i != NULL) i->elem1_key = (char *)e;
+  if (i != NULL) i->elem1_ptr = e;
 }
 
-void instr_add_elem2 (instr_t * i, const char * e)
+void instr_add_elem2 (instr_t * i, elem_t * e)
 {
-  if (i != NULL) i->elem2_key = (char *)e;
+  if (i != NULL) i->elem2_ptr = e;
 }
 
 elem_t * instr_get_dest (instr_t * i)
 {
-  if (i == NULL || i->elem_dest_key == NULL || symtable == NULL) return NULL;
-  symtable_iterator_t tmp = symtable_find(symtable, i->elem_dest_key);
-  if (tmp.ptr == NULL) return NULL;
-  return &(tmp.ptr->data);
+  if (i == NULL) return NULL;
+  return i->elem_dest_ptr;
 }
 
 elem_t * instr_get_elem1 (instr_t * i)
 {
-  if (i == NULL || i->elem1_key == NULL || symtable == NULL) return NULL;
-  symtable_iterator_t tmp = symtable_find(symtable, i->elem1_key);
-  if (tmp.ptr == NULL) return NULL;
-  return &(tmp.ptr->data);
+  if (i == NULL) return NULL;
+  return i->elem1_ptr;
 }
 
 elem_t * instr_get_elem2 (instr_t * i)
 {
-  if (i == NULL || i->elem2_key == NULL || symtable == NULL) return NULL;
-  symtable_iterator_t tmp = symtable_find(symtable, i->elem2_key);
-  if (tmp.ptr == NULL) return NULL;
-  return &(tmp.ptr->data);
+  if (i == NULL) return NULL;
+  return i->elem2_ptr;
 }
