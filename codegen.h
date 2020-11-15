@@ -20,14 +20,14 @@
 // Define intermediate code instructions
 typedef enum instr_type {
 	/*
-	 * Variables are stored in symtable in format main:<num_of_call><function>:<variable>
+	 * Variables are stored in symtable in format <function>:<num_of_call><function>:<variable>
 	 * num_of_call and function can repeat with another function
 	 *
 	 * num_of_call is need for multiple different function calls (different inputs)
 	 *
 	 * Example for variable:
 	 * main:0init:var
-	 * main:0fun:0hello:var
+	 * bar:0fun:0hello:var
 	 *
 	 * Example for function:
 	 * main:0some_fun:0another_fun
@@ -38,11 +38,12 @@ typedef enum instr_type {
 	 */
 
 	/*
-	 * Symbol constants:
+	 * Symbol types:
 	 *
 	 * symbol var:   stores variable of int || float64 || string
 	 * symbol const: stores const variables of int || float64 || string or its reference
 	 *               to const in program, eg. 42
+	 *               Update: this is not actually symbol, but represent const boolean stored in var
 	 * symbol func:  stores function with its parameters and returns (variables or const)
 	 *
 	 */

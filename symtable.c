@@ -377,59 +377,25 @@ sym_func_t *sym_func_init(char *name, sym_var_list_t *params, sym_var_list_t *re
 		error(99, "symtable.c", "sym_func_init", "Failed to create symbol func");
 	}
 
-	sym_func->name = malloc(strlen(name) + 1);
-
-	if (sym_func->name == NULL) {
-		error(99, "symtable.c", "sym_func_init", "Failed to create symbol func");
-	}
-
-	strcpy(sym_func->name, name);
+	sym_func->name = name;
 	sym_func->params = params;
 	sym_func->returns = returns;
 
 	return sym_func;
 }
 
-sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data, bool is_const, bool is_global) {
+sym_var_item_t *sym_var_item_init(char *name) {
 	sym_var_item_t *sym_var_item = malloc(sizeof(sym_var_item_t));
 
 	if (sym_var_item == NULL) {
 		error(99, "symtable.c", "sym_var_item_init", "Failed to create symbol var item");
 	}
 
-	sym_var_item->name = malloc(strlen(name) + 1);
+	sym_var_item->name = name;
 
-	if (sym_var_item->name == NULL) {
-		error(99, "symtable.c", "sym_var_item_init", "Failed to create symbol var item");
-	}
-
-	strcpy(sym_var_item->name, name);
-	sym_var_item->type = type;
-	sym_var_item->is_const = is_const;
-	sym_var_item->is_global = is_global;
-
-	if (type == VAR_STRING) {
-		// name, data, default data
-		sym_var_item->data.string_t = malloc(strlen(data.string_t) + 1);
-
-		if (sym_var_item->data.string_t == NULL) {
-			error(99, "symtable.c", "sym_var_item_init", "Failed to create symbol var item");
-		}
-
-		sym_var_item->default_data.string_t = malloc(strlen(data.string_t) + 1);
-
-		if (sym_var_item->default_data.string_t == NULL) {
-			error(99, "symtable.c", "sym_var_item_init", "Failed to create symbol var item");
-		}
-
-		strcpy(sym_var_item->data.string_t, data.string_t);
-		strcpy(sym_var_item->default_data.string_t, data.string_t);
-	}
-	else {
-		sym_var_item->data = data;
-		sym_var_item->default_data = data;
-	}
-
+	sym_var_item->type = VAR_UNDEFINED;
+	sym_var_item->is_const = false;
+	sym_var_item->is_global = false;
 	sym_var_item->next = NULL;
 
 	return sym_var_item;
@@ -464,11 +430,6 @@ void sym_func_free(sym_func_t *sym_func) {
 		sym_var_list_free(sym_func_returns);
 	}
 
-	if (sym_func->name == NULL) {
-		error(99, "symtable.c", "sym_func_free", "Failed to free symbol func");
-	}
-
-	free(sym_func->name);
 	free(sym_func);
 }
 
@@ -482,19 +443,9 @@ void sym_var_item_free(sym_var_item_t *sym_var_item) {
 			error(99, "symtable.c", "sym_var_item_free", "Failed to free symbol var item");
 		}
 
-		if (sym_var_item->default_data.string_t == NULL) {
-			error(99, "symtable.c", "sym_var_item_free", "Failed to free symbol var item");
-		}
-
 		free(sym_var_item->data.string_t);
-		free(sym_var_item->default_data.string_t);
 	}
 
-	if (sym_var_item->name == NULL) {
-		error(99, "symtable.c", "sym_var_item_free", "Failed to free symbol var item");
-	}
-
-	free(sym_var_item->name);
 	free(sym_var_item);
 }
 
@@ -506,6 +457,61 @@ void sym_var_list_free(sym_var_list_t *sym_var_list) {
 	sym_var_list_clear(sym_var_list);
 
 	free(sym_var_list);
+}
+
+void sym_var_item_set_type(sym_var_item_t *sym_var_item, var_type_t type) {
+	if (sym_var_item == NULL) {
+		error(99, "symtable.c", "sym_var_item_set_type", "Failed to set type for var item");
+	}
+
+	sym_var_item->type = type;
+}
+
+void sym_var_item_set_data(sym_var_item_t *sym_var_item, variable_t data) {
+	if (sym_var_item == NULL) {
+		error(99, "symtable.c", "sym_var_item_set_data", "Failed to set data for var item");
+	}
+
+	if (sym_var_item->type == VAR_UNDEFINED) {
+		error(99, "symtable.c", "sym_var_item_set_data", "Cannot assign data to undefined variable");
+	}
+	else if (sym_var_item->type == VAR_STRING) {
+		sym_var_item->data.string_t = malloc(strlen(data.string_t) + 1);
+
+		if (sym_var_item->data.string_t == NULL) {
+			error(99, "symtable.c", "sym_var_item_init", "Failed to create symbol var item");
+		}
+
+		strcpy(sym_var_item->data.string_t, data.string_t);
+		sym_var_item->default_data = data;
+	}
+	else {
+		sym_var_item->data = data;
+	}
+}
+
+void sym_var_item_set_const(sym_var_item_t *sym_var_item, bool is_const) {
+	if (sym_var_item == NULL) {
+		error(99, "symtable.c", "sym_var_item_set_const", "Failed to set is_const for var item");
+	}
+
+	sym_var_item->is_const = is_const;
+}
+
+void sym_var_item_set_global(sym_var_item_t *sym_var_item, bool is_global) {
+	if (sym_var_item == NULL) {
+		error(99, "symtable.c", "sym_var_item_set_global", "Failed to set is_global for var item");
+	}
+
+	sym_var_item->is_global = is_global;
+}
+
+void sym_var_item_set_next(sym_var_item_t *sym_var_item, sym_var_item_t *next) {
+	if (sym_var_item == NULL) {
+		error(99, "symtable.c", "sym_var_item_set_next", "Failed to set next for var item");
+	}
+
+	sym_var_item->next = next;
 }
 
 symtable_key_t elem_key(elem_t *elem) {
@@ -624,20 +630,20 @@ void sym_var_list_clear(sym_var_list_t *sym_var_list) {
 	sym_var_list->active = NULL;
 }
 
-void sym_var_item_set(sym_var_item_t *sym_var_item, variable_t data) {
+void sym_var_item_change_data(sym_var_item_t *sym_var_item, variable_t data) {
 	if (sym_var_item == NULL) {
-		error(99, "symtable.c", "sym_var_item_set", "Failed to set sym var item to new value");
+		error(99, "symtable.c", "sym_var_item_change_data", "Failed to set sym var item to new value");
 	}
 
 	if (sym_var_item->is_const) {
-		error(99, "symtable.c", "sym_var_item_set", "Cannot change value to const");
+		error(99, "symtable.c", "sym_var_item_change_data", "Cannot change value to const");
 	}
 
 	if (sym_var_item->type == VAR_STRING) {
 		sym_var_item->data.string_t = realloc(sym_var_item->data.string_t, strlen(data.string_t) + 1);
 
 		if (sym_var_item->data.string_t == NULL) {
-			error(99, "symtable.c", "sym_var_item_set", "Failed to set sym var item to new value");
+			error(99, "symtable.c", "sym_var_item_change_data", "Failed to set sym var item to new value");
 		}
 
 		strcpy(sym_var_item->data.string_t, data.string_t);
@@ -653,7 +659,7 @@ void sym_var_item_reset(sym_var_item_t *sym_var_item) {
 	}
 
 	if (sym_var_item->is_const) {
-		error(99, "symtable.c", "sym_var_item_set", "Cannot reset value to const");
+		error(99, "symtable.c", "sym_var_item_reset", "Cannot reset value to const");
 	}
 
 	if (sym_var_item->type == VAR_STRING) {
