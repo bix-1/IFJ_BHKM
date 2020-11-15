@@ -28,22 +28,37 @@ TODO:
 */
 
 
-#include "parser.h"
-#include "error.h"
-#include "scanner.h"
-#include "symtable.h"
-#include "ll.h"
+#include "parser.h"   // own header
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "error.h"    // error calls handling
+#include "scanner.h"  // get_next_token
+#include "symtable.h" // symbol table for codegenerator
+#include "ll.h"       // list of instructions
+#include "str.h"      // contextual IDs
 
-
+/*_____________GLOBAL_VARIABLES_____________*/
 extern list_t * list;
 extern symtable_t * symtable;
 tToken next;
-// for checking whether eps terminal is allowed
+
+/*_____________SYMTABLE_HANDLING____________*/
+elem_t * last_elem;
+
+
+/*_______________GLOBAL_FLAGS_______________*/
+// outside match():
+//    for allowing eps terminal
+// inside of match():
+//    for checking whether EPS or NON-EPS terminal matched
 bool eps = false;
+// outside match():
+//    for allowing definiton
+// inside of match():
+//    for checking whether ID is being defined or called
+bool def = false;
 
 /*
   Functions for printing attributes of tokens
@@ -116,22 +131,40 @@ void match(int term) {
 
     case T_FUNC_ID:
       if (next.token_type != T_IDENTIFIER) {
-        if (eps) return;
+        if (eps) {
+          def = false;
+          return;
+        }
         goto default_err;
       }
       if (!strcmp( to_string(&next), "main")) {
-        if (eps) return;
+        if (eps) {
+          def = false;
+          return;
+        }
         next.token_type = T_MAIN;
         goto default_err;
       }
 
-      // TODO function definition handling
+      // expected func definition && func != main
+      // --> cannot be EPS terminal
+      // otherwise if in func_list_pre:
+      //    ends user_func_def segment
+      //    && "Missing main func" error called
+      if (def) eps = false;
 
       // check for duplicate
-      if (symtable_iterator_valid(symtable_find(symtable, to_string(&next))))
-        error(3, "parser", "match", "Redefinition of func \"%s\"", to_string(&next));
-      else {
-        // first definition
+      if (symtable_iterator_valid(symtable_find(symtable, to_string(&next)))) {
+        if (def && !eps)
+          error(3, "parser", "match", "Redefinition of function \"%s\"", to_string(&next));
+        else return;
+      }
+      else { // first definition
+        if (!def) {
+          if (eps) return;
+          error(3, "parser", "match", "Function \"%s\" undefined", to_string(&next));
+        }
+
         sym_func_t * func_sym = malloc(sizeof(sym_func_t));
         if (func_sym == NULL) error(99, "parser", "", "Memory allocation failed");;
         // init function symbol
@@ -140,27 +173,60 @@ void match(int term) {
         // add to symtable
         symbol_t func = {.sym_func = func_sym};
         elem_t * func_data = elem_init(SYM_FUNC, func);
-        symtable_insert(symtable, to_string(&next), func_data);
+        symtable_iterator_t tmp =
+          symtable_insert(symtable, to_string(&next), func_data);
+        last_elem = symtable_iterator_get_value(tmp);
         printf("Added ---%s\n", to_string(&next));
       }
       break;
 
     case T_VAR_ID:
       if (next.token_type != T_IDENTIFIER) {
-        if (eps) return;
+        if (eps) {
+          def = false;
+          return;
+        }
         next.token_type = T_VAR_ID;
         goto default_err;
       }
 
-      // TODO var definition handling
-      //      remove placeholder functionality below
+      // construct variable's contextual ID
+      char * id = malloc(
+        sizeof(char) *  // prefix + : + name + \0
+        (strlen(*(last_elem->key)) + strlen(to_string(&next)) + 2)
+      );
+      if (id == NULL) error(99, "parser", "", "Memory allocation failed");;
+      id[0] = '\0';
+      strcat(id, *(last_elem->key)); // prefix
+      strcat(id, ":");
+      strcat(id, to_string(&next));
+      // non-contextual ID no longer needed
+      token_cleanup();
 
-      int x = fgetc(source);
-      if (x == '(') {   // func_call
-        ungetc(x, source);
-        return;
+      // check for duplicate
+      if (symtable_iterator_valid(symtable_find(symtable, id))) {
+        if (def && !eps)
+          error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
+        else return;
       }
-      ungetc(x, source);
+      else { // first definition
+        if (!def) {
+          if (eps) return;
+          error(3, "parser", "match", "Function \"%s\" undefined", to_string(&next));
+        }
+
+        sym_var_item_t * var_sym = malloc(sizeof(sym_var_item_t));
+        if (var_sym == NULL) error(99, "parser", "", "Memory allocation failed");;
+        // init function symbol
+        var_sym->name = id;
+        var_sym->next = NULL;
+        // add to symtable
+        symbol_t var = {.sym_var_item = var_sym};
+        elem_t * var_data = elem_init(SYM_VAR, var);
+        symtable_insert(symtable, id, var_data);
+        printf("Added ---\t%s\n", id);
+      }
+
       break;
 
     default:
@@ -179,9 +245,6 @@ void match(int term) {
   // eps == FALSE --> non-eps terminal matched
   eps = false;
 
-  // TODO delete
-  // token_cleanup();
-
   get_next_token(&next);
 }
 
@@ -197,6 +260,7 @@ void parse() {
   get_next_token(&next);
   list = list_create();
   symtable = symtable_init(100);
+
   // parsing
   program();
   // termination
@@ -266,17 +330,15 @@ void prolog() {
 }
 
 void func_list_pre() {
-  eps = true;
+  def = true; eps = true;
   match(T_FUNC_ID);
   if (eps) {
     eps = false;
     return;
   }
-
   // for debugging purposes TODO delete
   // char s[50] = "";
   // strcat(s, to_string(&next));
-
   match(T_L_BRACKET);
   param_list();
   match(T_R_BRACKET);
@@ -301,6 +363,7 @@ void func_list() {
 void func_def() {
   match(T_FUNC);
   if (eps) return; // from func_list
+  def = true; eps = false;
   match(T_FUNC_ID);
 
   // TODO delete
@@ -319,7 +382,7 @@ void func_def() {
 }
 
 void param_list() {
-  eps = true;
+  def = true; eps = true;
   match(T_VAR_ID);
   if (eps) return;
   type();
@@ -403,12 +466,12 @@ void body() {
 void command() {
   switch (next.token_type) {
     case T_IDENTIFIER:  // var_ OR func_call
-      eps = true;
-      match(T_VAR_ID);
-      if (!eps) var_();
+      // def = false; eps = true; // TODO
+      match(T_FUNC_ID);
+      if (!def) func_call();
       else {
         eps = false;
-        func_call();
+        var_();
       }
       break;
 
@@ -434,6 +497,9 @@ void command() {
 }
 
 void var_() {
+  printf("var_ called\n");
+  eps = true;
+  match(T_VAR_ID);
   if (next.token_type == T_DEF_IDENT) var_def();
   else var_move();
 }
