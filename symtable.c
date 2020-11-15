@@ -200,7 +200,6 @@ void symtable_erase(symtable_t *t, symtable_iterator_t it) {
 		case SYM_FUNC:
 			sym_func_free(it.ptr->data->symbol.sym_func);
 			break;
-		case SYM_CONST:
 		case SYM_VAR:
 			sym_var_item_free(it.ptr->data->symbol.sym_var_item);
 			break;
@@ -329,7 +328,6 @@ void symtable_clear(symtable_t *t) {
 				case SYM_FUNC:
 					sym_func_free(t->item[i]->data->symbol.sym_func);
 					break;
-				case SYM_CONST:
 				case SYM_VAR:
 					sym_var_item_free(t->item[i]->data->symbol.sym_var_item);
 					break;
@@ -392,7 +390,7 @@ sym_func_t *sym_func_init(char *name, sym_var_list_t *params, sym_var_list_t *re
 	return sym_func;
 }
 
-sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data) {
+sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data, bool is_const) {
 	sym_var_item_t *sym_var_item = malloc(sizeof(sym_var_item_t));
 
 	if (sym_var_item == NULL) {
@@ -407,6 +405,7 @@ sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data) 
 
 	strcpy(sym_var_item->name, name);
 	sym_var_item->type = type;
+	sym_var_item->is_const = is_const;
 
 	if (type == VAR_STRING) {
 		// name, data, default data
@@ -629,6 +628,10 @@ void sym_var_item_set(sym_var_item_t *sym_var_item, variable_t data) {
 		error(99, "symtable.c", "sym_var_item_set", "Failed to set sym var item to new value");
 	}
 
+	if (sym_var_item->is_const) {
+		error(99, "symtable.c", "sym_var_item_set", "Cannot change value to const");
+	}
+
 	if (sym_var_item->type == VAR_STRING) {
 		sym_var_item->data.string_t = realloc(sym_var_item->data.string_t, strlen(data.string_t) + 1);
 
@@ -646,6 +649,10 @@ void sym_var_item_set(sym_var_item_t *sym_var_item, variable_t data) {
 void sym_var_item_reset(sym_var_item_t *sym_var_item) {
 	if (sym_var_item == NULL) {
 		error(99, "symtable.c", "sym_var_item_reset", "Failed to reset sym var item to default value");
+	}
+
+	if (sym_var_item->is_const) {
+		error(99, "symtable.c", "sym_var_item_set", "Cannot reset value to const");
 	}
 
 	if (sym_var_item->type == VAR_STRING) {
