@@ -35,8 +35,7 @@ typedef struct symtable symtable_t;
 // Types:
 typedef enum sym_type {
 	SYM_FUNC,
-	SYM_CONST,
-	SYM_VAR,
+	SYM_VAR_ITEM,
 	SYM_VAR_LIST
 } sym_type_t;
 
@@ -44,7 +43,8 @@ typedef enum var_type {
 	VAR_INT,
 	VAR_FLOAT64,
 	VAR_STRING,
-	VAR_BOOL
+	VAR_BOOL,
+	VAR_NIL
 } var_type_t;
 
 typedef union variable {
@@ -52,11 +52,14 @@ typedef union variable {
 	double float64_t;
 	char *string_t;
 	bool bool_t;
+	void *nil;
 } variable_t;
 
 typedef struct sym_var_item sym_var_item_t;
 struct sym_var_item {
 	char *name;
+	bool is_const;
+	bool is_global;
 	var_type_t type;
 	variable_t data;
 	variable_t default_data;
@@ -168,7 +171,7 @@ elem_t *elem_init(sym_type_t sym_type, symbol_t symbol);
 sym_func_t *sym_func_init(char *name, sym_var_list_t *params, sym_var_list_t *returns);
 
 // constructor of symbol var item
-sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data);
+sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data, bool is_const, bool is_global);
 
 // constructor of symbol var list
 sym_var_list_t *sym_var_list_init();
