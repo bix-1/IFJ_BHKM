@@ -14,6 +14,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
 
 // Define intermediate code instructions
 typedef enum instr_type {
@@ -591,6 +593,110 @@ typedef enum instr_type {
 	 *
 	 */
 	IC_SETCHAR_STR,
+
+	// ===================== CONDITION INSTRUCTIONS =====================
+
+	/*
+	 * Helper instruction. Indicates incoming condition instructions for if
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_IF_DEF,
+
+	/*
+	 * Helper instruction. Indicates start of if perform instructions
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_IF_START,
+
+	/*
+	 * Helper instruction. Indicates end of if perform instructions
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_IF_END,
+
+	/*
+	 * Helper instruction. Indicates start of else perform instructions
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_ELSE_START,
+
+	/*
+	 * Helper instruction. Indicates end of else perform instructions
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_ELSE_END,
+
+	// ===================== CYCLE INSTRUCTIONS =====================
+
+	/*
+	 * Helper instruction. Indicates incoming instructions for for cycle init
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_FOR_DEF,
+
+	/*
+	 * Helper instruction. Indicates incoming instructions for for cycle condition
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_FOR_COND,
+
+	/*
+	 * Helper instruction. Indicates incoming instructions for for cycle post iteration expression
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_FOR_STEP,
+
+	/*
+	 * Helper instruction. Indicates start of incoming instructions for for cycle body
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_FOR_BODY_START,
+
+	/*
+	 * Helper instruction. Indicates end of incoming instructions for for cycle body
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_FOR_BODY_END,
 
 } instr_type_t;
 
