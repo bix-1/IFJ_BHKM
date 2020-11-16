@@ -293,6 +293,15 @@ int get_next_token(tToken *token) {
                     } else if (str_cmp_cons(&attr, "string") == 0) {
                         token->token_type = T_STRING;
 
+                    } else if (str_cmp_cons(&attr, "bool") == 0) {
+                        token->token_type = T_BOOL;
+
+                    } else if (str_cmp_cons(&attr, "true") == 0) {
+                        token->token_type = T_TRUE;
+
+                    } else if (str_cmp_cons(&attr, "false") == 0) {
+                        token->token_type = T_FALSE;
+
                     } else {
                         str_init(&token->attr.str_lit);
                         token->token_type= T_IDENTIFIER;

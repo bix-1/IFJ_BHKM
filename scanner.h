@@ -85,6 +85,13 @@ FILE *source;
 #define T_AND 137 // &&
 #define T_OR 138 // ||
 
+// bool data type
+#define T_BOOL 139 // bool
+
+// bool data value
+#define T_TRUE 140 // true
+#define T_FALSE 141 // false
+
 /*
  * Automatons states.
  */
