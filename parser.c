@@ -459,7 +459,7 @@ void func_def_ret() {
     match(T_RIGHT_BRACE);
   }
   else {
-    ret_list();
+    ret_list_def();
     match(T_R_BRACKET);
     match(T_LEFT_BRACE);
     match(T_EOL);
@@ -468,7 +468,7 @@ void func_def_ret() {
   }
 }
 
-void ret_list() {
+void ret_list_def() {
   // adding parameters of func
   last_elem = last_func;
   type();
