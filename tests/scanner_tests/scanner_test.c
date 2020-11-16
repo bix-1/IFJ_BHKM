@@ -458,4 +458,28 @@ int main() {
     get_next_token(&tok);
     print_lex(&tok);
     fclose(f);
+
+    printf("[TEST52]\n");
+    printf("Test pre true 140, value : 140 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("tests/scanner_tests/true");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST53]\n");
+    printf("Test pre and 141, value : 141 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("tests/scanner_tests/false");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
+
+    printf("[TEST54]\n");
+    printf("Test pre or 139, value : 139 \n");
+    printf("~~~~~~~~~~~~~~~~~~~~\n");
+    f_open("tests/scanner_tests/bool");
+    get_next_token(&tok);
+    print_lex(&tok);
+    fclose(f);
 }
