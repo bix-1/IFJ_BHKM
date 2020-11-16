@@ -70,6 +70,8 @@ void cycle();
 void for_def();
 void for_move();
 void return_();
+void return_list();
+void next_ret();
 void func_call();
 void func_args();
 void expr_list();

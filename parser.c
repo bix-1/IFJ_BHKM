@@ -656,8 +656,29 @@ void for_move() {
 
 void return_() {
   match(T_RETURN);
-  expr_list();
+  return_list();
 }
+
+void return_list() {
+  if (next.token_type == T_EOL) return;
+
+  // TODO add type checking
+  expr_parser();
+  next_ret();
+}
+
+void next_ret() {
+  eps = true;
+  match(T_COMMA);
+  if (eps) {
+    eps = false;
+    return;
+  }
+  // TODO add type checking
+  expr_parser();
+  next_ret();
+}
+
 
 void func_call() {
   match(T_FUNC_ID);
