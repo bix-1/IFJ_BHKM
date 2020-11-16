@@ -439,11 +439,8 @@ void sym_var_item_free(sym_var_item_t *sym_var_item) {
 	}
 
 	if (sym_var_item->type == VAR_STRING) {
-		if (sym_var_item->data.string_t == NULL) {
-			error(99, "symtable.c", "sym_var_item_free", "Failed to free symbol var item");
-		}
-
-		free(sym_var_item->data.string_t);
+		if (sym_var_item->data.string_t != NULL)
+			free(sym_var_item->data.string_t);
 	}
 
 	free(sym_var_item);
@@ -529,6 +526,7 @@ void sym_var_list_add(sym_var_list_t *sym_var_list, sym_var_item_t *sym_var_item
 
 	if (sym_var_list->first == NULL) {
 		sym_var_list->first = sym_var_item;
+		sym_var_list->active = sym_var_item;
 		sym_var_item->next = NULL;
 	}
 	else {
