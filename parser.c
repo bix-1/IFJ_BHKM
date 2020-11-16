@@ -45,6 +45,7 @@ extern symtable_t * symtable;
 tToken next;
 
 /*_____________SYMTABLE_HANDLING____________*/
+elem_t * last_func;
 elem_t * last_elem;
 
 
@@ -157,6 +158,10 @@ void match(int term) {
       if (symtable_iterator_valid(symtable_find(symtable, to_string(&next)))) {
         if (def && !eps)
           error(3, "parser", "match", "Redefinition of function \"%s\"", to_string(&next));
+        if (!def) {
+          // TODO check for type
+          printf("func call: %s\n", to_string(&next));
+        }
         else return;
       }
       else { // first definition
@@ -165,17 +170,14 @@ void match(int term) {
           error(3, "parser", "match", "Function \"%s\" undefined", to_string(&next));
         }
 
-        sym_func_t * func_sym = malloc(sizeof(sym_func_t));
-        if (func_sym == NULL) error(99, "parser", "", "Memory allocation failed");;
-        // init function symbol
-        func_sym->name = to_string(&next);
-        func_sym->params = NULL; func_sym->returns = NULL;
-        // add to symtable
+        // create func
+        sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
         symbol_t func = {.sym_func = func_sym};
         elem_t * func_data = elem_init(SYM_FUNC, func);
+        // add to symtable
         symtable_iterator_t tmp =
           symtable_insert(symtable, to_string(&next), func_data);
-        last_elem = symtable_iterator_get_value(tmp);
+        last_func = symtable_iterator_get_value(tmp);
         printf("Added ---%s\n", to_string(&next));
       }
       break;
@@ -193,38 +195,41 @@ void match(int term) {
       // construct variable's contextual ID
       char * id = malloc(
         sizeof(char) *  // prefix + : + name + \0
-        (strlen(*(last_elem->key)) + strlen(to_string(&next)) + 2)
+        (strlen(*(last_func->key)) + strlen(to_string(&next)) + 2)
       );
       if (id == NULL) error(99, "parser", "", "Memory allocation failed");;
       id[0] = '\0';
-      strcat(id, *(last_elem->key)); // prefix
+      strcat(id, *(last_func->key)); // prefix
       strcat(id, ":");
       strcat(id, to_string(&next));
+
       // non-contextual ID no longer needed
-      token_cleanup();
+      // token_cleanup();   // TODO move
 
       // check for duplicate
       if (symtable_iterator_valid(symtable_find(symtable, id))) {
         if (def && !eps)
           error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
+        if (!def) {
+          // TODO
+          printf("var call: %s\n", id);
+        }
         else return;
       }
       else { // first definition
         if (!def) {
           if (eps) return;
-          error(3, "parser", "match", "Function \"%s\" undefined", to_string(&next));
+          error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
         }
 
-        sym_var_item_t * var_sym = malloc(sizeof(sym_var_item_t));
-        if (var_sym == NULL) error(99, "parser", "", "Memory allocation failed");;
-        // init function symbol
-        var_sym->name = id;
-        var_sym->next = NULL;
-        // add to symtable
+        // create var
+        sym_var_item_t * var_sym = sym_var_item_init(id);
         symbol_t var = {.sym_var_item = var_sym};
-        elem_t * var_data = elem_init(SYM_VAR, var);
+        elem_t * var_data = elem_init(SYM_VAR_ITEM, var);
+        // add to symtable
         symtable_insert(symtable, id, var_data);
-        printf("Added ---\t%s\n", id);
+        last_elem = var_data;
+        printf("\t---%s\n", id);
       }
 
       break;
@@ -440,8 +445,41 @@ void func_def_ret() {
 }
 
 void ret_list() {
+  // adding parameters of func
+  last_elem = last_func;
   type();
   next_ret();
+
+  // TODO delete
+  sym_var_list_t * rets = last_elem->symbol.sym_func->returns;
+  if (rets == NULL) return;
+  printf("\t\tRETURNS:\n");
+  printf("\t\t---");
+  for (
+    sym_var_item_t * tmp = sym_var_list_get_active(rets);
+    tmp != NULL;
+    tmp = sym_var_list_next(rets)
+  ) {
+    switch (tmp->type) {
+      case VAR_INT:
+        printf("INT, ");
+        break;
+      case VAR_FLOAT64:
+        printf("FLOAT64, ");
+        break;
+      case VAR_STRING:
+        printf("STRING, ");
+        break;
+      case VAR_BOOL:
+        printf("BOOL, ");
+        break;
+      default:
+        printf("Invalid return type");
+        exit(1);
+        break;
+    }
+  }
+  printf("\n");
 }
 
 void next_ret() {
@@ -640,26 +678,51 @@ void next_expr() {
 }
 
 void type() {
+  if (last_elem == NULL)
+    error(99, "parser", "type", "Missing variable to assign type to");
+
+  var_type_t type;
   switch (next.token_type) {
     case T_INT:
-      // printf("Matched int\n");
+      type = VAR_INT;
       break;
-
     case T_FLOAT64:
-      // printf("Matched float\n");
+      type = VAR_FLOAT64;
       break;
-
     case T_STRING:
-      // printf("Matched string\n");
+      type = VAR_STRING;
       break;
-
+    // TODO add after implementation in scanner
     // case T_BOOL:
-    //   // printf("Matched bool\n");
+    //   type = VAR_BOOL;
     //   break;
-
     default:
       error(1, "parser", "type", "Invalid variable type");
       break;
   }
+
+  if (last_elem->sym_type == SYM_VAR_ITEM) {
+    sym_var_item_set_type(last_elem->symbol.sym_var_item, type);
+    if (type == VAR_STRING)
+      last_elem->symbol.sym_var_item->data.string_t = NULL;
+  }
+  else if (last_elem->sym_type == SYM_FUNC) {
+    // get returns
+    sym_var_list_t ** rets = &(last_elem->symbol.sym_func->returns);
+    if (rets == NULL)
+      error(99, "parser", "type", "Failed to access function's returns");
+    if (*rets == NULL)  // param list empty
+      *rets = sym_var_list_init();
+
+    //create item
+    sym_var_item_t * new = sym_var_item_init(NULL);
+    sym_var_item_set_type(new, type);
+    if (type == VAR_STRING)
+      new->data.string_t = NULL;
+    // add to return list
+    sym_var_list_add(*rets, new);
+  }
+  else error(99, "parser", "type", "Unknown element type");
+
   get_next_token(&next);
 }
