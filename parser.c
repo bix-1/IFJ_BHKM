@@ -36,6 +36,7 @@ TODO:
 #include "error.h"    // error calls handling
 #include "scanner.h"  // get_next_token
 #include "symtable.h" // symbol table for codegenerator
+#include "codegen.h"  // instruction types
 #include "ll.h"       // list of instructions
 #include "str.h"      // contextual IDs
 
@@ -179,6 +180,7 @@ void match(int term) {
           symtable_insert(symtable, to_string(&next), func_data);
         last_func = symtable_iterator_get_value(tmp);
         printf("Added ---%s\n", to_string(&next));
+        // token_cleanup();
       }
       break;
 
@@ -188,7 +190,7 @@ void match(int term) {
           def = false;
           return;
         }
-        next.token_type = T_VAR_ID;
+        printf("got here\n");
         goto default_err;
       }
 
@@ -203,11 +205,9 @@ void match(int term) {
       strcat(id, ":");
       strcat(id, to_string(&next));
 
-      // non-contextual ID no longer needed
-      // token_cleanup();   // TODO move
-
       // check for duplicate
       if (symtable_iterator_valid(symtable_find(symtable, id))) {
+        free(id); // no longer needed
         if (def && !eps)
           error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
         if (!def) {
@@ -218,17 +218,20 @@ void match(int term) {
       }
       else { // first definition
         if (!def) {
+          free(id);
           if (eps) return;
           error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
         }
 
         // create var
-        sym_var_item_t * var_sym = sym_var_item_init(id);
-        symbol_t var = {.sym_var_item = var_sym};
-        elem_t * var_data = elem_init(SYM_VAR_ITEM, var);
+        sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
+        symbol_t var_sym = {.sym_var_item = var_item};
+        elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
         // add to symtable
-        symtable_insert(symtable, id, var_data);
-        last_elem = var_data;
+        symtable_insert(symtable, id, var);
+        // free(id);
+        last_elem = var;
+
         printf("\t---%s\n", id);
       }
 
@@ -239,7 +242,7 @@ void match(int term) {
         if (eps) return;
         default_err:
         error(
-          2, "parser.c", "match",
+          2, "parser", "match",
           "Expected: '%s' -- Got: '%s'", term, next.token_type
         );
       }
@@ -268,6 +271,28 @@ void parse() {
 
   // parsing
   program();
+
+
+  // TODO delete
+  // debugging instructions
+  printf("\n\n\tFUNCTIONS:\n");
+  for (
+    instr_t * tmp = list_get_active(list);
+    tmp != NULL;
+    tmp = list_get_next(list)
+  ) {
+    switch (instr_get_type(tmp)) {
+      case IC_DEF_FUN:
+        printf("IC_DEF_FUN");
+      break;
+
+      default:
+        printf("type not implemented");
+      break;
+    }
+    printf("\n");
+  }
+
   // termination
   list_destroy(&list);
   symtable_free(symtable);
@@ -289,7 +314,7 @@ void program() {
   // parameters
   match(T_L_BRACKET);
   if (next.token_type != T_R_BRACKET)
-    error(6, "parser", "program", "Function main cannot take parameters");
+    error(6, "parser", "program", "Main cannot take parameters");
   match(T_R_BRACKET);
 
   // returns
@@ -299,7 +324,7 @@ void program() {
     if (next.token_type != T_R_BRACKET)
       error(
         6, "parser", "program",
-        "Function main cannot have return types"
+        "Main cannot have return types"
       );
     match(T_R_BRACKET);
   }
@@ -371,25 +396,20 @@ void func_def() {
   def = true; eps = false;
   match(T_FUNC_ID);
 
-  // TODO delete
-  // for debugging purposes
-  // char s[50] = "";
-  // strcat(s, to_string(&next));
-
   match(T_L_BRACKET);
   param_list();
   match(T_R_BRACKET);
   func_def_type();
   match(T_EOL);
-
-  // for debugging purposes TODO delete
-  // printf("---Func %s matched\n", s);
 }
 
 void param_list() {
   def = true; eps = true;
   match(T_VAR_ID);
-  if (eps) return;
+  if (eps) {
+    eps = false;
+    return;
+  }
   type();
   next_param();
 }
@@ -418,12 +438,16 @@ void func_def_type() {
       break;
 
     default:
-      error(
-        99, "parser.c", "match",
-        "Wanted: '(' or '{' -- Got: %d", next.token_type
-      );
+      match(T_LEFT_BRACE);
       break;
   }
+  // each function definition ends here
+
+  // add func def instr
+  instr_t * new_func = instr_create();
+  instr_set_type(new_func, IC_DEF_FUN);
+  instr_add_dest(new_func, last_func);
+  list_add(list, new_func);
 }
 
 void func_def_ret() {
@@ -449,6 +473,8 @@ void ret_list() {
   last_elem = last_func;
   type();
   next_ret();
+
+  last_func = NULL; // terminate scope
 
   // TODO delete
   sym_var_list_t * rets = last_elem->symbol.sym_func->returns;
