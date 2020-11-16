@@ -114,7 +114,23 @@ typedef enum instr_type {
 	// ===================== FUNCTION INSTRUCTIONS =====================
 
 	/*
-	 * Function call with single/multiple values return
+	 * Function definition indicator, instructions after creates separate
+	 * block with label to jump on call
+	 *
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * Example:
+	 * fun_foo() {
+	 *  ...
+	 * }
+	 *
+	 */
+	IC_DEF_FUN,
+
+	/*
+	 * Function call with or without single/multiple values return
 	 *
 	 * elem_dest: symbol var_list
 	 * elem_1: symbol func
@@ -150,19 +166,6 @@ typedef enum instr_type {
 	 * Result: valid but data type of x must be same as declared, value of x is reassigned.
 	 *
 	 */
-	IC_DEF_FUN,
-
-	/*
-	 * Function call without assigning return value/values
-	 *
-	 * elem_dest: symbol func
-	 * elem_1: NULL
-	 * elem_2: NULL
-	 *
-	 * Example:
-	 * some_fun()
-	 *
-	 */
 	IC_CALL_FUN,
 
 	/*
@@ -182,8 +185,8 @@ typedef enum instr_type {
 	 *
 	 * This instruction only indicates end of function. Return parameters
 	 * are stored in symbol func and they will be propagated to variables from
-	 * IC_DEF_FUN in case that function has assigned at least 1 return value.
-	 * Otherwise it was call without assigning return value - IC_CALL_FUN
+	 * IC_CALL_FUN in case that function has assigned at least 1 return value.
+	 * Otherwise it was called without assigning return value.
 	 *
 	 */
 	IC_RET_FUN,
