@@ -130,13 +130,11 @@ symtable_iterator_t symtable_insert(symtable_t *t, symtable_key_t key, symtable_
 		return symtable_end(t);
 	}
 
-	iterator.ptr->key = malloc(strlen(key) + 1);
+	iterator.ptr->key = key;
 
 	if (iterator.ptr->key == NULL) {
 		return symtable_end(t);
 	}
-
-	strcpy((char *) iterator.ptr->key, key);
 
 	// Assign element key by pointer
 	data->key = (char **) &(iterator.ptr->key);
@@ -437,6 +435,9 @@ void sym_var_item_free(sym_var_item_t *sym_var_item) {
 	if (sym_var_item == NULL) {
 		error(99, "symtable.c", "sym_var_item_free", "Failed to free symbol var item");
 	}
+
+	if (sym_var_item->name != NULL)
+		free(sym_var_item->name);
 
 	if (sym_var_item->type == VAR_STRING) {
 		if (sym_var_item->data.string_t != NULL)
