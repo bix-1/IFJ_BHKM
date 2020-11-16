@@ -472,9 +472,7 @@ void ret_list() {
   // adding parameters of func
   last_elem = last_func;
   type();
-  next_ret();
-
-  last_func = NULL; // terminate scope
+  next_ret_def();
 
   // TODO delete
   sym_var_list_t * rets = last_elem->symbol.sym_func->returns;
@@ -508,12 +506,12 @@ void ret_list() {
   printf("\n");
 }
 
-void next_ret() {
+void next_ret_def() {
   eps = true;
   match(T_COMMA);
   if (eps) return;
   type();
-  next_ret();
+  next_ret_def();
 }
 
 void body() {

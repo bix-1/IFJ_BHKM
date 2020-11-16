@@ -56,7 +56,7 @@ void next_param();
 void func_def_type();
 void func_def_ret();
 void ret_list();
-void next_ret();
+void next_ret_def();
 void body();
 void command();
 void var_();
