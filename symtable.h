@@ -44,7 +44,8 @@ typedef enum var_type {
 	VAR_FLOAT64,
 	VAR_STRING,
 	VAR_BOOL,
-	VAR_NIL
+	VAR_NIL,
+	VAR_UNDEFINED
 } var_type_t;
 
 typedef union variable {
@@ -171,7 +172,7 @@ elem_t *elem_init(sym_type_t sym_type, symbol_t symbol);
 sym_func_t *sym_func_init(char *name, sym_var_list_t *params, sym_var_list_t *returns);
 
 // constructor of symbol var item
-sym_var_item_t *sym_var_item_init(char *name, var_type_t type, variable_t data, bool is_const, bool is_global);
+sym_var_item_t *sym_var_item_init(char *name);
 
 // constructor of symbol var list
 sym_var_list_t *sym_var_list_init();
@@ -184,6 +185,21 @@ void sym_var_item_free(sym_var_item_t *sym_var_item);
 
 // destructor of symbol var list
 void sym_var_list_free(sym_var_list_t *sym_var_list);
+
+// setter for symbol var variable type
+void sym_var_item_set_type(sym_var_item_t *sym_var_item, var_type_t type);
+
+// setter for symbol var variable data
+void sym_var_item_set_data(sym_var_item_t *sym_var_item, variable_t data);
+
+// setter for symbol var is const
+void sym_var_item_set_const(sym_var_item_t *sym_var_item, bool is_const);
+
+// setter for symbol var is global
+void sym_var_item_set_global(sym_var_item_t *sym_var_item, bool is_global);
+
+// setter for symbol var next item
+void sym_var_item_set_next(sym_var_item_t *sym_var_item, sym_var_item_t *next);
 
 // get element key
 symtable_key_t elem_key(elem_t *elem);
@@ -207,7 +223,7 @@ sym_var_item_t *sym_var_list_get_active(sym_var_list_t *sym_var_list);
 void sym_var_list_clear(sym_var_list_t *sym_var_list);
 
 // set item variable value, cant change type
-void sym_var_item_set(sym_var_item_t *sym_var_item, variable_t data);
+void sym_var_item_change_data(sym_var_item_t *sym_var_item, variable_t data);
 
 // reset data value to default data
 void sym_var_item_reset(sym_var_item_t *sym_var_item);

@@ -123,6 +123,12 @@ void def_var(instr_t instr) {
 				case VAR_NIL:
 					fprintf(OUTPUT, "MOVE %s@%s nil@nil", frame_dest, sym_dest->name);
 					break;
+				case VAR_UNDEFINED:
+					error(99, "codegen.c", "def_var", "Undefined data type");
+					break;
+				default:
+					error(99, "codegen.c", "def_var", "Wrong data type");
+					break;
 			}
 		}
 		else {
