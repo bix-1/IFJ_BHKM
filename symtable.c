@@ -137,7 +137,8 @@ symtable_iterator_t symtable_insert(symtable_t *t, symtable_key_t key, symtable_
 	}
 
 	// Assign element key by pointer
-	data->key = (char **) &(iterator.ptr->key);
+	data->key = malloc(sizeof(char**));
+	*(data->key) = (char *) (iterator.ptr->key);
 
 	symtable_iterator_set_value(iterator, data);
 

@@ -119,7 +119,12 @@ void match(int term) {
         if (eps) return;
         error(3, "parser", "match", "Missing main function");
       }
-      token_cleanup();
+      elem_t * main_elem = malloc(sizeof(elem_t));
+      if (main_elem == NULL) error(99, "parser", "", "Memory allocation failed");
+      main_elem->key = malloc(sizeof(char**));
+    	*(main_elem->key) = to_string(&next);
+
+      last_func = main_elem;
       break;
 
     case T_FUNC:
@@ -206,13 +211,14 @@ void match(int term) {
       strcat(id, to_string(&next));
 
       // check for duplicate
-      if (symtable_iterator_valid(symtable_find(symtable, id))) {
+      symtable_iterator_t it = symtable_find(symtable, id);
+      if (symtable_iterator_valid(it)) {
         free(id); // no longer needed
         if (def && !eps)
           error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
         if (!def) {
-          // TODO
-          printf("var call: %s\n", id);
+          last_elem = symtable_iterator_get_value(it);
+          printf("var call: %s\n", *(last_elem->key));
         }
         else return;
       }
@@ -222,14 +228,12 @@ void match(int term) {
           if (eps) return;
           error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
         }
-
         // create var
         sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
         symbol_t var_sym = {.sym_var_item = var_item};
         elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
         // add to symtable
         symtable_insert(symtable, id, var);
-        // free(id);
         last_elem = var;
 
         printf("\t---%s\n", id);
@@ -328,9 +332,11 @@ void program() {
       );
     match(T_R_BRACKET);
   }
+  eps = false;
 
   match(T_LEFT_BRACE);
   match(T_EOL);
+  printf("---MAIN\n"); // TODO delete
   body();
   match(T_RIGHT_BRACE);
   match(T_EOL);
@@ -528,9 +534,9 @@ void body() {
 void command() {
   switch (next.token_type) {
     case T_IDENTIFIER:  // var_ OR func_call
-      // def = false; eps = true; // TODO
+      def = false; eps = true;
       match(T_FUNC_ID);
-      if (!def) func_call();
+      if (!eps) func_call();
       else {
         eps = false;
         var_();
@@ -559,21 +565,27 @@ void command() {
 }
 
 void var_() {
-  printf("var_ called\n");
-  eps = true;
+  def = true; eps = true;
   match(T_VAR_ID);
-  if (next.token_type == T_DEF_IDENT) var_def();
-  else var_move();
+  if (!eps) var_def();
+  else {
+    def = false; eps = false;
+    match(T_VAR_ID);
+    var_move();
+  }
 }
 
 void var_def() {
+  if (next.token_type == T_ASSIGNMENT)
+    error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
   match(T_DEF_IDENT);
-  // printf("matched := \n");
   parse_expression();
 }
 
 void var_move() {
   next_id();
+  if (next.token_type == T_DEF_IDENT)
+    error(3, "parser", "var_move", "Redefinition of variable \"%s\"", to_string(&next));
   match(T_ASSIGNMENT);
   // printf("matched = \n");
   expr_list();
@@ -586,6 +598,7 @@ void next_id() {
     eps = false;
     return;
   }
+  def = false; eps = false;
   match(T_VAR_ID);
   next_id();
 }
@@ -679,7 +692,6 @@ void next_ret() {
   next_ret();
 }
 
-
 void func_call() {
   match(T_FUNC_ID);
   match(T_L_BRACKET);
@@ -737,10 +749,9 @@ void type() {
     case T_STRING:
       type = VAR_STRING;
       break;
-    // TODO add after implementation in scanner
-    // case T_BOOL:
-    //   type = VAR_BOOL;
-    //   break;
+    case T_BOOL:
+      type = VAR_BOOL;
+      break;
     default:
       error(1, "parser", "type", "Invalid variable type");
       break;
