@@ -663,7 +663,7 @@ void return_list() {
   if (next.token_type == T_EOL) return;
 
   // TODO add type checking
-  expr_parser();
+  parse_expression();
   next_ret();
 }
 
@@ -675,7 +675,7 @@ void next_ret() {
     return;
   }
   // TODO add type checking
-  expr_parser();
+  parse_expression();
   next_ret();
 }
 
