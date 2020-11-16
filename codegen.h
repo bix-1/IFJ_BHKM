@@ -191,6 +191,17 @@ typedef enum instr_type {
 	 */
 	IC_RET_FUN,
 
+	/*
+	 * Helper instruction. Indicates end of function definition
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 *
+	 */
+	IC_END_FUN,
+
 	// ===================== ARITHMETIC INSTRUCTIONS =====================
 
 	/*
