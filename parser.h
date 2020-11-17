@@ -46,6 +46,7 @@ void skip_empty();
 
 // additional instructions-related functions
 void instr_add_func_def();
+void instr_add_func_end();
 void instr_add_var_decl();
 void instr_add_var_def();
 

@@ -306,8 +306,7 @@ void parse() {
   ) {
     switch (instr_get_type(tmp)) {
       case IC_DEF_FUN:
-        printf("DEF_FUN");
-        printf("\t\t%s\n", *(instr_get_dest(tmp)->key));
+        printf("DEF_FUN\t  %s\n", *(instr_get_dest(tmp)->key));
         sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
         if (params != NULL) {
           printf("\t\t__PARAMS:\n");
@@ -330,16 +329,16 @@ void parse() {
             printf("\t\t");
             switch (tmp->type) {
               case VAR_INT:
-                printf("INT, ");
+                printf("INT");
                 break;
               case VAR_FLOAT64:
-                printf("FLOAT64, ");
+                printf("FLOAT64");
                 break;
               case VAR_STRING:
-                printf("STRING, ");
+                printf("STRING");
                 break;
               case VAR_BOOL:
-                printf("BOOL, ");
+                printf("BOOL");
                 break;
               default:
                 printf("Invalid return type");
@@ -351,7 +350,8 @@ void parse() {
         }
       break;
       case IC_END_FUN:
-        printf("_________________________END_FUN\n");
+        printf("_________________________END_FUN: ");
+        printf("%s\n", *(instr_get_dest(tmp)->key));
       break;
       case IC_DECL_VAR:
         printf("    DECL_VAR");
@@ -383,6 +383,14 @@ void instr_add_func_def() {
   instr_set_type(new_func, IC_DEF_FUN);
   instr_add_dest(new_func, last_func);
   list_add(list, new_func);
+}
+
+void instr_add_func_end() {
+  instr_t * end_func = instr_create();
+  instr_set_type(end_func, IC_END_FUN);
+  instr_add_dest(end_func, last_func);
+  list_add(list, end_func);
+  last_elem = NULL; // not in func def header
 }
 
 void instr_add_var_decl() {
@@ -457,11 +465,7 @@ void program() {
   match(T_RIGHT_BRACE);
   match(T_EOL);
   // end of main func
-  instr_t * end_func = instr_create();
-  instr_set_type(end_func, IC_END_FUN);
-  list_add(list, end_func);
-  last_elem = NULL;
-
+  instr_add_func_end();
 
   // user functions after main
   func_list();
@@ -501,10 +505,7 @@ void func_list_pre() {
   func_def_type();
   match(T_EOL);
   // end func def
-  instr_t * end_func = instr_create();
-  instr_set_type(end_func, IC_END_FUN);
-  list_add(list, end_func);
-  last_elem = NULL;
+  instr_add_func_end();
 
   match(T_FUNC);
   // check for next func
@@ -536,10 +537,7 @@ void func_def() {
   func_def_type();
   match(T_EOL);
   // end func def
-  instr_t * end_func = instr_create();
-  instr_set_type(end_func, IC_END_FUN);
-  list_add(list, end_func);
-  last_elem = NULL;
+  instr_add_func_end();
 }
 
 void param_list() {
