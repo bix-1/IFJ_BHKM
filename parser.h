@@ -42,8 +42,15 @@ void parse();
 void match(int term);
 
 // skip all empty spaces
-// TODO & comments
 void skip_empty();
+
+// additional instructions-related functions
+void instr_add_func_def();
+void instr_add_var_decl();
+void instr_add_var_def();
+
+// add parameter (last_elem) to last_func
+void func_add_param();
 
 // LL grammar nonterminals
 void program();

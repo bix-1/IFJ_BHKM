@@ -119,12 +119,22 @@ void match(int term) {
         if (eps) return;
         error(3, "parser", "match", "Missing main function");
       }
-      elem_t * main_elem = malloc(sizeof(elem_t));
-      if (main_elem == NULL) error(99, "parser", "", "Memory allocation failed");
-      main_elem->key = malloc(sizeof(char**));
-    	*(main_elem->key) = to_string(&next);
 
-      last_func = main_elem;
+      // not changing scope -- in prolog: (package main)
+      if (!def) {
+        token_cleanup();
+        break;
+      }
+
+      // create func
+      sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
+      symbol_t func = {.sym_func = func_sym};
+      elem_t * func_data = elem_init(SYM_FUNC, func);
+      // add to symtable
+      symtable_iterator_t tmp =
+        symtable_insert(symtable, to_string(&next), func_data);
+      last_func = symtable_iterator_get_value(tmp);
+
       break;
 
     case T_FUNC:
@@ -185,7 +195,6 @@ void match(int term) {
           symtable_insert(symtable, to_string(&next), func_data);
         last_func = symtable_iterator_get_value(tmp);
         printf("Added ---%s\n", to_string(&next));
-        // token_cleanup();
       }
       break;
 
@@ -218,7 +227,8 @@ void match(int term) {
           error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
         if (!def) {
           last_elem = symtable_iterator_get_value(it);
-          printf("var call: %s\n", *(last_elem->key));
+          instr_add_var_def();
+          token_cleanup();
         }
         else return;
       }
@@ -234,11 +244,21 @@ void match(int term) {
         elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
         // add to symtable
         symtable_insert(symtable, id, var);
-        last_elem = var;
+
+        // check if var is parameter
+        if (last_elem != NULL && last_elem->sym_type == SYM_FUNC) {
+          last_elem = var;
+          func_add_param();
+        } else {
+          last_elem = var;
+          instr_add_var_decl();
+        }
+
+        // last_elem = var;
+        // instr_add_var_decl();
 
         printf("\t---%s\n", id);
       }
-
       break;
 
     default:
@@ -287,11 +307,38 @@ void parse() {
   ) {
     switch (instr_get_type(tmp)) {
       case IC_DEF_FUN:
-        printf("IC_DEF_FUN");
+        printf("DEF_FUN");
+        printf("\t\t%s\n", *(instr_get_dest(tmp)->key));
+        sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
+        if (params == NULL) break;
+        for (
+          sym_var_item_t * tmp = params->first;
+          tmp != NULL;
+          tmp = sym_var_list_next(params)
+        ) {
+          printf(
+            "\t\t  %s\n",
+            tmp->name
+          );
+        }
+      break;
+      case IC_END_FUN:
+        printf("_________________________END_FUN\n");
+      break;
+      case IC_DECL_VAR:
+        printf("    DECL_VAR");
+        printf("\t  %s", *(instr_get_dest(tmp)->key));
+      break;
+      case IC_DEF_VAR:
+        printf("__DEF_VAR");
+        printf("\t    %s", *(instr_get_dest(tmp)->key));
+        // TODO remove after expr_parser's return handling
+        if (instr_get_elem1(tmp) != NULL)
+          printf("\t<--    %s", *(instr_get_elem1(tmp)->key));
       break;
 
       default:
-        printf("type not implemented");
+        printf("_instr type not implemented_");
       break;
     }
     printf("\n");
@@ -302,25 +349,65 @@ void parse() {
   symtable_free(symtable);
 }
 
+// additional instructions-related functions
+void instr_add_func_def() {
+  instr_t * new_func = instr_create();
+  instr_set_type(new_func, IC_DEF_FUN);
+  instr_add_dest(new_func, last_func);
+  list_add(list, new_func);
+}
+
+void instr_add_var_decl() {
+  instr_t * new_var = instr_create();
+  instr_set_type(new_var, IC_DECL_VAR);
+  instr_add_dest(new_var, last_elem);
+  list_add(list, new_var);
+}
+
+void instr_add_var_def() {
+  instr_t * var_def = instr_create();
+  instr_set_type(var_def, IC_DEF_VAR);
+  instr_add_dest(var_def, last_elem);
+  instr_add_elem1(var_def, NULL); // TODO add expr_parser's return
+  list_add(list, var_def);
+}
+
+
+
+void func_add_param() {
+  if (last_func == NULL || last_elem == NULL)
+    error(99, "parser", "type", "Failed to access function's parameters");
+
+  sym_var_list_t ** params = &(last_func->symbol.sym_func->params);
+  if (params == NULL)
+    error(99, "parser", "type", "Failed to access function's parameters");
+  if (*params == NULL)  // param list empty
+    *params = sym_var_list_init();
+
+  // add to param list
+  sym_var_list_add(*params, last_elem->symbol.sym_var_item);
+}
+
 // functions representing LL grammar nonterminals
 
 void program() {
   prolog();
-  // printf("Prolog matched\n");
 
   if (next.token_type == T_EOF)
     error(3, "parser", "program", "Missing function main");
 
+  // user functions before main
   match(T_FUNC);
   func_list_pre();
 
+  // start of main definition
+  def = true;
   match(T_MAIN);
   // parameters
   match(T_L_BRACKET);
   if (next.token_type != T_R_BRACKET)
     error(6, "parser", "program", "Main cannot take parameters");
   match(T_R_BRACKET);
-
   // returns
   eps = true;
   match(T_L_BRACKET);
@@ -333,27 +420,31 @@ void program() {
     match(T_R_BRACKET);
   }
   eps = false;
-
+  // end of func def
   match(T_LEFT_BRACE);
   match(T_EOL);
+  instr_add_func_def();
   printf("---MAIN\n"); // TODO delete
+  // main func body
   body();
   match(T_RIGHT_BRACE);
   match(T_EOL);
+  // end of main func
+  instr_t * end_func = instr_create();
+  instr_set_type(end_func, IC_END_FUN);
+  list_add(list, end_func);
 
-  // for debugging purposes TODO delete
-  // printf("Main matched\n");
 
+  // user functions after main
   func_list();
   skip_empty();
   match(T_EOF);
-  // printf("Program matched\n");
 }
 
 void prolog() {
   // skip all empty space to T_PACKAGE
   skip_empty();
-
+  // match _prolog main_
   match(T_PACKAGE);
   skip_empty();
   if (next.token_type != T_IDENTIFIER || strcmp(to_string(&next), "main"))
@@ -361,6 +452,7 @@ void prolog() {
       2, "parser.c", "match",
       "Expected: '%s' -- Got: '%s'", T_MAIN, next.token_type
     );
+  def = false;
   match(T_MAIN);
   match(T_EOL);
 }
@@ -372,17 +464,21 @@ void func_list_pre() {
     eps = false;
     return;
   }
-  // for debugging purposes TODO delete
-  // char s[50] = "";
-  // strcat(s, to_string(&next));
+  instr_add_func_def();
+  // params
   match(T_L_BRACKET);
   param_list();
   match(T_R_BRACKET);
+  // returns & body
   func_def_type();
   match(T_EOL);
+  // end func def
+  instr_t * end_func = instr_create();
+  instr_set_type(end_func, IC_END_FUN);
+  list_add(list, end_func);
+
   match(T_FUNC);
-  // for debugging purposes TODO delete
-  // printf("---Func %s matched\n", s);
+  // check for next func
   func_list_pre();
 }
 
@@ -393,6 +489,7 @@ void func_list() {
     eps = false;
     return;
   }
+  // check for next func
   func_list();
 }
 
@@ -401,16 +498,19 @@ void func_def() {
   if (eps) return; // from func_list
   def = true; eps = false;
   match(T_FUNC_ID);
+  instr_add_func_def();
 
   match(T_L_BRACKET);
   param_list();
   match(T_R_BRACKET);
+
   func_def_type();
   match(T_EOL);
 }
 
 void param_list() {
   def = true; eps = true;
+  last_elem = last_func;
   match(T_VAR_ID);
   if (eps) {
     eps = false;
@@ -424,6 +524,7 @@ void next_param() {
   eps = true;
   match(T_COMMA);
   if (eps) return;
+  last_elem = last_func;
   match(T_VAR_ID);
   type();
   next_param();
@@ -449,11 +550,6 @@ void func_def_type() {
   }
   // each function definition ends here
 
-  // add func def instr
-  instr_t * new_func = instr_create();
-  instr_set_type(new_func, IC_DEF_FUN);
-  instr_add_dest(new_func, last_func);
-  list_add(list, new_func);
 }
 
 void func_def_ret() {
@@ -475,13 +571,13 @@ void func_def_ret() {
 }
 
 void ret_list_def() {
-  // adding parameters of func
+  // adding rets of func
   last_elem = last_func;
   type();
   next_ret_def();
 
   // TODO delete
-  sym_var_list_t * rets = last_elem->symbol.sym_func->returns;
+  sym_var_list_t * rets = last_func->symbol.sym_func->returns;
   if (rets == NULL) return;
   printf("\t\tRETURNS:\n");
   printf("\t\t---");
@@ -767,7 +863,7 @@ void type() {
     sym_var_list_t ** rets = &(last_elem->symbol.sym_func->returns);
     if (rets == NULL)
       error(99, "parser", "type", "Failed to access function's returns");
-    if (*rets == NULL)  // param list empty
+    if (*rets == NULL)  // ret list empty
       *rets = sym_var_list_init();
 
     //create item
@@ -777,6 +873,7 @@ void type() {
       new->data.string_t = NULL;
     // add to return list
     sym_var_list_add(*rets, new);
+    last_elem = NULL;
   }
   else error(99, "parser", "type", "Unknown element type");
 
