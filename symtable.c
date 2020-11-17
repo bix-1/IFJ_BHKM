@@ -138,7 +138,7 @@ symtable_iterator_t symtable_insert(symtable_t *t, symtable_key_t key, symtable_
 
 	// Assign element key by pointer
 	data->key = malloc(sizeof(char**));
-	*(data->key) = (char *) (iterator.ptr->key);
+	*(data->key) = (char *)key;
 
 	symtable_iterator_set_value(iterator, data);
 
@@ -337,6 +337,8 @@ void symtable_clear(symtable_t *t) {
 					break;
 			}
 
+			// Free element's key
+			free(t->item[i]->data->key);
 			// Free element
 			free(t->item[i]->data);
 
@@ -422,12 +424,13 @@ void sym_func_free(sym_func_t *sym_func) {
 	sym_var_list_t *sym_func_returns = sym_func->returns;
 
 	if (sym_func_params != NULL) {
-		sym_var_list_free(sym_func_params);
+		free(sym_func_params);
 	}
 
 	if (sym_func_returns != NULL) {
 		sym_var_list_free(sym_func_returns);
 	}
+
 
 	free(sym_func);
 }
