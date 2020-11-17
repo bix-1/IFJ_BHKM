@@ -64,6 +64,7 @@ struct sym_var_item {
 	var_type_t type;
 	variable_t data;
 	variable_t default_data;
+	sym_var_item_t *prev;
 	sym_var_item_t *next;
 };
 
@@ -215,6 +216,9 @@ void sym_var_list_pop(sym_var_list_t *sym_var_list);
 
 // get item after active and change it to new active
 sym_var_item_t *sym_var_list_next(sym_var_list_t *sym_var_list);
+
+// get item before active and change it to new active, goes from end. Usage in stack
+sym_var_item_t *sym_var_list_prev(sym_var_list_t *sym_var_list);
 
 // get active item
 sym_var_item_t *sym_var_list_get_active(sym_var_list_t *sym_var_list);

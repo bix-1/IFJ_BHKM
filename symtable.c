@@ -396,6 +396,7 @@ sym_var_item_t *sym_var_item_init(char *name) {
 	sym_var_item->type = VAR_UNDEFINED;
 	sym_var_item->is_const = false;
 	sym_var_item->is_global = false;
+	sym_var_item->prev = NULL;
 	sym_var_item->next = NULL;
 
 	return sym_var_item;
@@ -514,6 +515,14 @@ void sym_var_item_set_next(sym_var_item_t *sym_var_item, sym_var_item_t *next) {
 	sym_var_item->next = next;
 }
 
+void sym_var_item_set_prev(sym_var_item_t *sym_var_item, sym_var_item_t *prev) {
+	if (sym_var_item == NULL) {
+		error(99, "symtable.c", "sym_var_item_set_prev", "Failed to set prev for var item");
+	}
+
+	sym_var_item->prev = prev;
+}
+
 symtable_key_t elem_key(elem_t *elem) {
 	if (elem == NULL) {
 		error(99, "symtable.c", "elem_key", "Failed to get key of element");
@@ -529,7 +538,8 @@ void sym_var_list_add(sym_var_list_t *sym_var_list, sym_var_item_t *sym_var_item
 
 	if (sym_var_list->first == NULL) {
 		sym_var_list->first = sym_var_item;
-		sym_var_item->next = NULL;
+		sym_var_item_set_next(sym_var_item, NULL);
+		sym_var_item_set_prev(sym_var_item, NULL);
 	}
 	else {
 		sym_var_item_t *current = sym_var_list->first;
@@ -538,7 +548,8 @@ void sym_var_list_add(sym_var_list_t *sym_var_list, sym_var_item_t *sym_var_item
 			current = current->next;
 		}
 
-		current->next = sym_var_item;
+		sym_var_item_set_next(current, sym_var_item);
+		sym_var_item_set_prev(sym_var_item, current);
 	}
 }
 
@@ -599,6 +610,27 @@ sym_var_item_t *sym_var_list_next(sym_var_list_t *sym_var_list) {
 	}
 	else {
 		sym_var_list->active = sym_var_list->active->next;
+	}
+
+	return sym_var_list->active;
+}
+
+sym_var_item_t *sym_var_list_prev(sym_var_list_t *sym_var_list) {
+	if (sym_var_list == NULL) {
+		error(99, "symtable.c", "sym_var_list_inv_next", "Failed to get prev sym var item in sym list");
+	}
+
+	if (sym_var_list->active == NULL) {
+		sym_var_item_t *current = sym_var_list->first;
+
+		while (current->next != NULL) {
+			current = current->next;
+		}
+
+		sym_var_list->active = current;
+	}
+	else {
+		sym_var_list->active = sym_var_list->active->prev;
 	}
 
 	return sym_var_list->active;
