@@ -194,6 +194,7 @@ void match(int term) {
         symtable_iterator_t tmp =
           symtable_insert(symtable, to_string(&next), func_data);
         last_func = symtable_iterator_get_value(tmp);
+        last_elem = last_func;
         printf("Added ---%s\n", to_string(&next));
       }
       break;
@@ -245,19 +246,16 @@ void match(int term) {
         // add to symtable
         symtable_insert(symtable, id, var);
 
-        // check if var is parameter
-        if (last_elem != NULL && last_elem->sym_type == SYM_FUNC) {
+        printf("\t---%s\n", id);
+
+        // check if var is parameter of func
+        if (last_elem != NULL && last_elem->sym_type == SYM_FUNC ) {
           last_elem = var;
           func_add_param();
         } else {
           last_elem = var;
           instr_add_var_decl();
         }
-
-        // last_elem = var;
-        // instr_add_var_decl();
-
-        printf("\t---%s\n", id);
       }
       break;
 
@@ -299,7 +297,8 @@ void parse() {
 
   // TODO delete
   // debugging instructions
-  printf("\n\n\tFUNCTIONS:\n");
+  printf("\n\n___________FUNCTIONS:___________\n");
+  printf("________________________________\n");
   for (
     instr_t * tmp = list_get_active(list);
     tmp != NULL;
@@ -310,16 +309,45 @@ void parse() {
         printf("DEF_FUN");
         printf("\t\t%s\n", *(instr_get_dest(tmp)->key));
         sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
-        if (params == NULL) break;
-        for (
-          sym_var_item_t * tmp = params->first;
-          tmp != NULL;
-          tmp = sym_var_list_next(params)
-        ) {
-          printf(
-            "\t\t  %s\n",
-            tmp->name
-          );
+        if (params != NULL) {
+          printf("\t\t__PARAMS:\n");
+          for (
+            sym_var_item_t * tmp = params->first;
+            tmp != NULL;
+            tmp = sym_var_list_next(params)
+          )
+            printf("\t\t  %s\n", tmp->name);
+        }
+
+        sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
+        if (rets != NULL) {
+          printf("\t\t__RETURNS:\n");
+          for (
+            sym_var_item_t * tmp = rets->first;
+            tmp != NULL;
+            tmp = tmp->next
+          ) {
+            printf("\t\t");
+            switch (tmp->type) {
+              case VAR_INT:
+                printf("INT, ");
+                break;
+              case VAR_FLOAT64:
+                printf("FLOAT64, ");
+                break;
+              case VAR_STRING:
+                printf("STRING, ");
+                break;
+              case VAR_BOOL:
+                printf("BOOL, ");
+                break;
+              default:
+                printf("Invalid return type");
+                exit(1);
+                break;
+            }
+            printf("\n");
+          }
         }
       break;
       case IC_END_FUN:
@@ -372,8 +400,6 @@ void instr_add_var_def() {
   list_add(list, var_def);
 }
 
-
-
 void func_add_param() {
   if (last_func == NULL || last_elem == NULL)
     error(99, "parser", "type", "Failed to access function's parameters");
@@ -385,6 +411,7 @@ void func_add_param() {
     *params = sym_var_list_init();
 
   // add to param list
+  printf("added param\n");
   sym_var_list_add(*params, last_elem->symbol.sym_var_item);
 }
 
@@ -433,6 +460,7 @@ void program() {
   instr_t * end_func = instr_create();
   instr_set_type(end_func, IC_END_FUN);
   list_add(list, end_func);
+  last_elem = NULL;
 
 
   // user functions after main
@@ -476,6 +504,7 @@ void func_list_pre() {
   instr_t * end_func = instr_create();
   instr_set_type(end_func, IC_END_FUN);
   list_add(list, end_func);
+  last_elem = NULL;
 
   match(T_FUNC);
   // check for next func
@@ -506,11 +535,15 @@ void func_def() {
 
   func_def_type();
   match(T_EOL);
+  // end func def
+  instr_t * end_func = instr_create();
+  instr_set_type(end_func, IC_END_FUN);
+  list_add(list, end_func);
+  last_elem = NULL;
 }
 
 void param_list() {
   def = true; eps = true;
-  last_elem = last_func;
   match(T_VAR_ID);
   if (eps) {
     eps = false;
@@ -524,7 +557,6 @@ void next_param() {
   eps = true;
   match(T_COMMA);
   if (eps) return;
-  last_elem = last_func;
   match(T_VAR_ID);
   type();
   next_param();
@@ -572,7 +604,6 @@ void func_def_ret() {
 
 void ret_list_def() {
   // adding rets of func
-  last_elem = last_func;
   type();
   next_ret_def();
 
@@ -832,7 +863,7 @@ void next_expr() {
 
 void type() {
   if (last_elem == NULL)
-    error(99, "parser", "type", "Missing variable to assign type to");
+    error(99, "parser", "type", "Failed to access last element");
 
   var_type_t type;
   switch (next.token_type) {
@@ -853,14 +884,18 @@ void type() {
       break;
   }
 
-  if (last_elem->sym_type == SYM_VAR_ITEM) {
+
+  if (last_elem->sym_type == SYM_VAR_ITEM) {  // assign type to last element
     sym_var_item_set_type(last_elem->symbol.sym_var_item, type);
     if (type == VAR_STRING)
       last_elem->symbol.sym_var_item->data.string_t = NULL;
   }
-  else if (last_elem->sym_type == SYM_FUNC) {
+  else { // return list of function
+    if (last_func == NULL)
+      error(99, "parser", "type", "Missing function to assign parameter to");
+
     // get returns
-    sym_var_list_t ** rets = &(last_elem->symbol.sym_func->returns);
+    sym_var_list_t ** rets = &(last_func->symbol.sym_func->returns);
     if (rets == NULL)
       error(99, "parser", "type", "Failed to access function's returns");
     if (*rets == NULL)  // ret list empty
@@ -873,9 +908,8 @@ void type() {
       new->data.string_t = NULL;
     // add to return list
     sym_var_list_add(*rets, new);
-    last_elem = NULL;
   }
-  else error(99, "parser", "type", "Unknown element type");
 
+  last_elem = last_func;
   get_next_token(&next);
 }
