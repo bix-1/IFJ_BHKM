@@ -15,7 +15,7 @@ func foo () {
 
 func main () {
   a := 0
-  b = a
+  b := a
   a,b = 0   ,     1
 }
 
