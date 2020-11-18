@@ -49,6 +49,8 @@ void instr_add_func_def();
 void instr_add_func_end();
 void instr_add_var_decl();
 void instr_add_var_def();
+void instr_var_list_append_dest();
+void instr_var_list_append_src();
 
 // add parameter (last_elem) to last_func
 void func_add_param();

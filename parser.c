@@ -228,7 +228,6 @@ void match(int term) {
           error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
         if (!def) {
           last_elem = symtable_iterator_get_value(it);
-          instr_add_var_def();
           token_cleanup();
         }
         else return;
@@ -358,11 +357,16 @@ void parse() {
         printf("\t  %s", *(instr_get_dest(tmp)->key));
       break;
       case IC_DEF_VAR:
-        printf("__DEF_VAR");
-        printf("\t    %s", *(instr_get_dest(tmp)->key));
-        // TODO remove after expr_parser's return handling
-        if (instr_get_elem1(tmp) != NULL)
-          printf("\t<--    %s", *(instr_get_elem1(tmp)->key));
+        printf("      DEF_VAR\t    ");
+        sym_var_list_t * l = instr_get_dest(tmp)->symbol.sym_var_list;
+        for (
+          sym_var_item_t * it = sym_var_list_get_active(l);
+          it != NULL;
+          it = sym_var_list_next(l)
+        ) {
+          printf("%s, ", it->name);
+        }
+        printf("  ===  ");
       break;
 
       default:
@@ -401,11 +405,33 @@ void instr_add_var_decl() {
 }
 
 void instr_add_var_def() {
+  // create var & expr lists
+  sym_var_list_t * dest_list = sym_var_list_init();
+  sym_var_list_t * src_list = sym_var_list_init();
+  symbol_t dest_sym = {.sym_var_list = dest_list};
+  symbol_t src_sym = {.sym_var_list = src_list};
+  elem_t * dest_elem = elem_init(SYM_VAR_LIST, dest_sym);
+  elem_t * src_elem = elem_init(SYM_VAR_LIST, src_sym);
+  // create instr & add lists
   instr_t * var_def = instr_create();
   instr_set_type(var_def, IC_DEF_VAR);
-  instr_add_dest(var_def, last_elem);
-  instr_add_elem1(var_def, NULL); // TODO add expr_parser's return
+  instr_add_dest(var_def, dest_elem);
+  instr_add_elem1(var_def, src_elem);
   list_add(list, var_def);
+}
+
+void instr_var_list_append_dest() {
+  sym_var_list_add(
+    instr_get_dest(list->last)->symbol.sym_var_list,
+    last_elem->symbol.sym_var_item
+  );
+}
+
+void instr_var_list_append_src() {
+  sym_var_list_add(
+    instr_get_elem1(list->last)->symbol.sym_var_list,
+    last_elem->symbol.sym_var_item
+  );
 }
 
 void func_add_param() {
@@ -419,7 +445,6 @@ void func_add_param() {
     *params = sym_var_list_init();
 
   // add to param list
-  printf("added param\n");
   sym_var_list_add(*params, last_elem->symbol.sym_var_item);
 }
 
@@ -552,7 +577,7 @@ void param_list() {
 }
 
 void next_param() {
-  eps = true;
+  def = true; eps = true;
   match(T_COMMA);
   if (eps) return;
   match(T_VAR_ID);
@@ -708,11 +733,13 @@ void var_def() {
 }
 
 void var_move() {
+  instr_add_var_def();
+  instr_var_list_append_dest();
+
   next_id();
   if (next.token_type == T_DEF_IDENT)
     error(3, "parser", "var_move", "Redefinition of variable \"%s\"", to_string(&next));
   match(T_ASSIGNMENT);
-  // printf("matched = \n");
   expr_list();
 }
 
@@ -725,6 +752,7 @@ void next_id() {
   }
   def = false; eps = false;
   match(T_VAR_ID);
+  instr_var_list_append_dest();
   next_id();
 }
 
@@ -773,7 +801,7 @@ void cycle() {
 }
 
 void for_def() {
-  eps = true;
+  def = true; eps = true;
   match(T_VAR_ID);
   if (eps) {
     eps = false;
@@ -783,7 +811,7 @@ void for_def() {
 }
 
 void for_move() {
-  eps = true;
+  def = false; eps = true;
   match(T_VAR_ID);
   if (eps) {
     eps = false;
@@ -818,7 +846,6 @@ void next_ret() {
 }
 
 void func_call() {
-  match(T_FUNC_ID);
   match(T_L_BRACKET);
   func_args();
   match(T_R_BRACKET);
