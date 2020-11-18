@@ -44,6 +44,7 @@ TODO:
 extern list_t * list;
 extern symtable_t * symtable;
 tToken next;
+extern struct scope_t scope;
 
 /*_____________SYMTABLE_HANDLING____________*/
 elem_t * last_func;
@@ -78,23 +79,6 @@ char * to_string(tToken *t) {
   return t->attr.str_lit.str;
 }
 //-------------------------------------------
-
-// TODO remove
-// placeholder for expression parser
-void expr() {
-  while (
-    next.token_type != T_EOL &&
-    next.token_type != T_LEFT_BRACE &&  // cond in if
-    next.token_type != T_SEMICOLON &&   // for cycle
-    next.token_type != T_R_BRACKET      // func_call
-  ) {
-
-    token_cleanup();
-
-    get_next_token(&next);
-  }
-  eps = false;
-}
 
 void token_cleanup() {
   if (
@@ -134,6 +118,12 @@ void match(int term) {
       symtable_iterator_t tmp =
         symtable_insert(symtable, to_string(&next), func_data);
       last_func = symtable_iterator_get_value(tmp);
+      // add to scope
+      char * new_scope = malloc(sizeof(char) * 6); // strlen(main) + ':' + \0
+      if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");;
+      strcpy(new_scope, to_string(&next));
+      strcat(new_scope, ":");
+      scope_push(new_scope);
 
       break;
 
@@ -195,6 +185,13 @@ void match(int term) {
           symtable_insert(symtable, to_string(&next), func_data);
         last_func = symtable_iterator_get_value(tmp);
         last_elem = last_func;
+        // add to scope
+        char * new_scope = malloc(sizeof(char) * (strlen(to_string(&next))+2) );
+        if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");;
+        strcpy(new_scope, to_string(&next));
+        strcat(new_scope, ":");
+        scope_push(new_scope);
+
         printf("Added ---%s\n", to_string(&next));
       }
       break;
@@ -212,12 +209,11 @@ void match(int term) {
       // construct variable's contextual ID
       char * id = malloc(
         sizeof(char) *  // prefix + : + name + \0
-        (strlen(*(last_func->key)) + strlen(to_string(&next)) + 2)
+        (strlen(scope_get()) + strlen(to_string(&next)) + 2)
       );
       if (id == NULL) error(99, "parser", "", "Memory allocation failed");;
       id[0] = '\0';
-      strcat(id, *(last_func->key)); // prefix
-      strcat(id, ":");
+      strcat(id, scope_get());
       strcat(id, to_string(&next));
 
       // check for duplicate
@@ -381,6 +377,35 @@ void parse() {
   symtable_free(symtable);
 }
 
+/*_______________SCOPE_CONTROL______________*/
+void scope_init() {
+  scope.first = NULL;
+}
+
+void scope_destroy() {
+}
+
+void scope_push(char * new_name) {
+  scope_elem_t * tmp = scope.first;
+  scope_elem_t * new = malloc(sizeof(scope_elem_t));
+  new->name = new_name;
+  new->next = tmp;
+  scope.first = new;
+}
+
+void scope_pop() {
+  if (scope.first == NULL) return;
+  scope_elem_t * tmp = scope.first->next;
+  free(scope.first->name);
+  free(scope.first);
+  scope.first = tmp;
+}
+
+char * scope_get() {
+  if (scope.first == NULL) return NULL;
+  return scope.first->name;
+}
+
 // additional instructions-related functions
 void instr_add_func_def() {
   instr_t * new_func = instr_create();
@@ -484,13 +509,14 @@ void program() {
   match(T_LEFT_BRACE);
   match(T_EOL);
   instr_add_func_def();
-  printf("---MAIN\n"); // TODO delete
+  printf("Added ---MAIN\n"); // TODO delete
   // main func body
   body();
   match(T_RIGHT_BRACE);
   match(T_EOL);
   // end of main func
   instr_add_func_end();
+  scope_pop();
 
   // user functions after main
   func_list();
@@ -531,6 +557,7 @@ void func_list_pre() {
   match(T_EOL);
   // end func def
   instr_add_func_end();
+  scope_pop();
 
   match(T_FUNC);
   // check for next func
@@ -563,6 +590,7 @@ void func_def() {
   match(T_EOL);
   // end func def
   instr_add_func_end();
+  scope_pop();
 }
 
 void param_list() {
