@@ -52,6 +52,10 @@ struct scope_t {
   scope_elem_t * first;
 } scope;
 
+int64_t to_int(tToken *t);
+double to_double(tToken *t);
+char * to_string(tToken *);
+
 // functions for scope control
 void scope_init();
 void scope_destroy();
