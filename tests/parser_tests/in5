@@ -9,7 +9,7 @@ func main () {
   *** /*   fdfdf
   **
   */      // foo
-  a = 0
+  a := 0
   if 1 > /*commmmm*/ 0 {
   } else { //fffffffffff
   }
