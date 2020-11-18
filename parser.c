@@ -105,20 +105,20 @@ void parse() {
   ) {
     switch (instr_get_type(tmp)) {
       case IC_DEF_FUN:
-      printf("DEF_FUN\t  %s\n", *(instr_get_dest(tmp)->key));
-      sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
-      if (params != NULL) {
-        printf("\t\t__PARAMS:\n");
-        for (
-          sym_var_item_t * tmp = params->first;
-          tmp != NULL;
-          tmp = sym_var_list_next(params)
-        )
-        printf("\t\t  %s\n", tmp->name);
-      }
+        printf("DEF_FUN\t  %s\n", *(instr_get_dest(tmp)->key));
+        sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
+        if (params != NULL) {
+          printf("\t\t__PARAMS:\n");
+          for (
+            sym_var_item_t * tmp = params->first;
+            tmp != NULL;
+            tmp = sym_var_list_next(params)
+          )
+          printf("\t\t  %s\n", tmp->name);
+        }
 
-      sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
-      if (rets != NULL) {
+        sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
+        if (rets != NULL) {
         printf("\t\t__RETURNS:\n");
         for (
           sym_var_item_t * tmp = rets->first;
@@ -149,37 +149,43 @@ void parse() {
       }
       break;
       case IC_END_FUN:
-      printf("_________________________END_FUN: ");
-      printf("%s\n", *(instr_get_dest(tmp)->key));
+        printf("_________________________END_FUN: ");
+        printf("%s\n", *(instr_get_dest(tmp)->key));
       break;
       case IC_DECL_VAR:
-      printf("\tDECL_VAR");
-      printf("\t  %s", *(instr_get_dest(tmp)->key));
+        printf("\tDECL_VAR");
+        printf("\t  %s", *(instr_get_dest(tmp)->key));
       break;
       case IC_DEF_VAR:
-      printf("\tDEF_VAR\t    ");
-      sym_var_list_t * l = instr_get_dest(tmp)->symbol.sym_var_list;
-      for (
-        sym_var_item_t * it = sym_var_list_get_active(l);
-        it != NULL;
-        it = sym_var_list_next(l)
-      ) {
-        printf("%s, ", it->name);
-      }
-      printf("  ===  ");
+        printf("\tDEF_VAR\t    ");
+        sym_var_list_t * l = instr_get_dest(tmp)->symbol.sym_var_list;
+        for (
+          sym_var_item_t * it = sym_var_list_get_active(l);
+          it != NULL;
+          it = sym_var_list_next(l)
+        ) {
+          printf("%s, ", it->name);
+        }
+          printf("  ===  ");
       break;
       case IC_IF_DEF:
-      printf("\n\tIF");
+        printf("\n\tIF");
       break;
       case IC_IF_START:
-      printf("\t__ifstart\n");
+        printf("\t__ifstart\n");
       break;
       case IC_IF_END:
-      printf("\n\t____________ENDIF\n");
+        printf("\n\t____________ENDIF\n");
+      break;
+      case IC_ELSE_START:
+        printf("\n\tELSE\n");
+      break;
+      case IC_ELSE_END:
+        printf("\n\t____________END_ELSE\n");
       break;
 
       default:
-      printf("_instr type [%d] not implemented_", instr_get_type(tmp));
+        printf("_instr type [%d] not implemented_", instr_get_type(tmp));
       break;
     }
     printf("\n");
@@ -519,7 +525,24 @@ void instr_add_if_end() {
   scope_pop();
 }
 
+void instr_add_else_start() {
+  instr_t * new_else = instr_create();
+  instr_set_type(new_else, IC_ELSE_START);
+  list_add(list, new_else);
 
+  char * prefix = get_unique();
+  char * else_scope = malloc(sizeof(char) * (strlen(prefix) + 5)); // u_id + else\0
+  strcpy(else_scope, prefix);
+  strcat(else_scope, "else");
+  scope_push(else_scope);
+}
+
+void instr_add_else_end() {
+  instr_t * else_end = instr_create();
+  instr_set_type(else_end, IC_ELSE_END);
+  list_add(list, else_end);
+  scope_pop();
+}
 
 void func_add_param() {
   if (last_func == NULL || last_elem == NULL)
@@ -873,19 +896,21 @@ void if_() {
 void if_cont() {
   if (next.token_type != T_ELSE) return;
   match(T_ELSE);
-  // printf("matched else\n");
+  instr_add_else_start();
   else_();
 }
 
 void else_() {
   if (next.token_type != T_LEFT_BRACE) {
     if_();
+    instr_add_else_end();
     return;
   }
   match(T_LEFT_BRACE);
   match(T_EOL);
   body();
   match(T_RIGHT_BRACE);
+  instr_add_else_end();
 }
 
 void cycle() {

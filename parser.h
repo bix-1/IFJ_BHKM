@@ -75,6 +75,8 @@ void instr_add_var_def();
 void instr_var_list_append_dest();
 void instr_var_list_append_src();
 void instr_add_if_end();
+void instr_add_else_start();
+void instr_add_else_end();
 
 // add parameter (last_elem) to last_func
 void func_add_param();
