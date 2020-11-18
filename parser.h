@@ -52,6 +52,7 @@ struct scope_t {
   scope_elem_t * first;
 } scope;
 
+// Getters for token attributes
 int64_t to_int(tToken *t);
 double to_double(tToken *t);
 char * to_string(tToken *);
@@ -73,6 +74,7 @@ void instr_add_var_decl();
 void instr_add_var_def();
 void instr_var_list_append_dest();
 void instr_var_list_append_src();
+void instr_add_if_end();
 
 // add parameter (last_elem) to last_func
 void func_add_param();

@@ -46,6 +46,11 @@ extern symtable_t * symtable;
 tToken next;
 extern struct scope_t scope;
 
+
+unsigned long U_ID = 0; // unique id
+#define U_ID_LENGTH 20
+char u_id[U_ID_LENGTH + 1] = "";
+
 /*_____________SYMTABLE_HANDLING____________*/
 elem_t * last_func;
 elem_t * last_elem;
@@ -63,10 +68,7 @@ bool eps = false;
 //    for checking whether ID is being defined or called
 bool def = false;
 
-/*
-  Functions for printing attributes of tokens
-  TODO: remove for final implementation
-*/
+// Getters for token attributes
 int64_t to_int(tToken *t) {
   return t->attr.int_lit;
 }
@@ -78,7 +80,116 @@ double to_double(tToken *t) {
 char * to_string(tToken *t) {
   return t->attr.str_lit.str;
 }
+
 //-------------------------------------------
+
+void parse() {
+  // initialization
+  source_file_setup(stdin);
+  get_next_token(&next);
+  list = list_create();
+  symtable = symtable_init(100);
+
+  // parsing
+  program();
+
+
+  // TODO delete
+  // debugging instructions
+  printf("\n\n___________FUNCTIONS:___________\n");
+  printf("________________________________\n");
+  for (
+    instr_t * tmp = list_get_active(list);
+    tmp != NULL;
+    tmp = list_get_next(list)
+  ) {
+    switch (instr_get_type(tmp)) {
+      case IC_DEF_FUN:
+      printf("DEF_FUN\t  %s\n", *(instr_get_dest(tmp)->key));
+      sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
+      if (params != NULL) {
+        printf("\t\t__PARAMS:\n");
+        for (
+          sym_var_item_t * tmp = params->first;
+          tmp != NULL;
+          tmp = sym_var_list_next(params)
+        )
+        printf("\t\t  %s\n", tmp->name);
+      }
+
+      sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
+      if (rets != NULL) {
+        printf("\t\t__RETURNS:\n");
+        for (
+          sym_var_item_t * tmp = rets->first;
+          tmp != NULL;
+          tmp = tmp->next
+        ) {
+          printf("\t\t");
+          switch (tmp->type) {
+            case VAR_INT:
+            printf("INT");
+            break;
+            case VAR_FLOAT64:
+            printf("FLOAT64");
+            break;
+            case VAR_STRING:
+            printf("STRING");
+            break;
+            case VAR_BOOL:
+            printf("BOOL");
+            break;
+            default:
+            printf("Invalid return type");
+            exit(1);
+            break;
+          }
+          printf("\n");
+        }
+      }
+      break;
+      case IC_END_FUN:
+      printf("_________________________END_FUN: ");
+      printf("%s\n", *(instr_get_dest(tmp)->key));
+      break;
+      case IC_DECL_VAR:
+      printf("\tDECL_VAR");
+      printf("\t  %s", *(instr_get_dest(tmp)->key));
+      break;
+      case IC_DEF_VAR:
+      printf("\tDEF_VAR\t    ");
+      sym_var_list_t * l = instr_get_dest(tmp)->symbol.sym_var_list;
+      for (
+        sym_var_item_t * it = sym_var_list_get_active(l);
+        it != NULL;
+        it = sym_var_list_next(l)
+      ) {
+        printf("%s, ", it->name);
+      }
+      printf("  ===  ");
+      break;
+      case IC_IF_DEF:
+      printf("\n\tIF");
+      break;
+      case IC_IF_START:
+      printf("\t__ifstart\n");
+      break;
+      case IC_IF_END:
+      printf("\n\t____________ENDIF\n");
+      break;
+
+      default:
+      printf("_instr type [%d] not implemented_", instr_get_type(tmp));
+      break;
+    }
+    printf("\n");
+  }
+
+  // termination
+  scope_destroy();
+  list_destroy(&list);
+  symtable_free(symtable);
+}
 
 void token_cleanup() {
   if (
@@ -119,10 +230,9 @@ void match(int term) {
         symtable_insert(symtable, to_string(&next), func_data);
       last_func = symtable_iterator_get_value(tmp);
       // add to scope
-      char * new_scope = malloc(sizeof(char) * 6); // strlen(main) + ':' + \0
-      if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");;
+      char * new_scope = malloc(sizeof(char) * 5);
+      if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
       strcpy(new_scope, to_string(&next));
-      strcat(new_scope, ":");
       scope_push(new_scope);
 
       break;
@@ -184,13 +294,12 @@ void match(int term) {
         symtable_iterator_t tmp =
           symtable_insert(symtable, to_string(&next), func_data);
         last_func = symtable_iterator_get_value(tmp);
-        last_elem = last_func;
         // add to scope
-        char * new_scope = malloc(sizeof(char) * (strlen(to_string(&next))+2) );
-        if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");;
+        char * new_scope = malloc(sizeof(char) * (strlen(to_string(&next))+1) );
+        if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
         strcpy(new_scope, to_string(&next));
-        strcat(new_scope, ":");
         scope_push(new_scope);
+        last_elem = last_func;
 
         printf("Added ---%s\n", to_string(&next));
       }
@@ -211,7 +320,7 @@ void match(int term) {
         sizeof(char) *  // prefix + : + name + \0
         (strlen(scope_get()) + strlen(to_string(&next)) + 2)
       );
-      if (id == NULL) error(99, "parser", "", "Memory allocation failed");;
+      if (id == NULL) error(99, "parser", "", "Memory allocation failed");
       id[0] = '\0';
       strcat(id, scope_get());
       strcat(id, to_string(&next));
@@ -279,116 +388,49 @@ void skip_empty() {
   eps = false;
 }
 
-void parse() {
-  // initialization
-  source_file_setup(stdin);
-  get_next_token(&next);
-  list = list_create();
-  symtable = symtable_init(100);
-
-  // parsing
-  program();
-
-
-  // TODO delete
-  // debugging instructions
-  printf("\n\n___________FUNCTIONS:___________\n");
-  printf("________________________________\n");
-  for (
-    instr_t * tmp = list_get_active(list);
-    tmp != NULL;
-    tmp = list_get_next(list)
-  ) {
-    switch (instr_get_type(tmp)) {
-      case IC_DEF_FUN:
-        printf("DEF_FUN\t  %s\n", *(instr_get_dest(tmp)->key));
-        sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
-        if (params != NULL) {
-          printf("\t\t__PARAMS:\n");
-          for (
-            sym_var_item_t * tmp = params->first;
-            tmp != NULL;
-            tmp = sym_var_list_next(params)
-          )
-            printf("\t\t  %s\n", tmp->name);
-        }
-
-        sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
-        if (rets != NULL) {
-          printf("\t\t__RETURNS:\n");
-          for (
-            sym_var_item_t * tmp = rets->first;
-            tmp != NULL;
-            tmp = tmp->next
-          ) {
-            printf("\t\t");
-            switch (tmp->type) {
-              case VAR_INT:
-                printf("INT");
-                break;
-              case VAR_FLOAT64:
-                printf("FLOAT64");
-                break;
-              case VAR_STRING:
-                printf("STRING");
-                break;
-              case VAR_BOOL:
-                printf("BOOL");
-                break;
-              default:
-                printf("Invalid return type");
-                exit(1);
-                break;
-            }
-            printf("\n");
-          }
-        }
-      break;
-      case IC_END_FUN:
-        printf("_________________________END_FUN: ");
-        printf("%s\n", *(instr_get_dest(tmp)->key));
-      break;
-      case IC_DECL_VAR:
-        printf("    DECL_VAR");
-        printf("\t  %s", *(instr_get_dest(tmp)->key));
-      break;
-      case IC_DEF_VAR:
-        printf("      DEF_VAR\t    ");
-        sym_var_list_t * l = instr_get_dest(tmp)->symbol.sym_var_list;
-        for (
-          sym_var_item_t * it = sym_var_list_get_active(l);
-          it != NULL;
-          it = sym_var_list_next(l)
-        ) {
-          printf("%s, ", it->name);
-        }
-        printf("  ===  ");
-      break;
-
-      default:
-        printf("_instr type not implemented_");
-      break;
-    }
-    printf("\n");
-  }
-
-  // termination
-  list_destroy(&list);
-  symtable_free(symtable);
+/*_______________SCOPE_CONTROL______________*/
+char * get_unique() {
+  sprintf(u_id, "%ld", U_ID++);
+  return u_id;
 }
 
-/*_______________SCOPE_CONTROL______________*/
 void scope_init() {
   scope.first = NULL;
 }
 
 void scope_destroy() {
+  scope_elem_t * tmp, * next;
+
+  for (
+    tmp = scope.first;
+    tmp != NULL;
+    tmp = next
+  ) {
+    next = tmp->next;
+    free(tmp->name);
+    free(tmp);
+  }
+
+  scope.first = NULL;
 }
 
 void scope_push(char * new_name) {
   scope_elem_t * tmp = scope.first;
   scope_elem_t * new = malloc(sizeof(scope_elem_t));
-  new->name = new_name;
+  if (tmp == NULL) {
+    new->name = malloc(sizeof(char) * (strlen(new_name) + 2));
+    strcpy(new->name, new_name);
+    strcat(new->name, ":");
+  } else {
+    new->name = malloc(
+      sizeof(char) *
+      (strlen(tmp->name) + strlen(new_name) + 2)
+    );
+    strcpy(new->name, tmp->name);
+    strcat(new->name, new_name);
+    strcat(new->name, ":");
+  }
+  free(new_name);
   new->next = tmp;
   scope.first = new;
 }
@@ -419,7 +461,6 @@ void instr_add_func_end() {
   instr_set_type(end_func, IC_END_FUN);
   instr_add_dest(end_func, last_func);
   list_add(list, end_func);
-  last_elem = NULL; // not in func def header
 }
 
 void instr_add_var_decl() {
@@ -458,6 +499,27 @@ void instr_var_list_append_src() {
     last_elem->symbol.sym_var_item
   );
 }
+
+void instr_add_if_def() {
+  instr_t * new_if = instr_create();
+  instr_set_type(new_if, IC_IF_DEF);
+  list_add(list, new_if);
+
+  char * prefix = get_unique();
+  char * if_scope = malloc(sizeof(char) * (strlen(prefix) + 3)); // u_id + if\0
+  strcpy(if_scope, prefix);
+  strcat(if_scope, "if");
+  scope_push(if_scope);
+}
+
+void instr_add_if_end() {
+  instr_t * if_end = instr_create();
+  instr_set_type(if_end, IC_IF_END);
+  list_add(list, if_end);
+  scope_pop();
+}
+
+
 
 void func_add_param() {
   if (last_func == NULL || last_elem == NULL)
@@ -627,12 +689,10 @@ void func_def_type() {
       func_def_ret();
       break;
 
-    default:
+    default:  // error
       match(T_LEFT_BRACE);
       break;
   }
-  // each function definition ends here
-
 }
 
 void func_def_ret() {
@@ -699,6 +759,7 @@ void next_ret_def() {
 }
 
 void body() {
+  last_elem = NULL; // leaving func def header
   skip_empty();
   command();
   if (eps) {
@@ -766,7 +827,10 @@ void var_move() {
 
   next_id();
   if (next.token_type == T_DEF_IDENT)
-    error(3, "parser", "var_move", "Redefinition of variable \"%s\"", to_string(&next));
+    error(
+      3, "parser", "var_move", "Redefinition of variable \"%s\"",
+      last_elem->symbol.sym_var_item->name
+    );
   match(T_ASSIGNMENT);
   expr_list();
 }
@@ -785,16 +849,25 @@ void next_id() {
 }
 
 void if_() {
+  // if def
   match(T_IF);
-  // printf("matched IF\t%d\n", get_err_line()+1);
+  instr_add_if_def();
+  // condition
   parse_expression(); // condition handling
   match(T_LEFT_BRACE);
   match(T_EOL);
+
+    // if start instr
+  instr_t * if_start = instr_create();
+  instr_set_type(if_start, IC_IF_START);
+  list_add(list, if_start);
+
+  // commands
   body();
   match(T_RIGHT_BRACE);
-  // printf("matched ENDIF\t%d\t%d\n", get_err_line()+1, next.token_type);
+  instr_add_if_end();
+
   if_cont();
-  // printf("if matched\n");
 }
 
 void if_cont() {
