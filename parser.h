@@ -41,9 +41,37 @@ void parse();
 // -- contains all error calls that are not context-specific
 void match(int term);
 
+/*__________________SCOPE__________________*/
+typedef struct scope_elem scope_elem_t;
+struct scope_elem {
+  char * name;
+  scope_elem_t * next;
+};
+
+struct scope_t {
+  scope_elem_t * first;
+} scope;
+
+// functions for scope control
+void scope_init();
+void scope_destroy();
+void scope_push(char *);
+void scope_pop();
+char * scope_get();
+
 // skip all empty spaces
-// TODO & comments
 void skip_empty();
+
+// additional instructions-related functions
+void instr_add_func_def();
+void instr_add_func_end();
+void instr_add_var_decl();
+void instr_add_var_def();
+void instr_var_list_append_dest();
+void instr_var_list_append_src();
+
+// add parameter (last_elem) to last_func
+void func_add_param();
 
 // LL grammar nonterminals
 void program();
