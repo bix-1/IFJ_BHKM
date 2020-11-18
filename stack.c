@@ -48,6 +48,8 @@ void stack_push(tokenStack *stack, tToken tokPush)
 
     newElem->token.token_type = tokPush.token_type;
     newElem->token.attr = tokPush.attr;
+    newElem->originalType = tokPush.token_type;
+    newElem->element = NULL;
 
     // Push the token
     //printf("STACK TOP\t%p\t%d\t%d\n", stack->topToken, stack->topToken->token.token_type);

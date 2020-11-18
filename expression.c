@@ -15,6 +15,7 @@
 #include "error.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 // Precedence table actions
 typedef enum
@@ -94,6 +95,7 @@ int get_index(tToken token)
     case T_EXPR:
     case T_IDENTIFIER:
     case T_INT_VALUE:
+    case T_DEC_VALUE:
         return OP_value;
         break;
     case T_DOLLAR:
@@ -112,6 +114,29 @@ int get_index(tToken token)
     }
 
     return 0;
+}
+
+void check_types(stackElemPtr top, stackElemPtr afterTop)
+{
+    if (top->originalType != afterTop->originalType)
+    {
+        release_resources();
+        error(5, "expression parser", "check_types", "Variable types do not match.");
+    }
+
+    printf("\nCHECK TYPES\n");
+}
+
+void check_expr(tToken *token)
+{
+
+    if (token->token_type == T_DOLLAR)
+    {
+        release_resources();
+        error(2, "expression parser", "reduce", "Missing expression at operation");
+    }
+
+    printf("\nCHECK EXPRS\n");
 }
 
 void shift()
@@ -154,7 +179,7 @@ void shift()
 
 void reduce()
 {
-         // Vypis elementov na stacku
+    // Vypis elementov na stacku
     // stackElemPtr tmp2;
     // tmp2 = tokStack.topToken;
     // while (tmp2->token.token_type != T_EMPTY)
@@ -163,9 +188,9 @@ void reduce()
     //     tmp2 = tmp2->nextTok;
     // }
 
-    tToken *tokenTop = &tokStack.topToken->token;               // Top member on VALUE stack
-    tToken *tokenAfterTop = &tokStack.topToken->nextTok->token; // Second from the top member on VALUE stack
-    tToken symbolTop = symbolStack.topToken->token;             // Top member on SYMBOL stack
+    stackElemPtr tokenTop = tokStack.topToken;               // Top member on VALUE stack
+    stackElemPtr tokenAfterTop = tokStack.topToken->nextTok; // Second from the top member on VALUE stack
+    tToken symbolTop = symbolStack.topToken->token;           // Top member on SYMBOL stack
 
     // If value stack is !empty
     if (tokStack.topToken->token.token_type != T_DOLLAR)
@@ -174,8 +199,11 @@ void reduce()
         {
         case T_PLUS:
             //IF E + E IS ON STACK
-            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
+
+                check_types(tokenTop, tokenAfterTop);
+
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_PLUS\tE = E+E\n");
 
@@ -185,38 +213,32 @@ void reduce()
                 stack_pop(&tokStack);
                 stack_push(&tokStack, exprToken);
             } //IF 5 + E IS ON STACK
-            else if (tokenAfterTop->token_type != T_EXPR)
+            else if (tokenAfterTop->token.token_type != T_EXPR)
             {
                 // IF $+E IS ON STACK
-                if (tokenAfterTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E+E expr1\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression at sum");
-                }
+                check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token_type = T_EXPR;
+                tokenAfterTop->token.token_type = T_EXPR;
+
             } //IF E + 5 IS ON STACK
-            else if (tokenTop->token_type != T_EXPR)
+            else if (tokenTop->token.token_type != T_EXPR)
             {
                 // IF E+ IS ON STACK
-                if (tokenTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E+E expr2\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression at sum");
-                }
+                check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token_type = T_EXPR;
+                tokenTop->token.token_type = T_EXPR;
             }
             break;
         case T_MINUS:
             //IF E - E IS ON STACK
-            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
+
+                check_types(tokenTop, tokenAfterTop);
+
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_MINUS\tE = E - E\n");
                 exprToken.token_type = T_EXPR;
@@ -225,38 +247,31 @@ void reduce()
                 stack_pop(&tokStack);
                 stack_push(&tokStack, exprToken);
             } //IF 5 - E IS ON STACK
-            else if (tokenAfterTop->token_type != T_EXPR)
+            else if (tokenAfterTop->token.token_type != T_EXPR)
             {
                 // IF $-E IS ON STACK
-                if (tokenAfterTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E - E expr1\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression at substaction");
-                }
+                check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token_type = T_EXPR;
+                tokenAfterTop->token.token_type = T_EXPR;
             } //IF E - 5 IS ON STACK
-            else if (tokenTop->token_type != T_EXPR)
+            else if (tokenTop->token.token_type != T_EXPR)
             {
                 // IF E- IS ON STACK
-                if (tokenTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E+E expr2\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression at substaction");
-                }
+                check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token_type = T_EXPR;
+                tokenTop->token.token_type = T_EXPR;
             }
             break;
         case T_MUL:
             //IF E * E IS ON STACK
-            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
+
+                check_types(tokenTop, tokenAfterTop);
+
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_MINUS\tE = E * E\n");
                 exprToken.token_type = T_EXPR;
@@ -265,42 +280,35 @@ void reduce()
                 stack_pop(&tokStack);
                 stack_push(&tokStack, exprToken);
             } //IF 5 * E IS ON STACK
-            else if (tokenAfterTop->token_type != T_EXPR)
+            else if (tokenAfterTop->token.token_type != T_EXPR)
             {
                 // IF $*E IS ON STACK
-                if (tokenAfterTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E * E expr1\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression at multiplication");
-                }
+                check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token_type = T_EXPR;
+                tokenAfterTop->token.token_type = T_EXPR;
             } //IF E * 5 IS ON STACK
-            else if (tokenTop->token_type != T_EXPR)
+            else if (tokenTop->token.token_type != T_EXPR)
             {
                 // IF E* IS ON STACK
-                if (tokenTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E+E expr2\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression at multiplication");
-                }
+                check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token_type = T_EXPR;
+                tokenTop->token.token_type = T_EXPR;
             }
             break;
         case T_DIV:
             //IF E / E IS ON STACK
-            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
+
+                check_types(tokenTop, tokenAfterTop);
+
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_MINUS\tE = E / E\n");
 
-                if (tokenTop->attr.int_lit == 0)
+                if (tokenTop->token.attr.int_lit == 0)
                 {
                     release_resources();
                     error(9, "expression parser", "reduce", "Division by ZERO");
@@ -312,38 +320,31 @@ void reduce()
                 stack_pop(&tokStack);
                 stack_push(&tokStack, exprToken);
             } //IF 5 / E IS ON STACK
-            else if (tokenAfterTop->token_type != T_EXPR)
+            else if (tokenAfterTop->token.token_type != T_EXPR)
             {
                 // IF $/E IS ON STACK
-                if (tokenAfterTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E / E expr1\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression at division");
-                }
+                check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token_type = T_EXPR;
+                tokenAfterTop->token.token_type = T_EXPR;
             } //IF E / 5 IS ON STACK
-            else if (tokenTop->token_type != T_EXPR)
+            else if (tokenTop->token.token_type != T_EXPR)
             {
                 // IF E/ IS ON STACK
-                if (tokenTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E+E expr2\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression at division");
-                }
+                check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token_type = T_EXPR;
+                tokenTop->token.token_type = T_EXPR;
             }
             break;
         case T_LESS:
             //IF E < E IS ON STACK
-            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
+
+                check_types(tokenTop, tokenAfterTop);
+
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_LESS\tE < E\n");
                 exprToken.token_type = T_EXPR;
@@ -352,38 +353,31 @@ void reduce()
                 stack_pop(&tokStack);
                 stack_push(&tokStack, exprToken);
             } //IF 5 < E IS ON STACK
-            else if (tokenAfterTop->token_type != T_EXPR)
+            else if (tokenAfterTop->token.token_type != T_EXPR)
             {
                 // IF $<E IS ON STACK
-                if (tokenAfterTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E < E expr1\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions <");
-                }
+                check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token_type = T_EXPR;
+                tokenAfterTop->token.token_type = T_EXPR;
             } //IF E < 5 IS ON STACK
-            else if (tokenTop->token_type != T_EXPR)
+            else if (tokenTop->token.token_type != T_EXPR)
             {
                 // IF E< IS ON STACK
-                if (tokenTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E < E expr2\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions <");
-                }
+                check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 // printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token_type = T_EXPR;
+                tokenTop->token.token_type = T_EXPR;
             }
             break;
         case T_LESS_EQ:
             //IF E <= E IS ON STACK
-            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
+
+                check_types(tokenTop, tokenAfterTop);
+
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_LESS_EQ\tE <= E\n");
                 exprToken.token_type = T_EXPR;
@@ -392,38 +386,31 @@ void reduce()
                 stack_pop(&tokStack);
                 stack_push(&tokStack, exprToken);
             } //IF 5 <= E IS ON STACK
-            else if (tokenAfterTop->token_type != T_EXPR)
+            else if (tokenAfterTop->token.token_type != T_EXPR)
             {
-                // IF $/E IS ON STACK
-                if (tokenAfterTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E <= E expr1\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions <=");
-                }
+                // IF <=E IS ON STACK
+                check_expr(&(tokenAfterTop->token));
 
                 // printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token_type = T_EXPR;
+                tokenAfterTop->token.token_type = T_EXPR;
             } //IF E <= 5 IS ON STACK
-            else if (tokenTop->token_type != T_EXPR)
+            else if (tokenTop->token.token_type != T_EXPR)
             {
                 // IF E<= IS ON STACK
-                if (tokenTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E <= E expr2\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions <=");
-                }
+                check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token_type = T_EXPR;
+                tokenTop->token.token_type = T_EXPR;
             }
             break;
         case T_GREATER:
             //IF E > E IS ON STACK
-            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
+
+                check_types(tokenTop, tokenAfterTop);
+
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_GREATER\tE > E\n");
                 exprToken.token_type = T_EXPR;
@@ -432,38 +419,31 @@ void reduce()
                 stack_pop(&tokStack);
                 stack_push(&tokStack, exprToken);
             } //IF 5 > E IS ON STACK
-            else if (tokenAfterTop->token_type != T_EXPR)
+            else if (tokenAfterTop->token.token_type != T_EXPR)
             {
                 // IF $>E IS ON STACK
-                if (tokenAfterTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E > E expr1\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions >");
-                }
+                check_expr(&(tokenAfterTop->token));
 
                 // printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token_type = T_EXPR;
+                tokenAfterTop->token.token_type = T_EXPR;
             } //IF E > 5 IS ON STACK
-            else if (tokenTop->token_type != T_EXPR)
+            else if (tokenTop->token.token_type != T_EXPR)
             {
                 // IF E > IS ON STACK
-                if (tokenTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E > E expr2\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions >");
-                }
+                check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token_type = T_EXPR;
+                tokenTop->token.token_type = T_EXPR;
             }
             break;
         case T_GREATER_EQ:
             //IF E >= E IS ON STACK
-            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
+
+                check_types(tokenTop, tokenAfterTop);
+
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_GREATER_EQ\tE >= E\n");
                 exprToken.token_type = T_EXPR;
@@ -472,38 +452,31 @@ void reduce()
                 stack_pop(&tokStack);
                 stack_push(&tokStack, exprToken);
             } //IF 5 >= E IS ON STACK
-            else if (tokenAfterTop->token_type != T_EXPR)
+            else if (tokenAfterTop->token.token_type != T_EXPR)
             {
                 // IF $>=E IS ON STACK
-                if (tokenAfterTop->token_type == T_DOLLAR)
-                {
-                    printf("\n\t\t\tERROR E= E >= E expr1\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions >=");
-                }
+                check_expr(&(tokenAfterTop->token));
 
                 // printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token_type = T_EXPR;
+                tokenAfterTop->token.token_type = T_EXPR;
             } //IF E >= 5 IS ON STACK
-            else if (tokenTop->token_type != T_EXPR)
+            else if (tokenTop->token.token_type != T_EXPR)
             {
                 // IF E >= IS ON STACK
-                if (tokenTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E >= E expr2\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions >=");
-                }
+                check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 // printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token_type = T_EXPR;
+                tokenTop->token.token_type = T_EXPR;
             }
             break;
         case T_EQ:
             //IF E == E IS ON STACK
-            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
+
+                check_types(tokenTop, tokenAfterTop);
+
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_EQ\tE == E\n");
                 exprToken.token_type = T_EXPR;
@@ -512,38 +485,31 @@ void reduce()
                 stack_pop(&tokStack);
                 stack_push(&tokStack, exprToken);
             } //IF 5 == E IS ON STACK
-            else if (tokenAfterTop->token_type != T_EXPR)
+            else if (tokenAfterTop->token.token_type != T_EXPR)
             {
                 // IF $ == E IS ON STACK
-                if (tokenAfterTop->token_type == T_DOLLAR)
-                {
-                    // printf("\n\t\t\tERROR E= E == E expr1\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions ==");
-                }
+                check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token_type = T_EXPR;
+                tokenAfterTop->token.token_type = T_EXPR;
             } //IF E == 5 IS ON STACK
-            else if (tokenTop->token_type != T_EXPR)
+            else if (tokenTop->token.token_type != T_EXPR)
             {
                 // IF E == IS ON STACK
-                if (tokenTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E == E expr2\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions ==");
-                }
+                check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token_type = T_EXPR;
+                tokenTop->token.token_type = T_EXPR;
             }
             break;
         case T_NEQ:
             //IF E != E IS ON STACK
-            if (tokenTop->token_type == T_EXPR && tokenAfterTop->token_type == T_EXPR)
+            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
+
+                check_types(tokenTop, tokenAfterTop);
+
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE T_NEQ\tE != E\n");
                 exprToken.token_type = T_EXPR;
@@ -552,32 +518,22 @@ void reduce()
                 stack_pop(&tokStack);
                 stack_push(&tokStack, exprToken);
             } //IF 5 != E IS ON STACK
-            else if (tokenAfterTop->token_type != T_EXPR)
+            else if (tokenAfterTop->token.token_type != T_EXPR)
             {
                 // IF $ != E IS ON STACK
-                if (tokenAfterTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E != E expr1\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions !=");
-                }
+                check_expr(&(tokenAfterTop->token));
 
                 // printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token_type = T_EXPR;
+                tokenAfterTop->token.token_type = T_EXPR;
             } //IF E != 5 IS ON STACK
-            else if (tokenTop->token_type != T_EXPR)
+            else if (tokenTop->token.token_type != T_EXPR)
             {
                 // IF E != IS ON STACK
-                if (tokenTop->token_type == T_DOLLAR)
-                {
-                    //printf("\n\t\t\tERROR E= E != E expr2\n");
-                    release_resources();
-                    error(2, "expression parser", "reduce", "Missing expression when comparing expressions !=");
-                }
+                check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token_type = T_EXPR;
+                tokenTop->token.token_type = T_EXPR;
             }
             break;
 

@@ -23,6 +23,16 @@
 int get_index(tToken token);
 
 /*
+*   Function checks whether the token types are same
+*/
+void check_types(stackElemPtr top, stackElemPtr afterTop);
+
+/*
+*   Function which checks if the term is missing from operation
+*/
+void check_expr(tToken *token);
+
+/*
 *   Function shifts the current token to stack and gets next token
 */
 void shift();
