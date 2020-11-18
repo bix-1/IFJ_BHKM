@@ -25,7 +25,7 @@ typedef struct stackElem
     struct stackElem *nextTok;
     tToken token;
     int originalType;
-    elem_t *element;
+    symtable_value_t data;
 } *stackElemPtr;
 
 /*

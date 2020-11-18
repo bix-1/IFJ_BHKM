@@ -61,6 +61,7 @@ int precTable[7][7] = {
 tToken exprToken;       // Expression token
 tokenStack symbolStack; // Symbol stack
 tokenStack tokStack;    // Token stack
+int exprNumber = 0;
 
 int get_index(tToken token)
 {
@@ -116,8 +117,117 @@ int get_index(tToken token)
     return 0;
 }
 
+void check_symtable(stackElemPtr elem)
+{
+
+    if (elem->originalType == T_IDENTIFIER)
+    {
+        // variable ID construct
+        char *id = malloc(strlen(scope_get()) + strlen(to_string(&(elem->token)) + 2));
+        if (id == NULL)
+        {
+            error(99, "expression parser", "check_symtable", "Memory allocation failed");
+        }
+        id[0] = '\0';
+        strcat(id, scope_get());
+        strcat(id, to_string(&(elem->token)));
+
+        // check duplicate
+        symtable_iterator_t iterator = symtable_find(symtable, id);
+        if (symtable_iterator_valid(iterator))
+        {
+            free(id);
+            elem->data = symtable_iterator_get_value(iterator);
+        }
+        else
+        {
+            free(id);
+            error(3, "expression parser", "check_symtable", "Variable \"%s\" undefined", to_string(&next));
+        }
+    }
+    else
+    {
+        // id = scope:N.oExpress = strlen scope + sizeof exprNumber + "express" + \0
+        char *id = malloc(strlen(scope_get()) + sizeof(int) + 9);
+        char *number = malloc(sizeof(int) * 8 + 1);
+        if (id == NULL)
+        {
+            error(99, "expression parser", "check_symtable", "Memory allocation failed");
+        }
+        id[0] = '\0';
+        strcat(id, scope_get());
+        sprintf(number, "%d", exprNumber); // INT TO STING
+        strcat(id, number);
+        strcat(id, "express");
+        printf("\nNAME : %s\n", id);
+
+        // create variable and add to symtable
+        sym_var_item_t *var_item = sym_var_item_init(id);
+        sym_var_item_set_type(var_item, var_type_check(&(elem->token)));
+        var_data_set(&(elem->token), var_item);
+        symbol_t var_sym = {.sym_var_item = var_item};
+        elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
+        symtable_insert(symtable, id, var);
+
+        exprNumber++;
+    }
+}
+
+void var_data_set(tToken *token, sym_var_item_t *var)
+{
+    switch (token->token_type)
+    {
+        variable_t data;
+    case T_INT_VALUE:
+        data.int_t = token->attr.int_lit;
+        sym_var_item_set_data(var, data);
+        return;
+        break;
+    case T_DEC_VALUE:
+        data.float64_t = token->attr.dec_lit;
+        sym_var_item_set_data(var, data);
+        return;
+        break;
+    case T_STRING_VALUE:
+        data.string_t = token->attr.str_lit.str; //TODO MAKE SURE THIS IS RIGHT
+        sym_var_item_set_data(var, data);
+        return;
+        break;
+        default : break;
+    }
+}
+
+int var_type_check(tToken *token)
+{
+
+    switch (token->token_type)
+    {
+    case T_INT_VALUE:
+        return VAR_INT;
+        break;
+    case T_DEC_VALUE:
+        return VAR_FLOAT64;
+        break;
+    case T_STRING_VALUE:
+        return VAR_STRING;
+        break;
+    case T_TRUE:
+        return VAR_BOOL;
+        break;
+    case T_FALSE:
+        return VAR_BOOL;
+        break;
+
+    default:
+        break;
+    }
+
+    // TODO ADD ERROR
+}
+
 void check_types(stackElemPtr top, stackElemPtr afterTop)
 {
+
     if (top->originalType != afterTop->originalType)
     {
         release_resources();
@@ -190,7 +300,7 @@ void reduce()
 
     stackElemPtr tokenTop = tokStack.topToken;               // Top member on VALUE stack
     stackElemPtr tokenAfterTop = tokStack.topToken->nextTok; // Second from the top member on VALUE stack
-    tToken symbolTop = symbolStack.topToken->token;           // Top member on SYMBOL stack
+    tToken symbolTop = symbolStack.topToken->token;          // Top member on SYMBOL stack
 
     // If value stack is !empty
     if (tokStack.topToken->token.token_type != T_DOLLAR)
@@ -202,6 +312,8 @@ void reduce()
             if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
 
+                check_symtable(tokenTop);
+                check_symtable(tokenAfterTop);
                 check_types(tokenTop, tokenAfterTop);
 
                 // TO DO INSERT INSTRUCTIONS
@@ -220,6 +332,9 @@ void reduce()
 
                 //printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token.token_type = T_EXPR;
+
+                // symtable
+                //char * id = malloc(sizeof(char)*(strlen(*(last_func))));
 
             } //IF E + 5 IS ON STACK
             else if (tokenTop->token.token_type != T_EXPR)
