@@ -90,6 +90,9 @@ void parse() {
   list = list_create();
   symtable = symtable_init(100);
 
+  printf("\n\n___________SYMTABLE:____________\n");
+  printf("________________________________\n");
+
   // parsing
   program();
 
@@ -183,6 +186,22 @@ void parse() {
       case IC_ELSE_END:
         printf("\n\t____________END_ELSE\n");
       break;
+      case IC_FOR_DEF:
+        printf("\n\tFOR\n");
+      break;
+      case IC_FOR_COND:
+        printf("\n\t__for_cond\n");
+      break;
+      case IC_FOR_STEP:
+        printf("\n\t__for_step\n");
+      break;
+      case IC_FOR_BODY_START:
+        printf("\n\t__for_body_start\n");
+      break;
+      case IC_FOR_BODY_END:
+        printf("\n\t____________END_FOR\n");
+      break;
+
 
       default:
         printf("_instr type [%d] not implemented_", instr_get_type(tmp));
@@ -239,6 +258,7 @@ void match(int term) {
       char * new_scope = malloc(sizeof(char) * 5);
       if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
       strcpy(new_scope, to_string(&next));
+      U_ID = 0; // new founc -- can reset counter
       scope_push(new_scope);
 
       break;
@@ -304,6 +324,7 @@ void match(int term) {
         char * new_scope = malloc(sizeof(char) * (strlen(to_string(&next))+1) );
         if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
         strcpy(new_scope, to_string(&next));
+        U_ID = 0; // new founc -- can reset counter
         scope_push(new_scope);
         last_elem = last_func;
 
@@ -317,56 +338,114 @@ void match(int term) {
           def = false;
           return;
         }
-        printf("got here\n");
         goto default_err;
       }
 
-      // construct variable's contextual ID
-      char * id = malloc(
-        sizeof(char) *  // prefix + : + name + \0
-        (strlen(scope_get()) + strlen(to_string(&next)) + 2)
-      );
-      if (id == NULL) error(99, "parser", "", "Memory allocation failed");
-      id[0] = '\0';
-      strcat(id, scope_get());
-      strcat(id, to_string(&next));
+      // // construct variable's contextual ID
+      // char * id = malloc(
+      //   sizeof(char) *  // prefix + : + name + \0
+      //   (strlen(scope_get()) + strlen(to_string(&next)) + 2)
+      // );
+      // if (id == NULL) error(99, "parser", "", "Memory allocation failed");
+      // id[0] = '\0';
+      // strcat(id, scope_get());
+      // strcat(id, to_string(&next));
 
-      // check for duplicate
-      symtable_iterator_t it = symtable_find(symtable, id);
-      if (symtable_iterator_valid(it)) {
-        free(id); // no longer needed
-        if (def && !eps)
-          error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
-        if (!def) {
-          last_elem = symtable_iterator_get_value(it);
-          token_cleanup();
-        }
-        else return;
-      }
-      else { // first definition
-        if (!def) {
+      if (def) {  // definition expected
+        // get variable's contextual ID
+        char * id = id_add_scope(scope.first, to_string(&next));
+        symtable_iterator_t it = symtable_find(symtable, id);
+        if (symtable_iterator_valid(it)) {  // found in symtable
           free(id);
-          if (eps) return;
-          error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
-        }
-        // create var
-        sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
-        symbol_t var_sym = {.sym_var_item = var_item};
-        elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
-        // add to symtable
-        symtable_insert(symtable, id, var);
+          if (eps) {
+            def = false;
+            return;
+          }
+          else error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
+        } else {  // first occurrence
+          // create var
+          sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
+          symbol_t var_sym = {.sym_var_item = var_item};
+          elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
+          // add to symtable
+          symtable_insert(symtable, id, var);
 
-        printf("\t---%s\n", id);
+          printf("\t---%s\n", id);
 
-        // check if var is parameter of func
-        if (last_elem != NULL && last_elem->sym_type == SYM_FUNC ) {
-          last_elem = var;
-          func_add_param();
-        } else {
-          last_elem = var;
-          instr_add_var_decl();
+          // check if var is parameter of func
+          if (last_elem != NULL && last_elem->sym_type == SYM_FUNC ) {
+            last_elem = var;
+            func_add_param();
+          } else {
+            last_elem = var;
+            instr_add_var_decl();
+          }
         }
       }
+      else {  // var_call expected
+        char * id;
+        char * old_id = to_string(&next);
+        scope_elem_t * tmp_scope = scope.first;
+        symtable_iterator_t it;
+
+        // look through all higher contexts
+        while (true) {
+          // check for end of scope
+          if (tmp_scope == NULL) {
+            if (eps) return;
+            else error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
+          }
+          // get variable's contextual ID
+          id = id_add_scope(tmp_scope, old_id);
+          // look for in symtable
+          it = symtable_find(symtable, id);
+          free(id);
+          if (symtable_iterator_valid(it)) {  // found in symtable
+            last_elem = symtable_iterator_get_value(it);
+            token_cleanup();
+            break;
+          } else {  // move to the next
+            tmp_scope = tmp_scope->next;
+          }
+        }
+      }
+
+      // // check for duplicate
+      // symtable_iterator_t it = symtable_find(symtable, id);
+      // if (symtable_iterator_valid(it)) {
+      //   free(id); // no longer needed
+      //   if (def && !eps)
+      //     error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
+      //   if (!def) {
+      //     last_elem = symtable_iterator_get_value(it);
+      //     token_cleanup();
+      //   }
+      //   else return;
+      // }
+      // else { // first definition
+      //   if (!def) {
+      //     free(id);
+      //     if (eps) return;
+      //     error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
+      //   }
+      //   // create var
+      //   sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
+      //   symbol_t var_sym = {.sym_var_item = var_item};
+      //   elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
+      //   // add to symtable
+      //   symtable_insert(symtable, id, var);
+      //
+      //   printf("\t---%s\n", id);
+      //
+      //   // check if var is parameter of func
+      //   if (last_elem != NULL && last_elem->sym_type == SYM_FUNC ) {
+      //     last_elem = var;
+      //     func_add_param();
+      //   } else {
+      //     last_elem = var;
+      //     instr_add_var_decl();
+      //   }
+      // }
       break;
 
     default:
@@ -452,6 +531,20 @@ void scope_pop() {
 char * scope_get() {
   if (scope.first == NULL) return NULL;
   return scope.first->name;
+}
+
+char * id_add_scope(scope_elem_t * tmp_scope, char * old_id) {
+  char * scope_name = tmp_scope->name;
+  char * new_id = malloc(
+    sizeof(char) *  // prefix + : + name + \0
+    (strlen(scope_name) + strlen(old_id) + 2)
+  );
+  if (new_id == NULL) error(99, "parser", "", "Memory allocation failed");
+  new_id[0] = '\0';
+  strcat(new_id, scope_name);
+  strcat(new_id, old_id);
+
+  return new_id;
 }
 
 // additional instructions-related functions
@@ -543,6 +636,19 @@ void instr_add_else_end() {
   list_add(list, else_end);
   scope_pop();
 }
+
+void instr_add_for_def() {
+  instr_t * new_for = instr_create();
+  instr_set_type(new_for, IC_FOR_DEF);
+  list_add(list, new_for);
+
+  char * prefix = get_unique();
+  char * for_scope = malloc(sizeof(char) * (strlen(prefix) + 4)); // u_id + for\0
+  strcpy(for_scope, prefix);
+  strcat(for_scope, "for");
+  scope_push(for_scope);
+}
+
 
 void func_add_param() {
   if (last_func == NULL || last_elem == NULL)
@@ -915,15 +1021,38 @@ void else_() {
 
 void cycle() {
   match(T_FOR);
+  // initialization
+  instr_add_for_def();
   for_def();
   match(T_SEMICOLON);
+  // condition
+  instr_t * for_cond = instr_create();
+  instr_set_type(for_cond, IC_FOR_COND);
+  list_add(list, for_cond);
   parse_expression(); // expression parser call
   match(T_SEMICOLON);
+  // step
   for_move();
   match(T_LEFT_BRACE);
   match(T_EOL);
+
+  // body start
+  instr_t * for_body_start = instr_create();
+  instr_set_type(for_body_start, IC_FOR_BODY_START);
+  list_add(list, for_body_start);
+  // body is a new scope subordinate to cycle's head
+  char * body_scope = malloc(sizeof(char) * 5);
+  strcpy(body_scope, "body");
+  scope_push(body_scope);
+  // ----------------------------
   body();
   match(T_RIGHT_BRACE);
+  // body end
+  instr_t * for_body_end = instr_create();
+  instr_set_type(for_body_end, IC_FOR_BODY_END);
+  list_add(list, for_body_end);
+  scope_pop();  // body
+  scope_pop();  // for
 }
 
 void for_def() {
@@ -937,12 +1066,18 @@ void for_def() {
 }
 
 void for_move() {
-  def = false; eps = true;
+  if (next.token_type == T_LEFT_BRACE) return;
+  def = false; eps = false;
   match(T_VAR_ID);
   if (eps) {
     eps = false;
     return;
   }
+  // create instruction
+  instr_t * for_step = instr_create();
+  instr_set_type(for_step, IC_FOR_STEP);
+  list_add(list, for_step);
+
   var_move();
 }
 

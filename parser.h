@@ -15,6 +15,7 @@
 #define PARSER_H
 
 #include "scanner.h"
+#include "symtable.h"   // elem_t
 #include "expression.h"
 
 // additional terminals not necessary in scanner
@@ -40,6 +41,9 @@ void parse();
 // either matches & gets_new_token or calls error
 // -- contains all error calls that are not context-specific
 void match(int term);
+// match global variable
+extern elem_t * last_elem;
+
 
 /*__________________SCOPE__________________*/
 typedef struct scope_elem scope_elem_t;
@@ -63,6 +67,7 @@ void scope_destroy();
 void scope_push(char *);
 void scope_pop();
 char * scope_get();
+char * id_add_scope(scope_elem_t *, char *);
 
 // skip all empty spaces
 void skip_empty();
@@ -77,6 +82,7 @@ void instr_var_list_append_src();
 void instr_add_if_end();
 void instr_add_else_start();
 void instr_add_else_end();
+void instr_add_for_def();
 
 // add parameter (last_elem) to last_func
 void func_add_param();
