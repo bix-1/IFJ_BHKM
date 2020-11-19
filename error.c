@@ -162,6 +162,7 @@ void error(
   list_destroy( &list );
   symtable_free( symtable );
   token_cleanup();
+  scope_destroy();
 
   exit( errCode );
 }
