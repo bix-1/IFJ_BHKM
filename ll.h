@@ -56,7 +56,7 @@ elem_t * instr_get_elem2 (instr_t *);
 
 // Global variables
 list_t * list;
-symtable_t * symtable;
+extern symtable_t * symtable;
 
 
 #endif

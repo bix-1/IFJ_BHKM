@@ -14,9 +14,8 @@
 TODO:
   refactor func comments
   crossreference LL.pdf & implemented rules
-  REMOVE RULE 13 IN DOC
 
-``  built-in funcs
+  built-in funcs
 
   handle errors from assignment in:
   - 4.1.1 (4, 3)
@@ -29,23 +28,47 @@ TODO:
 */
 
 
-#include "parser.h"
-#include "scanner.h"
-#include "error.h"
+#include "parser.h"   // own header
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "error.h"    // error calls handling
+#include "scanner.h"  // get_next_token
+#include "symtable.h" // symbol table for codegenerator
+#include "codegen.h"  // instruction types
+#include "ll.h"       // list of instructions
+#include "str.h"      // contextual IDs
 
-
+/*_____________GLOBAL_VARIABLES_____________*/
+extern list_t * list;
+extern symtable_t * symtable;
 tToken next;
-// for checking whether eps terminal is allowed
-bool eps = false;
+extern struct scope_t scope;
 
-/*
-  Functions for printing attributes of tokens
-  TODO: remove for final implementation
-*/
+
+unsigned long U_ID = 0; // unique id
+#define U_ID_LENGTH 20
+char u_id[U_ID_LENGTH + 1] = "";
+
+/*_____________SYMTABLE_HANDLING____________*/
+elem_t * last_func;
+elem_t * last_elem;
+
+
+/*_______________GLOBAL_FLAGS_______________*/
+// outside match():
+//    for allowing eps terminal
+// inside of match():
+//    for checking whether EPS or NON-EPS terminal matched
+bool eps = false;
+// outside match():
+//    for allowing definiton
+// inside of match():
+//    for checking whether ID is being defined or called
+bool def = false;
+
+// Getters for token attributes
 int64_t to_int(tToken *t) {
   return t->attr.int_lit;
 }
@@ -57,23 +80,140 @@ double to_double(tToken *t) {
 char * to_string(tToken *t) {
   return t->attr.str_lit.str;
 }
+
 //-------------------------------------------
 
-// TODO remove
-// placeholder for expression parser
-void expr() {
-  while (
-    next.token_type != T_EOL &&
-    next.token_type != T_LEFT_BRACE &&  // cond in if
-    next.token_type != T_SEMICOLON &&   // for cycle
-    next.token_type != T_R_BRACKET      // func_call
+void parse() {
+  // initialization
+  source_file_setup(stdin);
+  get_next_token(&next);
+  list = list_create();
+  symtable = symtable_init(100);
+
+  printf("\n\n___________SYMTABLE:____________\n");
+  printf("________________________________\n");
+
+  // parsing
+  program();
+
+
+  // TODO delete
+  // debugging instructions
+  printf("\n\n___________FUNCTIONS:___________\n");
+  printf("________________________________\n");
+  for (
+    instr_t * tmp = list_get_active(list);
+    tmp != NULL;
+    tmp = list_get_next(list)
   ) {
+    switch (instr_get_type(tmp)) {
+      case IC_DEF_FUN:
+        printf("DEF_FUN\t  %s\n", *(instr_get_dest(tmp)->key));
+        sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
+        if (params != NULL) {
+          printf("\t\t__PARAMS:\n");
+          for (
+            sym_var_item_t * tmp = params->first;
+            tmp != NULL;
+            tmp = sym_var_list_next(params)
+          )
+          printf("\t\t  %s\n", tmp->name);
+        }
 
-    token_cleanup();
+        sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
+        if (rets != NULL) {
+        printf("\t\t__RETURNS:\n");
+        for (
+          sym_var_item_t * tmp = rets->first;
+          tmp != NULL;
+          tmp = tmp->next
+        ) {
+          printf("\t\t");
+          switch (tmp->type) {
+            case VAR_INT:
+            printf("INT");
+            break;
+            case VAR_FLOAT64:
+            printf("FLOAT64");
+            break;
+            case VAR_STRING:
+            printf("STRING");
+            break;
+            case VAR_BOOL:
+            printf("BOOL");
+            break;
+            default:
+            printf("Invalid return type");
+            exit(1);
+            break;
+          }
+          printf("\n");
+        }
+      }
+      break;
+      case IC_END_FUN:
+        printf("_________________________END_FUN: ");
+        printf("%s\n", *(instr_get_dest(tmp)->key));
+      break;
+      case IC_DECL_VAR:
+        printf("\tDECL_VAR");
+        printf("\t  %s", *(instr_get_dest(tmp)->key));
+      break;
+      case IC_DEF_VAR:
+        printf("\tDEF_VAR\t    ");
+        sym_var_list_t * l = instr_get_dest(tmp)->symbol.sym_var_list;
+        for (
+          sym_var_item_t * it = sym_var_list_get_active(l);
+          it != NULL;
+          it = sym_var_list_next(l)
+        ) {
+          printf("%s, ", it->name);
+        }
+          printf("  ===  ");
+      break;
+      case IC_IF_DEF:
+        printf("\n\tIF");
+      break;
+      case IC_IF_START:
+        printf("\t__ifstart\n");
+      break;
+      case IC_IF_END:
+        printf("\n\t____________ENDIF\n");
+      break;
+      case IC_ELSE_START:
+        printf("\n\tELSE\n");
+      break;
+      case IC_ELSE_END:
+        printf("\n\t____________END_ELSE\n");
+      break;
+      case IC_FOR_DEF:
+        printf("\n\tFOR\n");
+      break;
+      case IC_FOR_COND:
+        printf("\n\t__for_cond\n");
+      break;
+      case IC_FOR_STEP:
+        printf("\n\t__for_step\n");
+      break;
+      case IC_FOR_BODY_START:
+        printf("\n\t__for_body_start\n");
+      break;
+      case IC_FOR_BODY_END:
+        printf("\n\t____________END_FOR\n");
+      break;
 
-    get_next_token(&next);
+
+      default:
+        printf("_instr type [%d] not implemented_", instr_get_type(tmp));
+      break;
+    }
+    printf("\n");
   }
-  eps = false;
+
+  // termination
+  scope_destroy();
+  list_destroy(&list);
+  symtable_free(symtable);
 }
 
 void token_cleanup() {
@@ -99,6 +239,28 @@ void match(int term) {
         if (eps) return;
         error(3, "parser", "match", "Missing main function");
       }
+
+      // not changing scope -- in prolog: (package main)
+      if (!def) {
+        token_cleanup();
+        break;
+      }
+
+      // create func
+      sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
+      symbol_t func = {.sym_func = func_sym};
+      elem_t * func_data = elem_init(SYM_FUNC, func);
+      // add to symtable
+      symtable_iterator_t tmp =
+        symtable_insert(symtable, to_string(&next), func_data);
+      last_func = symtable_iterator_get_value(tmp);
+      // add to scope
+      char * new_scope = malloc(sizeof(char) * 5);
+      if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
+      strcpy(new_scope, to_string(&next));
+      U_ID = 0; // new founc -- can reset counter
+      scope_push(new_scope);
+
       break;
 
     case T_FUNC:
@@ -112,35 +274,154 @@ void match(int term) {
 
     case T_FUNC_ID:
       if (next.token_type != T_IDENTIFIER) {
-        if (eps) return;
+        if (eps) {
+          def = false;
+          return;
+        }
         goto default_err;
       }
       if (!strcmp( to_string(&next), "main")) {
-        if (eps) return;
+        if (eps) {
+          def = false;
+          return;
+        }
         next.token_type = T_MAIN;
         goto default_err;
       }
 
-      // TODO function definition handling
+      // expected func definition && func != main
+      // --> cannot be EPS terminal
+      // otherwise if in func_list_pre:
+      //    ends user_func_def segment
+      //    && "Missing main func" error called
+      if (def) eps = false;
 
+      // check for duplicate
+      if (symtable_iterator_valid(symtable_find(symtable, to_string(&next)))) {
+        if (def && !eps)
+          error(3, "parser", "match", "Redefinition of function \"%s\"", to_string(&next));
+        if (!def) {
+          // TODO check for type
+          printf("func call: %s\n", to_string(&next));
+        }
+        else return;
+      }
+      else { // first definition
+        if (!def) {
+          if (eps) return;
+          error(3, "parser", "match", "Function \"%s\" undefined", to_string(&next));
+        }
+
+        // create func
+        sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
+        symbol_t func = {.sym_func = func_sym};
+        elem_t * func_data = elem_init(SYM_FUNC, func);
+        // add to symtable
+        symtable_iterator_t tmp =
+          symtable_insert(symtable, to_string(&next), func_data);
+        last_func = symtable_iterator_get_value(tmp);
+        // add to scope
+        char * new_scope = malloc(sizeof(char) * (strlen(to_string(&next))+1) );
+        if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
+        strcpy(new_scope, to_string(&next));
+        U_ID = 0; // new founc -- can reset counter
+        scope_push(new_scope);
+        last_elem = last_func;
+
+        printf("Added ---%s\n", to_string(&next));
+      }
       break;
 
     case T_VAR_ID:
       if (next.token_type != T_IDENTIFIER) {
-        if (eps) return;
-        next.token_type = T_VAR_ID;
+        if (eps) {
+          def = false;
+          return;
+        }
         goto default_err;
       }
 
-      // TODO var definition handling
-      //      remove placeholder functionality below
+      // // construct variable's contextual ID
+      // char * id = malloc(
+      //   sizeof(char) *  // prefix + : + name + \0
+      //   (strlen(scope_get()) + strlen(to_string(&next)) + 2)
+      // );
+      // if (id == NULL) error(99, "parser", "", "Memory allocation failed");
+      // id[0] = '\0';
+      // strcat(id, scope_get());
+      // strcat(id, to_string(&next));
 
-      int x = fgetc(source);
-      if (x == '(') {   // func_call
-        ungetc(x, source);
-        return;
+      if (def) {  // definition expected
+        // get variable's contextual ID
+        char * id = id_add_scope(scope_get_head(), to_string(&next));
+        symtable_iterator_t it = symtable_find(symtable, id);
+        if (symtable_iterator_valid(it)) {  // found in symtable
+          free(id);
+          if (eps) {
+            def = false;
+            return;
+          }
+          else error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
+        } else {  // first occurrence
+          // create var
+          sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
+          symbol_t var_sym = {.sym_var_item = var_item};
+          elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
+          // add to symtable
+          symtable_insert(symtable, id, var);
+
+          printf("\t---%s\n", id);
+
+          // check if var is parameter of func
+          if (last_elem != NULL && last_elem->sym_type == SYM_FUNC ) {
+            last_elem = var;
+            func_add_param();
+          } else {
+            last_elem = var;
+            instr_add_var_decl();
+          }
+        }
       }
-      ungetc(x, source);
+      else {  // var_call expected
+        id_find(scope_get_head(), to_string(&next));
+      }
+
+      // // check for duplicate
+      // symtable_iterator_t it = symtable_find(symtable, id);
+      // if (symtable_iterator_valid(it)) {
+      //   free(id); // no longer needed
+      //   if (def && !eps)
+      //     error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
+      //   if (!def) {
+      //     last_elem = symtable_iterator_get_value(it);
+      //     token_cleanup();
+      //   }
+      //   else return;
+      // }
+      // else { // first definition
+      //   if (!def) {
+      //     free(id);
+      //     if (eps) return;
+      //     error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
+      //   }
+      //   // create var
+      //   sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
+      //   symbol_t var_sym = {.sym_var_item = var_item};
+      //   elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
+      //   // add to symtable
+      //   symtable_insert(symtable, id, var);
+      //
+      //   printf("\t---%s\n", id);
+      //
+      //   // check if var is parameter of func
+      //   if (last_elem != NULL && last_elem->sym_type == SYM_FUNC ) {
+      //     last_elem = var;
+      //     func_add_param();
+      //   } else {
+      //     last_elem = var;
+      //     instr_add_var_decl();
+      //   }
+      // }
       break;
 
     default:
@@ -148,7 +429,7 @@ void match(int term) {
         if (eps) return;
         default_err:
         error(
-          2, "parser.c", "match",
+          2, "parser", "match",
           "Expected: '%s' -- Got: '%s'", term, next.token_type
         );
       }
@@ -159,9 +440,6 @@ void match(int term) {
   // eps == FALSE --> non-eps terminal matched
   eps = false;
 
-  // TODO delete
-  token_cleanup();
-
   get_next_token(&next);
 }
 
@@ -171,33 +449,248 @@ void skip_empty() {
   eps = false;
 }
 
-void parse() {
-  // initialization
-  source_file_setup(stdin);
-  get_next_token(&next);
+/*_______________SCOPE_CONTROL______________*/
+char * get_unique() {
+  sprintf(u_id, "%ld", U_ID++);
+  return u_id;
+}
 
-  program();
+void scope_init() {
+  scope.first = NULL;
+}
+
+void scope_destroy() {
+  scope_elem_t * tmp, * next;
+
+  for (
+    tmp = scope.first;
+    tmp != NULL;
+    tmp = next
+  ) {
+    next = tmp->next;
+    free(tmp->name);
+    free(tmp);
+  }
+
+  scope.first = NULL;
+}
+
+void scope_push(char * new_name) {
+  scope_elem_t * tmp = scope.first;
+  scope_elem_t * new = malloc(sizeof(scope_elem_t));
+  if (tmp == NULL) {
+    new->name = malloc(sizeof(char) * (strlen(new_name) + 2));
+    strcpy(new->name, new_name);
+    strcat(new->name, ":");
+  } else {
+    new->name = malloc(
+      sizeof(char) *
+      (strlen(tmp->name) + strlen(new_name) + 2)
+    );
+    strcpy(new->name, tmp->name);
+    strcat(new->name, new_name);
+    strcat(new->name, ":");
+  }
+  free(new_name);
+  new->next = tmp;
+  scope.first = new;
+}
+
+void scope_pop() {
+  if (scope.first == NULL) return;
+  scope_elem_t * tmp = scope.first->next;
+  free(scope.first->name);
+  free(scope.first);
+  scope.first = tmp;
+}
+
+scope_elem_t * scope_get_head() {
+  return scope.first;
+}
+
+char * scope_get() {
+  if (scope.first == NULL) return NULL;
+  return scope.first->name;
+}
+
+char * id_add_scope(scope_elem_t * tmp_scope, char * old_id) {
+  char * scope_name = tmp_scope->name;
+  char * new_id = malloc(
+    sizeof(char) *  // prefix + : + name + \0
+    (strlen(scope_name) + strlen(old_id) + 2)
+  );
+  if (new_id == NULL) error(99, "parser", "", "Memory allocation failed");
+  new_id[0] = '\0';
+  strcat(new_id, scope_name);
+  strcat(new_id, old_id);
+
+  return new_id;
+}
+
+void id_find(scope_elem_t *scope, char *old_id) {
+  char * id;
+  scope_elem_t * tmp_scope = scope;
+  symtable_iterator_t it;
+
+  // look through all higher contexts
+  while (true) {
+    // check for end of scope
+    if (tmp_scope == NULL) {
+      if (eps) return;
+      else error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
+    }
+    // get variable's contextual ID
+    id = id_add_scope(tmp_scope, old_id);
+    // look for in symtable
+    it = symtable_find(symtable, id);
+    free(id);
+    if (symtable_iterator_valid(it)) {  // found in symtable
+      last_elem = symtable_iterator_get_value(it);
+      token_cleanup();
+      break;
+    } else {  // move to the next
+      tmp_scope = tmp_scope->next;
+    }
+  }
+}
+
+// additional instructions-related functions
+void instr_add_func_def() {
+  instr_t * new_func = instr_create();
+  instr_set_type(new_func, IC_DEF_FUN);
+  instr_add_dest(new_func, last_func);
+  list_add(list, new_func);
+}
+
+void instr_add_func_end() {
+  instr_t * end_func = instr_create();
+  instr_set_type(end_func, IC_END_FUN);
+  instr_add_dest(end_func, last_func);
+  list_add(list, end_func);
+}
+
+void instr_add_var_decl() {
+  instr_t * new_var = instr_create();
+  instr_set_type(new_var, IC_DECL_VAR);
+  instr_add_dest(new_var, last_elem);
+  list_add(list, new_var);
+}
+
+void instr_add_var_def() {
+  // create var & expr lists
+  sym_var_list_t * dest_list = sym_var_list_init();
+  sym_var_list_t * src_list = sym_var_list_init();
+  symbol_t dest_sym = {.sym_var_list = dest_list};
+  symbol_t src_sym = {.sym_var_list = src_list};
+  elem_t * dest_elem = elem_init(SYM_VAR_LIST, dest_sym);
+  elem_t * src_elem = elem_init(SYM_VAR_LIST, src_sym);
+  // create instr & add lists
+  instr_t * var_def = instr_create();
+  instr_set_type(var_def, IC_DEF_VAR);
+  instr_add_dest(var_def, dest_elem);
+  instr_add_elem1(var_def, src_elem);
+  list_add(list, var_def);
+}
+
+void instr_var_list_append_dest() {
+  sym_var_list_add(
+    instr_get_dest(list->last)->symbol.sym_var_list,
+    last_elem->symbol.sym_var_item
+  );
+}
+
+void instr_var_list_append_src() {
+  sym_var_list_add(
+    instr_get_elem1(list->last)->symbol.sym_var_list,
+    last_elem->symbol.sym_var_item
+  );
+}
+
+void instr_add_if_def() {
+  instr_t * new_if = instr_create();
+  instr_set_type(new_if, IC_IF_DEF);
+  list_add(list, new_if);
+
+  char * prefix = get_unique();
+  char * if_scope = malloc(sizeof(char) * (strlen(prefix) + 3)); // u_id + if\0
+  strcpy(if_scope, prefix);
+  strcat(if_scope, "if");
+  scope_push(if_scope);
+}
+
+void instr_add_if_end() {
+  instr_t * if_end = instr_create();
+  instr_set_type(if_end, IC_IF_END);
+  list_add(list, if_end);
+  scope_pop();
+}
+
+void instr_add_else_start() {
+  instr_t * new_else = instr_create();
+  instr_set_type(new_else, IC_ELSE_START);
+  list_add(list, new_else);
+
+  char * prefix = get_unique();
+  char * else_scope = malloc(sizeof(char) * (strlen(prefix) + 5)); // u_id + else\0
+  strcpy(else_scope, prefix);
+  strcat(else_scope, "else");
+  scope_push(else_scope);
+}
+
+void instr_add_else_end() {
+  instr_t * else_end = instr_create();
+  instr_set_type(else_end, IC_ELSE_END);
+  list_add(list, else_end);
+  scope_pop();
+}
+
+void instr_add_for_def() {
+  instr_t * new_for = instr_create();
+  instr_set_type(new_for, IC_FOR_DEF);
+  list_add(list, new_for);
+
+  char * prefix = get_unique();
+  char * for_scope = malloc(sizeof(char) * (strlen(prefix) + 4)); // u_id + for\0
+  strcpy(for_scope, prefix);
+  strcat(for_scope, "for");
+  scope_push(for_scope);
+}
+
+
+void func_add_param() {
+  if (last_func == NULL || last_elem == NULL)
+    error(99, "parser", "type", "Failed to access function's parameters");
+
+  sym_var_list_t ** params = &(last_func->symbol.sym_func->params);
+  if (params == NULL)
+    error(99, "parser", "type", "Failed to access function's parameters");
+  if (*params == NULL)  // param list empty
+    *params = sym_var_list_init();
+
+  // add to param list
+  sym_var_list_add(*params, last_elem->symbol.sym_var_item);
 }
 
 // functions representing LL grammar nonterminals
 
 void program() {
   prolog();
-  // printf("Prolog matched\n");
 
   if (next.token_type == T_EOF)
     error(3, "parser", "program", "Missing function main");
 
+  // user functions before main
   match(T_FUNC);
   func_list_pre();
 
+  // start of main definition
+  def = true;
   match(T_MAIN);
   // parameters
   match(T_L_BRACKET);
   if (next.token_type != T_R_BRACKET)
-    error(6, "parser", "program", "Function main cannot take parameters");
+    error(6, "parser", "program", "Main cannot take parameters");
   match(T_R_BRACKET);
-
   // returns
   eps = true;
   match(T_L_BRACKET);
@@ -205,61 +698,67 @@ void program() {
     if (next.token_type != T_R_BRACKET)
       error(
         6, "parser", "program",
-        "Function main cannot have return types"
+        "Main cannot have return types"
       );
     match(T_R_BRACKET);
   }
-
+  eps = false;
+  // end of func def
   match(T_LEFT_BRACE);
   match(T_EOL);
+  instr_add_func_def();
+  printf("Added ---MAIN\n"); // TODO delete
+  // main func body
   body();
   match(T_RIGHT_BRACE);
   match(T_EOL);
+  // end of main func
+  instr_add_func_end();
+  scope_pop();
 
-  // for debugging purposes TODO delete
-  // printf("Main matched\n");
-
+  // user functions after main
   func_list();
   skip_empty();
   match(T_EOF);
-  // printf("Program matched\n");
 }
 
 void prolog() {
   // skip all empty space to T_PACKAGE
   skip_empty();
-
+  // match _prolog main_
   match(T_PACKAGE);
   skip_empty();
   if (next.token_type != T_IDENTIFIER || strcmp(to_string(&next), "main"))
     error(
-      2, "parser.c", "match",
+      2, "parser", "match",
       "Expected: '%s' -- Got: '%s'", T_MAIN, next.token_type
     );
+  def = false;
   match(T_MAIN);
   match(T_EOL);
 }
 
 void func_list_pre() {
-  eps = true;
+  def = true; eps = true;
   match(T_FUNC_ID);
   if (eps) {
     eps = false;
     return;
   }
-
-  // for debugging purposes TODO delete
-  // char s[50] = "";
-  // strcat(s, to_string(&next));
-
+  instr_add_func_def();
+  // params
   match(T_L_BRACKET);
   param_list();
   match(T_R_BRACKET);
+  // returns & body
   func_def_type();
   match(T_EOL);
+  // end func def
+  instr_add_func_end();
+  scope_pop();
+
   match(T_FUNC);
-  // for debugging purposes TODO delete
-  // printf("---Func %s matched\n", s);
+  // check for next func
   func_list_pre();
 }
 
@@ -270,39 +769,41 @@ void func_list() {
     eps = false;
     return;
   }
+  // check for next func
   func_list();
 }
 
 void func_def() {
   match(T_FUNC);
   if (eps) return; // from func_list
+  def = true; eps = false;
   match(T_FUNC_ID);
-
-  // TODO delete
-  // for debugging purposes
-  // char s[50] = "";
-  // strcat(s, to_string(&next));
+  instr_add_func_def();
 
   match(T_L_BRACKET);
   param_list();
   match(T_R_BRACKET);
+
   func_def_type();
   match(T_EOL);
-
-  // for debugging purposes TODO delete
-  // printf("---Func %s matched\n", s);
+  // end func def
+  instr_add_func_end();
+  scope_pop();
 }
 
 void param_list() {
-  eps = true;
+  def = true; eps = true;
   match(T_VAR_ID);
-  if (eps) return;
+  if (eps) {
+    eps = false;
+    return;
+  }
   type();
   next_param();
 }
 
 void next_param() {
-  eps = true;
+  def = true; eps = true;
   match(T_COMMA);
   if (eps) return;
   match(T_VAR_ID);
@@ -324,11 +825,8 @@ void func_def_type() {
       func_def_ret();
       break;
 
-    default:
-      error(
-        99, "parser.c", "match",
-        "Wanted: '(' or '{' -- Got: %d", next.token_type
-      );
+    default:  // error
+      match(T_LEFT_BRACE);
       break;
   }
 }
@@ -342,7 +840,7 @@ void func_def_ret() {
     match(T_RIGHT_BRACE);
   }
   else {
-    ret_list();
+    ret_list_def();
     match(T_R_BRACKET);
     match(T_LEFT_BRACE);
     match(T_EOL);
@@ -351,20 +849,53 @@ void func_def_ret() {
   }
 }
 
-void ret_list() {
+void ret_list_def() {
+  // adding rets of func
   type();
-  next_ret();
+  next_ret_def();
+
+  // TODO delete
+  sym_var_list_t * rets = last_func->symbol.sym_func->returns;
+  if (rets == NULL) return;
+  printf("\t\tRETURNS:\n");
+  printf("\t\t---");
+  for (
+    sym_var_item_t * tmp = sym_var_list_get_active(rets);
+    tmp != NULL;
+    tmp = sym_var_list_next(rets)
+  ) {
+    switch (tmp->type) {
+      case VAR_INT:
+        printf("INT, ");
+        break;
+      case VAR_FLOAT64:
+        printf("FLOAT64, ");
+        break;
+      case VAR_STRING:
+        printf("STRING, ");
+        break;
+      case VAR_BOOL:
+        printf("BOOL, ");
+        break;
+      default:
+        printf("Invalid return type");
+        exit(1);
+        break;
+    }
+  }
+  printf("\n");
 }
 
-void next_ret() {
+void next_ret_def() {
   eps = true;
   match(T_COMMA);
   if (eps) return;
   type();
-  next_ret();
+  next_ret_def();
 }
 
 void body() {
+  last_elem = NULL; // leaving func def header
   skip_empty();
   command();
   if (eps) {
@@ -378,12 +909,12 @@ void body() {
 void command() {
   switch (next.token_type) {
     case T_IDENTIFIER:  // var_ OR func_call
-      eps = true;
-      match(T_VAR_ID);
-      if (!eps) var_();
+      def = false; eps = true;
+      match(T_FUNC_ID);
+      if (!eps) func_call();
       else {
         eps = false;
-        func_call();
+        var_();
       }
       break;
 
@@ -409,20 +940,34 @@ void command() {
 }
 
 void var_() {
-  if (next.token_type == T_DEF_IDENT) var_def();
-  else var_move();
+  def = true; eps = true;
+  match(T_VAR_ID);
+  if (!eps) var_def();
+  else {
+    def = false; eps = false;
+    match(T_VAR_ID);
+    var_move();
+  }
 }
 
 void var_def() {
+  if (next.token_type == T_ASSIGNMENT)
+    error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
   match(T_DEF_IDENT);
-  // printf("matched := \n");
   parse_expression();
 }
 
 void var_move() {
+  instr_add_var_def();
+  instr_var_list_append_dest();
+
   next_id();
+  if (next.token_type == T_DEF_IDENT)
+    error(
+      3, "parser", "var_move", "Redefinition of variable \"%s\"",
+      last_elem->symbol.sym_var_item->name
+    );
   match(T_ASSIGNMENT);
-  // printf("matched = \n");
   expr_list();
 }
 
@@ -433,56 +978,92 @@ void next_id() {
     eps = false;
     return;
   }
+  def = false; eps = false;
   match(T_VAR_ID);
+  instr_var_list_append_dest();
   next_id();
 }
 
 void if_() {
+  // if def
   match(T_IF);
-  // printf("matched IF\t%d\n", get_err_line()+1);
+  instr_add_if_def();
+  // condition
   parse_expression(); // condition handling
   match(T_LEFT_BRACE);
   match(T_EOL);
+
+    // if start instr
+  instr_t * if_start = instr_create();
+  instr_set_type(if_start, IC_IF_START);
+  list_add(list, if_start);
+
+  // commands
   body();
   match(T_RIGHT_BRACE);
-  // printf("matched ENDIF\t%d\t%d\n", get_err_line()+1, next.token_type);
+  instr_add_if_end();
+
   if_cont();
-  // printf("if matched\n");
 }
 
 void if_cont() {
   if (next.token_type != T_ELSE) return;
   match(T_ELSE);
-  // printf("matched else\n");
+  instr_add_else_start();
   else_();
 }
 
 void else_() {
   if (next.token_type != T_LEFT_BRACE) {
     if_();
+    instr_add_else_end();
     return;
   }
   match(T_LEFT_BRACE);
   match(T_EOL);
   body();
   match(T_RIGHT_BRACE);
+  instr_add_else_end();
 }
 
 void cycle() {
   match(T_FOR);
+  // initialization
+  instr_add_for_def();
   for_def();
   match(T_SEMICOLON);
+  // condition
+  instr_t * for_cond = instr_create();
+  instr_set_type(for_cond, IC_FOR_COND);
+  list_add(list, for_cond);
   parse_expression(); // expression parser call
   match(T_SEMICOLON);
+  // step
   for_move();
   match(T_LEFT_BRACE);
   match(T_EOL);
+
+  // body start
+  instr_t * for_body_start = instr_create();
+  instr_set_type(for_body_start, IC_FOR_BODY_START);
+  list_add(list, for_body_start);
+  // body is a new scope subordinate to cycle's head
+  char * body_scope = malloc(sizeof(char) * 5);
+  strcpy(body_scope, "body");
+  scope_push(body_scope);
+  // ----------------------------
   body();
   match(T_RIGHT_BRACE);
+  // body end
+  instr_t * for_body_end = instr_create();
+  instr_set_type(for_body_end, IC_FOR_BODY_END);
+  list_add(list, for_body_end);
+  scope_pop();  // body
+  scope_pop();  // for
 }
 
 void for_def() {
-  eps = true;
+  def = true; eps = true;
   match(T_VAR_ID);
   if (eps) {
     eps = false;
@@ -492,22 +1073,47 @@ void for_def() {
 }
 
 void for_move() {
-  eps = true;
+  if (next.token_type == T_LEFT_BRACE) return;
+  def = false; eps = false;
   match(T_VAR_ID);
   if (eps) {
     eps = false;
     return;
   }
+  // create instruction
+  instr_t * for_step = instr_create();
+  instr_set_type(for_step, IC_FOR_STEP);
+  list_add(list, for_step);
+
   var_move();
 }
 
 void return_() {
   match(T_RETURN);
-  expr_list();
+  return_list();
+}
+
+void return_list() {
+  if (next.token_type == T_EOL) return;
+
+  // TODO add type checking
+  parse_expression();
+  next_ret();
+}
+
+void next_ret() {
+  eps = true;
+  match(T_COMMA);
+  if (eps) {
+    eps = false;
+    return;
+  }
+  // TODO add type checking
+  parse_expression();
+  next_ret();
 }
 
 void func_call() {
-  match(T_FUNC_ID);
   match(T_L_BRACKET);
   func_args();
   match(T_R_BRACKET);
@@ -549,26 +1155,54 @@ void next_expr() {
 }
 
 void type() {
+  if (last_elem == NULL)
+    error(99, "parser", "type", "Failed to access last element");
+
+  var_type_t type;
   switch (next.token_type) {
     case T_INT:
-      // printf("Matched int\n");
+      type = VAR_INT;
       break;
-
     case T_FLOAT64:
-      // printf("Matched float\n");
+      type = VAR_FLOAT64;
       break;
-
     case T_STRING:
-      // printf("Matched string\n");
+      type = VAR_STRING;
       break;
-
-    // case T_BOOL:
-    //   // printf("Matched bool\n");
-    //   break;
-
+    case T_BOOL:
+      type = VAR_BOOL;
+      break;
     default:
       error(1, "parser", "type", "Invalid variable type");
       break;
   }
+
+
+  if (last_elem->sym_type == SYM_VAR_ITEM) {  // assign type to last element
+    sym_var_item_set_type(last_elem->symbol.sym_var_item, type);
+    if (type == VAR_STRING)
+      last_elem->symbol.sym_var_item->data.string_t = NULL;
+  }
+  else { // return list of function
+    if (last_func == NULL)
+      error(99, "parser", "type", "Missing function to assign parameter to");
+
+    // get returns
+    sym_var_list_t ** rets = &(last_func->symbol.sym_func->returns);
+    if (rets == NULL)
+      error(99, "parser", "type", "Failed to access function's returns");
+    if (*rets == NULL)  // ret list empty
+      *rets = sym_var_list_init();
+
+    //create item
+    sym_var_item_t * new = sym_var_item_init(NULL);
+    sym_var_item_set_type(new, type);
+    if (type == VAR_STRING)
+      new->data.string_t = NULL;
+    // add to return list
+    sym_var_list_add(*rets, new);
+  }
+
+  last_elem = last_func;
   get_next_token(&next);
 }

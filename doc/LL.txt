@@ -16,10 +16,10 @@ next_param: /*eps*/ | ',' VAR_ID type next_param;
 
 //-----------Determining RETURN TYPE(s) of function----
 func_def_type: '{' EOL body '}' | '(' func_def_ret;
-func_def_ret: ')' '{' EOL body '}' | ret_list ')' '{' EOL body '}';
+func_def_ret: ')' '{' EOL body '}' | ret_list_def ')' '{' EOL body '}';
 //-----------List of RETURN TYPES----------------------
-ret_list: type next_ret;
-next_ret: /*eps*/ | ',' type next_ret;
+ret_list_def: type next_ret_def;
+next_ret_def: /*eps*/ | ',' type next_ret_def;
 
 
 //-----------BODY of functions-------------------------
@@ -41,7 +41,9 @@ cycle: FOR for_def ';' COND ';' for_move '{' EOL body '}';
 for_def: /*eps*/ | VAR_ID var_def;
 for_move: /*eps*/ | VAR_ID var_move;
 //--------RETURN---------------------------------------
-return: RETURN expr_list;
+return: RETURN return_list;
+return_list: /*eps*/ | EXPR next_ret;
+next_ret: /*eps*/ | ',' EXPR next_ret;
 //--------FUNCTION CALLS-------------------------------
 func_call: FUNC_ID '(' func_args ')';
 func_args: /*eps*/ | expr_list;

@@ -130,16 +130,15 @@ symtable_iterator_t symtable_insert(symtable_t *t, symtable_key_t key, symtable_
 		return symtable_end(t);
 	}
 
-	iterator.ptr->key = malloc(strlen(key) + 1);
+	iterator.ptr->key = key;
 
 	if (iterator.ptr->key == NULL) {
 		return symtable_end(t);
 	}
 
-	strcpy((char *) iterator.ptr->key, key);
-
 	// Assign element key by pointer
-	data->key = (char **) &(iterator.ptr->key);
+	data->key = malloc(sizeof(char**));
+	*(data->key) = (char *)key;
 
 	symtable_iterator_set_value(iterator, data);
 
@@ -338,6 +337,8 @@ void symtable_clear(symtable_t *t) {
 					break;
 			}
 
+			// Free element's key
+			free(t->item[i]->data->key);
 			// Free element
 			free(t->item[i]->data);
 
@@ -424,7 +425,7 @@ void sym_func_free(sym_func_t *sym_func) {
 	sym_var_list_t *sym_func_returns = sym_func->returns;
 
 	if (sym_func_params != NULL) {
-		sym_var_list_free(sym_func_params);
+		free(sym_func_params);
 	}
 
 	if (sym_func_returns != NULL) {
@@ -439,12 +440,12 @@ void sym_var_item_free(sym_var_item_t *sym_var_item) {
 		error(99, "symtable.c", "sym_var_item_free", "Failed to free symbol var item");
 	}
 
-	if (sym_var_item->type == VAR_STRING) {
-		if (sym_var_item->data.string_t == NULL) {
-			error(99, "symtable.c", "sym_var_item_free", "Failed to free symbol var item");
-		}
+	if (sym_var_item->name != NULL)
+		free(sym_var_item->name);
 
-		free(sym_var_item->data.string_t);
+	if (sym_var_item->type == VAR_STRING) {
+		if (sym_var_item->data.string_t != NULL)
+			free(sym_var_item->data.string_t);
 	}
 
 	free(sym_var_item);
@@ -538,6 +539,7 @@ void sym_var_list_add(sym_var_list_t *sym_var_list, sym_var_item_t *sym_var_item
 
 	if (sym_var_list->first == NULL) {
 		sym_var_list->first = sym_var_item;
+		sym_var_list->active = sym_var_item;
 		sym_var_item_set_next(sym_var_item, NULL);
 		sym_var_item_set_prev(sym_var_item, NULL);
 	}
