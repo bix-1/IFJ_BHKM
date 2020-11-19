@@ -17,6 +17,14 @@
 #include "stack.h"
 #include "scanner.h"
 
+typedef struct parserData
+{
+    tToken *token;
+    tokenStack *stack;
+} tPData;
+
+tPData parsData;
+
 /*
 *   Function returns index of the symbol to choose action from precedence table
 */
@@ -28,7 +36,7 @@ int get_index(tToken token);
 void shift();
 
 /*
-*   Function reduces the expression with rule based on the precedence table 
+*   Function reduces the expression with rule based on the precedence table
 */
 void reduce();
 
