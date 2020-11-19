@@ -14,6 +14,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "ll.h"         // instr_t
 #include "scanner.h"
 #include "symtable.h"   // elem_t
 #include "expression.h"
@@ -175,6 +176,20 @@ void instr_add_for_def();
 // add parameter (last_elem) to last_func
 void func_add_param();
 
+typedef struct func_def func_def_t;
+struct func_def {
+  elem_t * func;
+  func_def_t * next;
+};
+
+struct func_defs_t {
+  func_def_t * first;
+} func_defs;
+
+void func_defs_init();
+void func_defs_destroy();
+void func_defs_add(elem_t *);
+void func_defs_check();
 
 /*
   ___________FUNCTIONS_REPRESENTING___________
@@ -196,7 +211,6 @@ void ret_list_def();
 void next_ret_def();
 void body();
 void command();
-void var_();
 void var_def();
 void var_move();
 void next_id();

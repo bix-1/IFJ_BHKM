@@ -48,6 +48,9 @@ void list_destroy (list_t ** l)
       free(curr->elem_dest_ptr);
       free(curr->elem1_ptr);
     }
+    else if (curr->type == IC_CALL_FUN) {
+      free(curr->elem1_ptr->symbol.sym_func->name);
+    }
     next = curr->next;
     free( curr );
     curr = next;

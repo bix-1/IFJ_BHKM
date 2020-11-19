@@ -76,6 +76,8 @@ void parse() {
   get_next_token(&next);
   list = list_create();
   symtable = symtable_init(100);
+  scope_init();
+  func_defs_init();
 
   printf("\n\n___________SYMTABLE:____________\n");
   printf("________________________________\n");
@@ -188,6 +190,12 @@ void parse() {
       case IC_FOR_BODY_END:
         printf("\n\t____________END_FOR\n");
       break;
+      case IC_CALL_FUN:
+        printf("\tFUNC CALL\t%s\n", instr_get_elem1(tmp)->symbol.sym_func->name);
+      break;
+      case IC_RET_FUN:
+        // TODO
+      break;
 
 
       default:
@@ -197,8 +205,11 @@ void parse() {
     printf("\n");
   }
 
+  func_defs_check();
+
   // termination
   scope_destroy();
+  func_defs_destroy();
   list_destroy(&list);
   symtable_free(symtable);
 }
@@ -298,39 +309,56 @@ void match(int term) {
       //    && "Missing main func" error called
       if (def) eps = false;
 
-      // check for duplicate
-      if (symtable_iterator_valid(symtable_find(symtable, to_string(&next)))) {
-        if (def && !eps)
-          error(3, "parser", "match", "Redefinition of function \"%s\"", to_string(&next));
-        if (!def) {
-          // TODO check for type
-          printf("func call: %s\n", to_string(&next));
+      if (def) { //definition expected
+        symtable_iterator_t it = symtable_find(symtable, to_string(&next));
+        if (symtable_iterator_valid(it)) {  // found in symtable
+          if (eps) {
+            def = false;
+            return;
+          } else error(3, "parser", "match", "Redefinition of function \"%s\"", to_string(&next));
         }
-        else return;
-      }
-      else { // first definition
-        if (!def) {
-          if (eps) return;
-          error(3, "parser", "match", "Function \"%s\" undefined", to_string(&next));
-        }
+        else { // first definition
+          // create func
+          sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
+          symbol_t func = {.sym_func = func_sym};
+          elem_t * func_data = elem_init(SYM_FUNC, func);
+          // add to symtable
+          symtable_iterator_t tmp =
+            symtable_insert(symtable, to_string(&next), func_data);
+          last_func = symtable_iterator_get_value(tmp);
+          // add to scope
+          char * new_scope = malloc(sizeof(char) * (strlen(to_string(&next))+1) );
+          if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
+          strcpy(new_scope, to_string(&next));
+          U_ID = 0; // new founc -- can reset counter
+          scope_push(new_scope);
+          last_elem = last_func;
 
-        // create func
+          printf("Added ---%s\n", to_string(&next));
+        }
+      }
+      else { // func call expected
+        // create func elem
         sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
         symbol_t func = {.sym_func = func_sym};
-        elem_t * func_data = elem_init(SYM_FUNC, func);
+        elem_t * func_elem = elem_init(SYM_FUNC, func);
         // add to symtable
-        symtable_iterator_t tmp =
-          symtable_insert(symtable, to_string(&next), func_data);
-        last_func = symtable_iterator_get_value(tmp);
-        // add to scope
-        char * new_scope = malloc(sizeof(char) * (strlen(to_string(&next))+1) );
-        if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
-        strcpy(new_scope, to_string(&next));
-        U_ID = 0; // new founc -- can reset counter
-        scope_push(new_scope);
-        last_elem = last_func;
+        char * index = get_unique();
+        char i_name[strlen(index) + strlen(to_string(&next)) + 1];
+        strcpy(i_name, index);
+        strcat(i_name, to_string(&next));
+        char * func_name = id_add_scope(scope_get_head(), i_name);
+        symtable_insert(symtable, func_name, func_elem);
+        // create instruction
+        instr_t * func_call = instr_create();
+        instr_set_type(func_call, IC_CALL_FUN);
+        instr_add_elem1(func_call, func_elem);
+        list_add(list, func_call);
+        last_elem = func_elem;
 
-        printf("Added ---%s\n", to_string(&next));
+        func_defs_add(func_elem);
+
+        printf("\t---func call:\t%s\t\t\n", func_name);
       }
       break;
 
@@ -343,16 +371,6 @@ void match(int term) {
         goto default_err;
       }
 
-      // // construct variable's contextual ID
-      // char * id = malloc(
-      //   sizeof(char) *  // prefix + : + name + \0
-      //   (strlen(scope_get()) + strlen(to_string(&next)) + 2)
-      // );
-      // if (id == NULL) error(99, "parser", "", "Memory allocation failed");
-      // id[0] = '\0';
-      // strcat(id, scope_get());
-      // strcat(id, to_string(&next));
-
       if (def) {  // definition expected
         // get variable's contextual ID
         char * id = id_add_scope(scope_get_head(), to_string(&next));
@@ -364,7 +382,8 @@ void match(int term) {
             return;
           }
           else error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
-        } else {  // first occurrence
+        }
+        else {  // first occurrence
           // create var
           sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
           symbol_t var_sym = {.sym_var_item = var_item};
@@ -387,43 +406,6 @@ void match(int term) {
       else {  // var_call expected
         id_find(scope_get_head(), to_string(&next));
       }
-
-      // // check for duplicate
-      // symtable_iterator_t it = symtable_find(symtable, id);
-      // if (symtable_iterator_valid(it)) {
-      //   free(id); // no longer needed
-      //   if (def && !eps)
-      //     error(3, "parser", "match", "Redefinition of variable \"%s\"", to_string(&next));
-      //   if (!def) {
-      //     last_elem = symtable_iterator_get_value(it);
-      //     token_cleanup();
-      //   }
-      //   else return;
-      // }
-      // else { // first definition
-      //   if (!def) {
-      //     free(id);
-      //     if (eps) return;
-      //     error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
-      //   }
-      //   // create var
-      //   sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
-      //   symbol_t var_sym = {.sym_var_item = var_item};
-      //   elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
-      //   // add to symtable
-      //   symtable_insert(symtable, id, var);
-      //
-      //   printf("\t---%s\n", id);
-      //
-      //   // check if var is parameter of func
-      //   if (last_elem != NULL && last_elem->sym_type == SYM_FUNC ) {
-      //     last_elem = var;
-      //     func_add_param();
-      //   } else {
-      //     last_elem = var;
-      //     instr_add_var_decl();
-      //   }
-      // }
       break;
 
     default:
@@ -662,6 +644,7 @@ void instr_add_for_def() {
 }
 
 
+// func functions
 void func_add_param() {
   if (last_func == NULL || last_elem == NULL)
     error(99, "parser", "type", "Failed to access function's parameters");
@@ -675,6 +658,52 @@ void func_add_param() {
   // add to param list
   sym_var_list_add(*params, last_elem->symbol.sym_var_item);
 }
+
+
+
+void func_defs_init() {
+    func_defs.first = NULL;
+}
+
+void func_defs_destroy() {
+  func_def_t * tmp = func_defs.first;
+  func_def_t * next;
+  while (tmp != NULL) {
+    next = tmp->next;
+    free(tmp);
+    tmp = next;
+  }
+  func_defs.first = NULL;
+}
+
+void func_defs_add(elem_t * func) {
+  func_def_t * new = malloc(sizeof(func_def_t));
+  new->func = func;
+  new->next = func_defs.first;
+  func_defs.first = new;
+}
+
+void func_defs_check() {
+  printf("\n\n\n===============================\n\n");
+  func_def_t * tmp = func_defs.first;
+  char * name;
+  while (tmp != NULL) {
+    name = tmp->func->symbol.sym_func->name;
+    symtable_iterator_t it = symtable_find(symtable, name);
+    if (symtable_iterator_valid(it)) {
+      printf("FUNC\t%s\n", name);
+      // TODO
+
+
+
+      printf("\n");
+    } else {
+      error(3, "parser", "func_check", "Function '%s' called but not defined", name);
+    }
+    tmp = tmp->next;
+  }
+}
+
 
 /*
   ___________FUNCTIONS_REPRESENTING___________
@@ -916,15 +945,47 @@ void body() {
 
 void command() {
   switch (next.token_type) {
-    case T_IDENTIFIER:  // var_ OR func_call
-      def = false; eps = true;
-      match(T_FUNC_ID);
-      if (!eps) func_call();
-      else {
-        eps = false;
-        var_();
+    case T_IDENTIFIER: {  // var_ OR func_call
+      // identifier (current token) must be stashed
+      char * id_stash = to_string(&next);
+
+      get_next_token(&next);
+      int type = next.token_type;
+      next.token_type = T_IDENTIFIER;
+      next.attr.str_lit.str = id_stash;
+
+      switch (type) {
+        case T_L_BRACKET:
+          ungetc('(', source);
+          func_call();
+          break;
+
+        case T_DEF_IDENT:
+          ungetc('=', source);
+          ungetc(':', source);
+          var_def();
+          break;
+
+        case T_ASSIGNMENT:
+          ungetc('=', source);
+          var_move();
+          break;
+
+        case T_COMMA:
+          ungetc(',', source);
+          var_move();
+          break;
+
+        default:
+          error(
+            2, "parser", "match",
+            "Expected: Function call or variable definition/assignment -- Got: '%s'",
+            next.token_type
+          );
+          break;
       }
       break;
+    }
 
     // if
     case T_IF:
@@ -947,25 +1008,17 @@ void command() {
   }
 }
 
-void var_() {
-  def = true; eps = true;
-  match(T_VAR_ID);
-  if (!eps) var_def();
-  else {
-    def = false; eps = false;
-    match(T_VAR_ID);
-    var_move();
-  }
-}
-
 void var_def() {
-  if (next.token_type == T_ASSIGNMENT)
-    error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
+  def = true; eps = false;
+  match(T_VAR_ID);
   match(T_DEF_IDENT);
   parse_expression();
 }
 
 void var_move() {
+  def = false; eps = false;
+  match(T_VAR_ID);
+
   instr_add_var_def();
   instr_var_list_append_dest();
 
@@ -1122,6 +1175,8 @@ void next_ret() {
 }
 
 void func_call() {
+  def = false; eps = false;
+  match(T_FUNC_ID);
   match(T_L_BRACKET);
   func_args();
   match(T_R_BRACKET);
