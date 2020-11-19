@@ -68,21 +68,8 @@ bool eps = false;
 //    for checking whether ID is being defined or called
 bool def = false;
 
-// Getters for token attributes
-int64_t to_int(tToken *t) {
-  return t->attr.int_lit;
-}
 
-double to_double(tToken *t) {
-  return t->attr.dec_lit;
-}
-
-char * to_string(tToken *t) {
-  return t->attr.str_lit.str;
-}
-
-//-------------------------------------------
-
+/*_______________MAIN_FUNCTION______________*/
 void parse() {
   // initialization
   source_file_setup(stdin);
@@ -216,6 +203,8 @@ void parse() {
   symtable_free(symtable);
 }
 
+
+/*__________________TOKENS__________________*/
 void token_cleanup() {
   if (
     ( next.token_type == T_IDENTIFIER ||
@@ -226,6 +215,19 @@ void token_cleanup() {
   ) {
     free(next.attr.str_lit.str);
   }
+}
+
+// Getters for token attributes
+int64_t to_int(tToken *t) {
+  return t->attr.int_lit;
+}
+
+double to_double(tToken *t) {
+  return t->attr.dec_lit;
+}
+
+char * to_string(tToken *t) {
+  return t->attr.str_lit.str;
 }
 
 void match(int term) {
@@ -443,18 +445,8 @@ void match(int term) {
   get_next_token(&next);
 }
 
-void skip_empty() {
-  eps = true;
-  match(T_EOL);
-  eps = false;
-}
 
 /*_______________SCOPE_CONTROL______________*/
-char * get_unique() {
-  sprintf(u_id, "%ld", U_ID++);
-  return u_id;
-}
-
 void scope_init() {
   scope.first = NULL;
 }
@@ -553,6 +545,19 @@ void id_find(scope_elem_t *scope, char *old_id) {
     }
   }
 }
+
+char * get_unique() {
+  sprintf(u_id, "%ld", U_ID++);
+  return u_id;
+}
+
+
+void skip_empty() {
+  eps = true;
+  match(T_EOL);
+  eps = false;
+}
+
 
 // additional instructions-related functions
 void instr_add_func_def() {
@@ -671,8 +676,11 @@ void func_add_param() {
   sym_var_list_add(*params, last_elem->symbol.sym_var_item);
 }
 
-// functions representing LL grammar nonterminals
+/*
+  ___________FUNCTIONS_REPRESENTING___________
+  ___________LL_GRAMMAR_NONTERMINALS__________
 
+*/
 void program() {
   prolog();
 

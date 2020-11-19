@@ -94,11 +94,38 @@ void scope_init();
   Cleans up global variable [scope_t] scope
 */
 void scope_destroy();
+/*
+  Function scope_push
+  -------------------
+  Pushes given [char *] on scope stack
+*/
 void scope_push(char *);
+/*
+  Function scope_pop
+  ------------------
+  Removes the top element from scope stack
+*/
 void scope_pop();
+/*
+  Function scope_get_head
+  -----------------------
+  Returns [scope_elem_t *] ptr to the element on top of scope stack
+*/
 scope_elem_t * scope_get_head();
+/*
+  Function scope_get
+  ------------------
+  Returns [char *] name of the element at the top of scope stack
+  in format: <func_foo>:<index><if/else/for/for-body>:
+*/
 char * scope_get();
-char * id_add_scope(scope_elem_t *, char *);
+/*
+  Function id_add_scope
+  ---------------------
+  Returns [char *] name of given id in the context of given scope
+  in format: <format of scope_get>:id
+*/
+char * id_add_scope(scope_elem_t *scope, char *id);
 /*
   Function id_find
   ----------------
@@ -126,6 +153,8 @@ char * id_add_scope(scope_elem_t *, char *);
           	Variable "Y" undefined
 */
 void id_find(scope_elem_t *scope, char *id);
+
+char * get_unique();
 
 
 // skips all empty spaces
