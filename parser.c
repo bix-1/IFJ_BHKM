@@ -730,7 +730,7 @@ void prolog() {
   skip_empty();
   if (next.token_type != T_IDENTIFIER || strcmp(to_string(&next), "main"))
     error(
-      2, "parser.c", "match",
+      2, "parser", "match",
       "Expected: '%s' -- Got: '%s'", T_MAIN, next.token_type
     );
   def = false;
