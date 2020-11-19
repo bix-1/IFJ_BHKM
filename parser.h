@@ -22,13 +22,7 @@
 #define T_FUNC_ID 1001
 #define T_VAR_ID 1002
 
-typedef struct parserData
-{
-    tToken *token;
-    tokenStack *stack;
-} tPData;
 
-tPData parsData;
 
 extern tToken next;
 

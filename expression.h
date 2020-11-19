@@ -17,6 +17,14 @@
 #include "stack.h"
 #include "scanner.h"
 
+typedef struct parserData
+{
+    tToken *token;
+    tokenStack *stack;
+} tPData;
+
+tPData parsData;
+
 /*
 *   Function returns index of the symbol to choose action from precedence table
 */

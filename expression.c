@@ -164,8 +164,27 @@ void check_symtable(stackElemPtr elem)
         // create variable and add to symtable
         sym_var_item_t *var_item = sym_var_item_init(id);
         sym_var_item_set_type(var_item, var_type_check(&(elem->token)));
-        var_data_set(&(elem->token), var_item);
-        symbol_t var_sym = {.sym_var_item = var_item};
+        variable_t variable;
+        switch (elem->token.token_type)
+        {
+        case T_INT_VALUE:
+            variable.int_t = elem->token.attr.int_lit;
+            return;
+            break;
+        case T_DEC_VALUE:
+            variable.float64_t = elem->token.attr.dec_lit;
+            return;
+            break;
+        case T_STRING_VALUE:
+            variable.string_t = elem->token.attr.str_lit.str; //TODO MAKE SURE THIS IS RIGHT
+            return;
+            break;
+        default:
+            break;
+        }
+        sym_var_item_set_data(var_item, variable);
+            //var_data_set(&(elem->token), var_item);
+            symbol_t var_sym = {.sym_var_item = var_item};
         elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
         symtable_insert(symtable, id, var);
 
@@ -193,7 +212,8 @@ void var_data_set(tToken *token, sym_var_item_t *var)
         sym_var_item_set_data(var, data);
         return;
         break;
-        default : break;
+    default:
+        break;
     }
 }
 
