@@ -42,7 +42,7 @@ void parse();
 // -- contains all error calls that are not context-specific
 void match(int term);
 // match global variable
-extern elem_t * last_elem;
+// extern elem_t * last_elem;
 
 
 /*__________________SCOPE__________________*/
@@ -66,8 +66,36 @@ void scope_init();
 void scope_destroy();
 void scope_push(char *);
 void scope_pop();
+scope_elem_t * scope_get_head();
 char * scope_get();
 char * id_add_scope(scope_elem_t *, char *);
+/*
+  Function id_find
+  ----------------
+  Looks for id in given & higher scopes
+
+  __PARAMETERS:
+  [scope_elem_t]  scope:    scope in which to start looking
+  [char *]        id:       name to look for
+
+  __RETURNS:  ---
+    [elem_t *] in last_elem
+
+  -----------------
+  Example of usage:
+    eps = false;
+    id_find(scope_get_head(), to_string(&next));
+    printf("%s\n", last_elem->key);
+
+  Output:
+    Name_of_found_element
+    ___OR___
+    ERROR:	__line X__	Semantic error -- with exit code 3
+    parser:	match:
+          	Variable "Y" undefined
+*/
+void id_find(scope_elem_t *scope, char *id);
+
 
 // skip all empty spaces
 void skip_empty();

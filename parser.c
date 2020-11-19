@@ -353,7 +353,7 @@ void match(int term) {
 
       if (def) {  // definition expected
         // get variable's contextual ID
-        char * id = id_add_scope(scope.first, to_string(&next));
+        char * id = id_add_scope(scope_get_head(), to_string(&next));
         symtable_iterator_t it = symtable_find(symtable, id);
         if (symtable_iterator_valid(it)) {  // found in symtable
           free(id);
@@ -383,31 +383,7 @@ void match(int term) {
         }
       }
       else {  // var_call expected
-        char * id;
-        char * old_id = to_string(&next);
-        scope_elem_t * tmp_scope = scope.first;
-        symtable_iterator_t it;
-
-        // look through all higher contexts
-        while (true) {
-          // check for end of scope
-          if (tmp_scope == NULL) {
-            if (eps) return;
-            else error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
-          }
-          // get variable's contextual ID
-          id = id_add_scope(tmp_scope, old_id);
-          // look for in symtable
-          it = symtable_find(symtable, id);
-          free(id);
-          if (symtable_iterator_valid(it)) {  // found in symtable
-            last_elem = symtable_iterator_get_value(it);
-            token_cleanup();
-            break;
-          } else {  // move to the next
-            tmp_scope = tmp_scope->next;
-          }
-        }
+        id_find(scope_get_head(), to_string(&next));
       }
 
       // // check for duplicate
@@ -528,6 +504,10 @@ void scope_pop() {
   scope.first = tmp;
 }
 
+scope_elem_t * scope_get_head() {
+  return scope.first;
+}
+
 char * scope_get() {
   if (scope.first == NULL) return NULL;
   return scope.first->name;
@@ -545,6 +525,33 @@ char * id_add_scope(scope_elem_t * tmp_scope, char * old_id) {
   strcat(new_id, old_id);
 
   return new_id;
+}
+
+void id_find(scope_elem_t *scope, char *old_id) {
+  char * id;
+  scope_elem_t * tmp_scope = scope;
+  symtable_iterator_t it;
+
+  // look through all higher contexts
+  while (true) {
+    // check for end of scope
+    if (tmp_scope == NULL) {
+      if (eps) return;
+      else error(3, "parser", "match", "Variable \"%s\" undefined", to_string(&next));
+    }
+    // get variable's contextual ID
+    id = id_add_scope(tmp_scope, old_id);
+    // look for in symtable
+    it = symtable_find(symtable, id);
+    free(id);
+    if (symtable_iterator_valid(it)) {  // found in symtable
+      last_elem = symtable_iterator_get_value(it);
+      token_cleanup();
+      break;
+    } else {  // move to the next
+      tmp_scope = tmp_scope->next;
+    }
+  }
 }
 
 // additional instructions-related functions
