@@ -30,6 +30,36 @@ tPData parsData;
 */
 int get_index(tToken token);
 
+
+
+symtable_value_t create_variable(stackElemPtr elem);
+char *create_id();
+
+/*
+*   Function checks whether the variable is defined
+*/
+void check_symtable(stackElemPtr elem);
+
+/*
+*   Function sets data based on token type
+*/
+void var_data_set(tToken *token, sym_var_item_t *var);
+
+/*
+*   Function checks whether the token types are same
+*/
+void check_types(stackElemPtr top, stackElemPtr afterTop);
+
+/*
+*   Function returns VAR_TYPE
+*/
+int var_type_check(tToken *token);
+
+/*
+*   Function which checks if the term is missing from operation
+*/
+void check_expr(tToken *token);
+
 /*
 *   Function shifts the current token to stack and gets next token
 */
@@ -53,6 +83,6 @@ void release_resources();
 /*
 *   Main function which parses the expression
 */
-void parse_expression();
+symtable_value_t parse_expression();
 
 #endif //IFJ_BHKM_EXPRESSION_H
