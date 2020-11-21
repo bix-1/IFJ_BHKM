@@ -15,6 +15,7 @@
 #define PARSER_H
 
 #include "ll.h"         // instr_t
+#include <stdbool.h>     // bool built_in()
 #include "scanner.h"
 #include "symtable.h"   // elem_t
 #include "expression.h"
@@ -191,6 +192,7 @@ void func_defs_destroy();
 void func_defs_add(elem_t *);
 void func_defs_check();
 
+bool built_in();
 /*
   ___________FUNCTIONS_REPRESENTING___________
   ___________LL_GRAMMAR_NONTERMINALS__________

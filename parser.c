@@ -12,6 +12,8 @@
 
 /*
 TODO:
+  params, rets
+
   refactor func comments
   crossreference LL.pdf & implemented rules
 
@@ -196,6 +198,9 @@ void parse() {
       case IC_RET_FUN:
         // TODO
       break;
+      case IC_READ_VAR:
+        printf("\tINPUT_FUNC\n");
+      break;
 
 
       default:
@@ -301,6 +306,9 @@ void match(int term) {
         next.token_type = T_MAIN;
         goto default_err;
       }
+
+      // check for built-in function
+      if (built_in()) break;
 
       // expected func definition && func != main
       // --> cannot be EPS terminal
@@ -705,6 +713,33 @@ void func_defs_check() {
 }
 
 
+bool built_in() {
+  instr_t * instr = instr_create();
+  char * func = to_string(&next);
+  int type;
+  if (
+    !strcmp(func, "inputs") ||  // string
+    !strcmp(func, "inputi") ||  // int
+    !strcmp(func, "inputf") ||  // float
+    !strcmp(func, "inputb")     // bool
+  ) {
+    type = IC_READ_VAR;
+    instr_add_dest(instr, last_elem);
+  } else if (!strcmp(func, "print")) {
+    type = IC_WRITE_VAR;
+    // instr_add_dest(instr, ); // TODO ... somewhere
+  } else {
+    free(instr);
+    return false;
+  }
+  token_cleanup(); // get rid of func name
+
+  instr_set_type(instr, type);
+  list_add(list, instr);
+  return true;
+}
+
+
 /*
   ___________FUNCTIONS_REPRESENTING___________
   ___________LL_GRAMMAR_NONTERMINALS__________
@@ -1019,8 +1054,10 @@ void var_move() {
   def = false; eps = false;
   match(T_VAR_ID);
 
-  instr_add_var_def();
-  instr_var_list_append_dest();
+  // instr_add_var_def();
+  // instr_var_list_append_dest();
+
+  // TODO sym_var_list
 
   next_id();
   if (next.token_type == T_DEF_IDENT)
@@ -1124,23 +1161,12 @@ void cycle() {
 }
 
 void for_def() {
-  def = true; eps = true;
-  match(T_VAR_ID);
-  if (eps) {
-    eps = false;
-    return;
-  }
+  if (next.token_type == T_SEMICOLON) return;
   var_def();
 }
 
 void for_move() {
   if (next.token_type == T_LEFT_BRACE) return;
-  def = false; eps = false;
-  match(T_VAR_ID);
-  if (eps) {
-    eps = false;
-    return;
-  }
   // create instruction
   instr_t * for_step = instr_create();
   instr_set_type(for_step, IC_FOR_STEP);
@@ -1183,19 +1209,37 @@ void func_call() {
 }
 
 void func_args() {
-  if (
-    next.token_type == T_L_BRACKET ||
-    next.token_type == T_IDENTIFIER ||
-    next.token_type == T_INT_VALUE ||
-    next.token_type == T_DEC_VALUE ||
-    next.token_type == T_STRING_VALUE
-  ) {
-    parse_expression();
-    next_expr();
-  }
+  if (next.token_type == T_R_BRACKET) return;
+
+  // TODO param assigning
+
+  parse_expression();
+  next_expr();
 }
 
 void expr_list() {
+  // TODO comment this segment
+  if (next.token_type == T_IDENTIFIER) { // check if func call
+    // get next char
+    int c;
+    // TODO add skip comments
+    while ((c = getc(source)) == ' ');
+    ungetc(c, source);
+
+
+    if (c == '(') {
+      func_call();
+      if (next.token_type != T_COMMA) { // x = foo()
+        printf("\t\t\t\t\tsingle func\n\n");
+
+
+
+      } else {
+        printf("\t\t\t\t\tfunc as expr\n\n");
+      }
+    }
+  }
+
   // eps = true;
   eps = false;  // TODO unfuck this
 
