@@ -154,7 +154,7 @@ char * id_add_scope(scope_elem_t *scope, char *id);
     parser:	match:
           	Variable "Y" undefined
 */
-void id_find(scope_elem_t *scope, char *id);
+elem_t * id_find(scope_elem_t *scope, char *id);
 
 char * get_unique();
 

@@ -131,8 +131,7 @@ void check_symtable(stackElemPtr elem)
     {
         //printf("\nSEARCH IDENTIFIER VARIABLE\n");
         eps = false;
-        id_find(scope_get_head(), to_string(&(elem->token)));
-        elem->data = last_elem;
+        elem->data = id_find(scope_get_head(), to_string(&(elem->token)));
         //printf("\nID FOUND Variable \t%s\t%d\n", *(elem->data->key), elem->data->symbol.sym_var_item->data.int_t);
     }
     else
