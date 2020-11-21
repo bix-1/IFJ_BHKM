@@ -149,6 +149,31 @@ void parse() {
       case IC_DECL_VAR:
         printf("\tDECL_VAR");
         printf("\t  %s", *(instr_get_dest(tmp)->key));
+        printf("    ===    ");
+        if (
+          (instr_get_type(tmp->next) >= IC_ADD_VAR &&
+          instr_get_type(tmp->next) <= IC_STR2INT_VAR) ||
+          (instr_get_type(tmp->next) >= IC_CONCAT_STR &&
+          instr_get_type(tmp->next) <= IC_SETCHAR_STR)
+        ) break;
+        sym_var_item_t * item = instr_get_elem1(tmp)->symbol.sym_var_item;
+        switch(item->type) {
+          case VAR_INT:
+            printf("%d", item->default_data.int_t);
+          break;
+          case VAR_FLOAT64:
+            printf("%f", item->default_data.float64_t);
+          break;
+          case VAR_STRING:
+            printf("%s", item->default_data.string_t);
+          break;
+          case VAR_BOOL:
+            if (item->default_data.bool_t == true) printf("true");
+            else printf("false");
+          break;
+          default:
+          break;
+        }
       break;
       case IC_DEF_VAR:
         printf("\tDEF_VAR\t    ");
@@ -200,6 +225,18 @@ void parse() {
       break;
       case IC_READ_VAR:
         printf("\tINPUT_FUNC\n");
+      break;
+      case IC_ADD_VAR:
+        printf("\t++ADD");
+      break;
+      case IC_SUB_VAR:
+        printf("\t--SUB");
+      break;
+      case IC_MUL_VAR:
+        printf("\t**MUL");
+      break;
+      case IC_DIV_VAR:
+        printf("\t//DIV");
       break;
 
 
@@ -1047,7 +1084,8 @@ void var_def() {
   def = true; eps = false;
   match(T_VAR_ID);
   match(T_DEF_IDENT);
-  parse_expression();
+  elem_t * expr = parse_expression();
+  instr_add_elem1(list->last, expr);
 }
 
 void var_move() {
