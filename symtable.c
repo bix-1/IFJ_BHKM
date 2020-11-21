@@ -524,7 +524,7 @@ void sym_var_item_set_data(sym_var_item_t *sym_var_item, variable_t data) {
 	else {
 		sym_var_item->data = data;
 	}
-	
+
 	sym_var_item->default_data = data;
 }
 
@@ -588,6 +588,8 @@ void sym_var_list_add(sym_var_list_t *sym_var_list, list_item_t *list_item) {
 
 		list_item_set_next(current, list_item);
 		list_item_set_prev(list_item, current);
+
+		list_item_set_next(list_item, NULL);
 	}
 }
 
@@ -648,7 +650,9 @@ sym_var_item_t *sym_var_list_next(sym_var_list_t *sym_var_list) {
 		sym_var_list->active = sym_var_list->first;
 	}
 	else {
-		sym_var_list->active = sym_var_list->active->next;
+		sym_var_item_t * next = sym_var_list->active->next;
+		if (next == NULL) return NULL;
+		sym_var_list->active = next;
 	}
 
 	return sym_var_list->active->item;

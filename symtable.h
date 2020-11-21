@@ -184,7 +184,7 @@ sym_var_item_t *sym_var_item_init(char *name);
 sym_var_list_t *sym_var_list_init();
 
 // constructor of list item
-list_item_t *list_item_init();
+list_item_t *list_item_init(sym_var_item_t *sym_var_item);
 
 // destructor of symbol func
 void sym_func_free(sym_func_t *sym_func);
