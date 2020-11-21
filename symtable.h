@@ -64,13 +64,18 @@ struct sym_var_item {
 	var_type_t type;
 	variable_t data;
 	variable_t default_data;
-	sym_var_item_t *prev;
-	sym_var_item_t *next;
+};
+
+typedef struct list_item list_item_t;
+struct list_item {
+	sym_var_item_t *item;
+	list_item_t *next;
+	list_item_t *prev;
 };
 
 typedef struct sym_var_list {
-	sym_var_item_t *first;
-	sym_var_item_t *active;
+	list_item_t *first;
+	list_item_t *active;
 } sym_var_list_t;
 
 typedef struct sym_func {
@@ -178,6 +183,9 @@ sym_var_item_t *sym_var_item_init(char *name);
 // constructor of symbol var list
 sym_var_list_t *sym_var_list_init();
 
+// constructor of list item
+list_item_t *list_item_init();
+
 // destructor of symbol func
 void sym_func_free(sym_func_t *sym_func);
 
@@ -186,6 +194,9 @@ void sym_var_item_free(sym_var_item_t *sym_var_item);
 
 // destructor of symbol var list
 void sym_var_list_free(sym_var_list_t *sym_var_list);
+
+// destructor of list item
+void list_item_free(list_item_t *list_item);
 
 // setter for symbol var variable type
 void sym_var_item_set_type(sym_var_item_t *sym_var_item, var_type_t type);
@@ -199,14 +210,17 @@ void sym_var_item_set_const(sym_var_item_t *sym_var_item, bool is_const);
 // setter for symbol var is global
 void sym_var_item_set_global(sym_var_item_t *sym_var_item, bool is_global);
 
-// setter for symbol var next item
-void sym_var_item_set_next(sym_var_item_t *sym_var_item, sym_var_item_t *next);
+// setter for next item in list
+void list_item_set_next(list_item_t *list_item, list_item_t *next);
+
+// setter for prev item in list
+void list_item_set_prev(list_item_t *list_item, list_item_t *next);
 
 // get element key
 symtable_key_t elem_key(elem_t *elem);
 
 // append symbol var item to list
-void sym_var_list_add(sym_var_list_t *sym_var_list, sym_var_item_t *sym_var_item);
+void sym_var_list_add(sym_var_list_t *sym_var_list, list_item_t *list_item);
 
 // size of symbol var list
 size_t sym_var_list_size(sym_var_list_t *sym_var_list);
