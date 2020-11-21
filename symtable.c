@@ -444,8 +444,10 @@ void sym_var_item_free(sym_var_item_t *sym_var_item) {
 		free(sym_var_item->name);
 
 	if (sym_var_item->type == VAR_STRING) {
-		if (sym_var_item->data.string_t != NULL)
+		if (sym_var_item->data.string_t != NULL) {
 			free(sym_var_item->data.string_t);
+			free(sym_var_item->default_data.string_t);
+		}
 	}
 
 	free(sym_var_item);
@@ -485,11 +487,11 @@ void sym_var_item_set_data(sym_var_item_t *sym_var_item, variable_t data) {
 		}
 
 		strcpy(sym_var_item->data.string_t, data.string_t);
-		sym_var_item->default_data = data;
 	}
 	else {
 		sym_var_item->data = data;
 	}
+	sym_var_item->default_data = data;
 }
 
 void sym_var_item_set_const(sym_var_item_t *sym_var_item, bool is_const) {
