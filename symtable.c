@@ -521,6 +521,7 @@ void sym_var_item_set_data(sym_var_item_t *sym_var_item, variable_t data) {
 	}
 	else {
 		sym_var_item->data = data;
+		sym_var_item->default_data = data;
 	}
 }
 
