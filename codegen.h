@@ -719,4 +719,7 @@ typedef enum instr_type {
 
 } instr_type_t;
 
+void codegen_init();
+void codegen();
+
 #endif //CODEGEN_H
