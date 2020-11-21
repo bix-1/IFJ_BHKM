@@ -66,6 +66,7 @@ void stack_pop(tokenStack *stack)
     {
         stackElemPtr tmp = stack->topToken;
         stack->topToken = stack->topToken->nextTok;
+        tmp->data = NULL;
         free(tmp);
     }
     else
@@ -99,6 +100,7 @@ void stack_free(tokenStack *stack)
     {
         tmp = stack->topToken;
         stack->topToken = stack->topToken->nextTok;
+        tmp->data = NULL;
         free(tmp);
     }
 }

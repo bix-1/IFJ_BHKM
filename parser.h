@@ -36,7 +36,8 @@ void parse();
 // -- contains all error calls that are not context-specific
 void match(int term);
 // match global variable
-// extern elem_t * last_elem;
+ extern elem_t * last_elem;
+ extern bool eps;
 
 
 /*__________________SCOPE__________________*/

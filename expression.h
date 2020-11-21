@@ -30,6 +30,11 @@ tPData parsData;
 */
 int get_index(tToken token);
 
+
+
+symtable_value_t create_variable(stackElemPtr elem);
+char *create_id();
+
 /*
 *   Function checks whether the variable is defined
 */
@@ -78,6 +83,6 @@ void release_resources();
 /*
 *   Main function which parses the expression
 */
-void parse_expression();
+symtable_value_t parse_expression();
 
 #endif //IFJ_BHKM_EXPRESSION_H
