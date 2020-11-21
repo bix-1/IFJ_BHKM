@@ -517,12 +517,12 @@ void sym_var_item_set_data(sym_var_item_t *sym_var_item, variable_t data) {
 		}
 
 		strcpy(sym_var_item->data.string_t, data.string_t);
-		sym_var_item->default_data = data;
 	}
 	else {
 		sym_var_item->data = data;
-		sym_var_item->default_data = data;
 	}
+	
+	sym_var_item->default_data = data;
 }
 
 void sym_var_item_set_const(sym_var_item_t *sym_var_item, bool is_const) {
