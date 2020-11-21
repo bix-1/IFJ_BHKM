@@ -128,7 +128,7 @@ void check_symtable(stackElemPtr elem)
     //printf("\nCHECK_SYMTABLE ORIGINAL TYPE\t%d\n", elem->originalType);
     if (elem->originalType == T_IDENTIFIER)
     {
-        printf("\nSEARCH IDENTIFIER VARIABLE\n");
+        //printf("\nSEARCH IDENTIFIER VARIABLE\n");
         eps = false;
         id_find(scope_get_head(), to_string(&(elem->token)));
         elem->data = last_elem;
@@ -136,33 +136,51 @@ void check_symtable(stackElemPtr elem)
     }
     else
     {
-        printf("\nADD NUMBER VARIABLE \n");
+        //printf("\nADD NUMBER VARIABLE \n");
         elem->data = create_variable(elem);
-        printf("\nPRINT FOUND ID  \t%s\n", elem->data->symbol.sym_var_item->name);
+        //printf("\nPRINT FOUND ID  \t%s\n", elem->data->symbol.sym_var_item->name);
     }
+
+    retExpr = elem->data;
+}
+
+symtable_value_t create_dest(stackElemPtr elem)
+{
+    char *id = create_id();
+    char *id_scope = id_add_scope(scope_get_head(), id);
+
+    // create variable and add to symtable
+    sym_var_item_t *var_item = sym_var_item_init(id);
+    sym_var_item_set_type(var_item, var_type_check(&(elem->token)));
+    symbol_t var_sym = {.sym_var_item = var_item};
+    elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
+    symtable_iterator_t it = symtable_insert(symtable, id_scope, var);
+
+    return symtable_iterator_get_value(it);
 }
 
 symtable_value_t create_variable(stackElemPtr elem)
 {
 
-    // create variable and add to symtable
     char *id = create_id();
+    char *id_scope = id_add_scope(scope_get_head(), id);
+    // create variable and add to symtable
     sym_var_item_t *var_item = sym_var_item_init(id);
     sym_var_item_set_type(var_item, var_type_check(&(elem->token)));
     variable_t variable;
     switch (elem->token.token_type)
     {
     case T_INT_VALUE:
-        variable.int_t = elem->token.attr.int_lit;
-        printf("\nVARIABLE INT\t%d\n", variable);
+        variable.int_t = to_int(&(elem->token));
+        //printf("\nVARIABLE INT\t%d\n", variable);
         break;
     case T_DEC_VALUE:
-        variable.float64_t = elem->token.attr.dec_lit;
-        printf("\nVARIABLE FLOAT\t%f\n", variable);
+        variable.float64_t = to_double(&(elem->token));
+        ////printf("\nVARIABLE FLOAT\t%f\n", variable);
         break;
     case T_STRING_VALUE:
         variable.string_t = to_string(&(elem->token));
-        printf("\nVARIABLE String\t%s\n", variable);
+        ////printf("\nVARIABLE String\t%s\n", variable);
         break;
     default:
         release_resources();
@@ -172,30 +190,29 @@ symtable_value_t create_variable(stackElemPtr elem)
     sym_var_item_set_data(var_item, variable);
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
-    symtable_iterator_t it = symtable_insert(symtable, id, var);
+    symtable_iterator_t it = symtable_insert(symtable, id_scope, var);
 
-    return symtable_iterator_get_value(it);
+    return var;
 }
 
 char *create_id()
 {
     // id = scope:N.oExpress = strlen scope + sizeof exprNumber + "express" + \0
-    char *id = malloc(strlen(scope_get()) + sizeof(char) + 9);
-    char *number = malloc(sizeof(exprNumber));
-    if (id == NULL)
+    int length = snprintf(NULL, 0, "%d", exprNumber);
+    char *number = malloc(length + 1);
+    char *id = malloc(sizeof(char) * (length + 5));
+    if (id == NULL || number == NULL)
     {
         release_resources();
         free(id);
         free(number);
         error(99, "expression parser", "create_variable", "Memory allocation failed");
     }
-    id[0] = '\0';
-    strcat(id, scope_get());
     sprintf(number, "%d", exprNumber); // INT TO STING
+    id[0] = '\0';
     strcat(id, number);
     free(number);
     strcat(id, "expr");
-    printf("\nSYMTABLE ADD NAME : %s\n", id);
     exprNumber++;
     return id;
 }
@@ -236,7 +253,7 @@ void check_types(stackElemPtr top, stackElemPtr afterTop)
         error(5, "expression parser", "check_types", "Variable types do not match.");
     }
 
-    printf("\nCHECK TYPES\n");
+    //printf("\nCHECK TYPES\n");
 }
 
 void check_expr(tToken *token)
@@ -248,7 +265,7 @@ void check_expr(tToken *token)
         error(2, "expression parser", "reduce", "Missing expression at operation");
     }
 
-    printf("\nCHECK EXPRS\n");
+    //printf("\nCHECK EXPRS\n");
 }
 
 void shift()
@@ -308,7 +325,7 @@ void reduce()
     // If value stack is !empty
     if (tokStack.topToken->token.token_type != T_DOLLAR)
     {
-        printf("\nERR\t%d\t%d\t%d\n", tokenTop->originalType, tokenAfterTop->originalType, symbolTop.token_type);
+        //printf("\nERR\t%d\t%d\t%d\n", tokenTop->originalType, tokenAfterTop->originalType, symbolTop.token_type);
         if (tokenTop->originalType == T_STRING_VALUE && tokenAfterTop->originalType == T_STRING_VALUE && symbolTop.token_type != T_PLUS)
         {
             release_resources();
@@ -325,12 +342,14 @@ void reduce()
             {
                 // STRING CONCATENATION
 
-                printf("\n\t\tRULE T_PLUS\tE = E+E\n");
+                //printf("\n\t\tRULE T_PLUS\tE = E+E\n");
+
+                symtable_value_t dest = create_dest(tokenTop);
 
                 // INSTRUCTIONS
                 instr_t *instrADD = instr_create();
                 instr_set_type(instrADD, IC_ADD_VAR);
-                instr_add_dest(instrADD, tokenAfterTop->data);
+                instr_add_dest(instrADD, dest);
                 instr_add_elem1(instrADD, tokenAfterTop->data);
                 instr_add_elem2(instrADD, tokenTop->data);
                 list_add(list, instrADD);
@@ -345,7 +364,7 @@ void reduce()
                 // IF $+E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                printf("\n\t\tRULE\tE -> id\n");
+                //printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token.token_type = T_EXPR;
 
             } //IF E + 5 IS ON STACK
@@ -355,7 +374,7 @@ void reduce()
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
-                printf("\n\t\tRULE\tE -> id\n");
+                //printf("\n\t\tRULE\tE -> id\n");
                 tokenTop->token.token_type = T_EXPR;
             }
             break;
@@ -363,12 +382,14 @@ void reduce()
             //IF E - E IS ON STACK
             if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
-                printf("\n\t\tRULE T_MINUS\tE = E - E\n");
+                //printf("\n\t\tRULE T_MINUS\tE = E - E\n");
+
+                symtable_value_t dest = create_dest(tokenTop);
 
                 //INSTRUCTIONS
                 instr_t *instrSUB = instr_create();
                 instr_set_type(instrSUB, IC_SUB_VAR);
-                instr_add_dest(instrSUB, tokenAfterTop->data);
+                instr_add_dest(instrSUB, dest);
                 instr_add_elem1(instrSUB, tokenAfterTop->data);
                 instr_add_elem2(instrSUB, tokenTop->data);
                 list_add(list, instrSUB);
@@ -383,7 +404,7 @@ void reduce()
                 // IF $-E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                printf("\n\t\tRULE -\tE -> id\n");
+                //printf("\n\t\tRULE -\tE -> id\n");
                 tokenAfterTop->token.token_type = T_EXPR;
             } //IF E - 5 IS ON STACK
             else if (tokenTop->token.token_type != T_EXPR)
@@ -392,7 +413,7 @@ void reduce()
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
-                printf("\n\t\tRULE -\tE -> id\n");
+                //printf("\n\t\tRULE -\tE -> id\n");
                 tokenTop->token.token_type = T_EXPR;
             }
             break;
@@ -400,12 +421,14 @@ void reduce()
             //IF E * E IS ON STACK
             if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
-                printf("\n\t\tRULE T_MUL\tE = E * E\n");
+                //printf("\n\t\tRULE T_MUL\tE = E * E\n");
+
+                symtable_value_t dest = create_dest(tokenTop);
 
                 // INSTRUCTIONS
                 instr_t *instrMUL = instr_create();
                 instr_set_type(instrMUL, IC_MUL_VAR);
-                instr_add_dest(instrMUL, tokenAfterTop->data);
+                instr_add_dest(instrMUL, dest);
                 instr_add_elem1(instrMUL, tokenAfterTop->data);
                 instr_add_elem2(instrMUL, tokenTop->data);
                 list_add(list, instrMUL);
@@ -420,7 +443,7 @@ void reduce()
                 // IF $*E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                printf("\n\t\tRULE *\tE -> id\n");
+                //printf("\n\t\tRULE *\tE -> id\n");
                 tokenAfterTop->token.token_type = T_EXPR;
             } //IF E * 5 IS ON STACK
             else if (tokenTop->token.token_type != T_EXPR)
@@ -429,7 +452,7 @@ void reduce()
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
-                printf("\n\t\tRULE *\tE -> id\n");
+                //printf("\n\t\tRULE *\tE -> id\n");
                 tokenTop->token.token_type = T_EXPR;
             }
             break;
@@ -437,7 +460,7 @@ void reduce()
             //IF E / E IS ON STACK
             if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
-                printf("\n\t\tRULE T_DIV\tE = E / E\n");
+                //printf("\n\t\tRULE T_DIV\tE = E / E\n");
                 // DIVIDING BY ZERO
                 if (tokenTop->token.attr.int_lit == 0)
                 {
@@ -445,10 +468,12 @@ void reduce()
                     error(9, "expression parser", "reduce", "Division by ZERO");
                 }
 
+                symtable_value_t dest = create_dest(tokenTop);
+
                 // INSTRUCTIONS
                 instr_t *instrDIV = instr_create();
                 instr_set_type(instrDIV, IC_DIV_VAR);
-                instr_add_dest(instrDIV, tokenAfterTop->data);
+                instr_add_dest(instrDIV, dest);
                 instr_add_elem1(instrDIV, tokenAfterTop->data);
                 instr_add_elem2(instrDIV, tokenTop->data);
                 list_add(list, instrDIV);
@@ -480,24 +505,13 @@ void reduce()
             //IF E < E IS ON STACK
             if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
-                printf("\n\t\tRULE T_LESS\tE < E\n");
+                //printf("\n\t\tRULE T_LESS\tE < E\n");
 
                 check_types(tokenTop, tokenAfterTop);
 
-                char *id = create_id();
+                symtable_value_t dest = create_dest(tokenTop);
 
-                symtable_value_t dest;
-                // create variable and add to symtable
-                sym_var_item_t *var_item = sym_var_item_init(id);
-                sym_var_item_set_type(var_item, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym = {.sym_var_item = var_item};
-                elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
-                symtable_iterator_t it = symtable_insert(symtable, id, var);
-                dest = symtable_iterator_get_value(it);
-
-                printf("\n DEST EXPRESSION\t %s\n", dest->symbol.sym_var_item->name);
+                //printf("\n DEST EXPRESSION\t %s\n", dest->symbol.sym_var_item->name);
 
                 // INSTRUCTIONS
                 instr_t *instrLT = instr_create();
@@ -517,7 +531,7 @@ void reduce()
                 // IF $<E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                printf("\n\t\tRULE <\tE -> id\n");
+                //printf("\n\t\tRULE <\tE -> id\n");
                 tokenAfterTop->token.token_type = T_EXPR;
             } //IF E < 5 IS ON STACK
             else if (tokenTop->token.token_type != T_EXPR)
@@ -526,7 +540,7 @@ void reduce()
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
-                printf("\n\t\tRULE <\tE -> id\n");
+                //printf("\n\t\tRULE <\tE -> id\n");
                 tokenTop->token.token_type = T_EXPR;
             }
             break;
@@ -534,48 +548,17 @@ void reduce()
             //IF E <= E IS ON STACK
             if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
-                printf("\n\t\tRULE T_LESS_EQ\tE <= E\n");
+                //printf("\n\t\tRULE T_LESS_EQ\tE <= E\n");
 
                 check_types(tokenTop, tokenAfterTop);
 
-                char *id1 = create_id();
-                char *id2 = create_id();
-                char *id3 = create_id();
+                symtable_value_t tmpDestLT = create_dest(tokenTop);
+                symtable_value_t tmpDestEQ = create_dest(tokenTop);
+                symtable_value_t tmpDestRet = create_dest(tokenTop);
 
-                symtable_value_t tmpDestLT, tmpDestEQ, tmpDestRet;
-
-                // create variable and add to symtable
-                // tmpDest
-                sym_var_item_t *var_item1 = sym_var_item_init(id1);
-                sym_var_item_set_type(var_item1, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym1 = {.sym_var_item = var_item1};
-                elem_t *var1 = elem_init(SYM_VAR_ITEM, var_sym1);
-                symtable_iterator_t it1 = symtable_insert(symtable, id1, var1);
-                tmpDestLT = symtable_iterator_get_value(it1);
-
-                sym_var_item_t *var_item2 = sym_var_item_init(id2);
-                sym_var_item_set_type(var_item2, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym2 = {.sym_var_item = var_item2};
-                elem_t *var2 = elem_init(SYM_VAR_ITEM, var_sym2);
-                symtable_iterator_t it2 = symtable_insert(symtable, id2, var2);
-                tmpDestEQ = symtable_iterator_get_value(it2);
-
-                sym_var_item_t *var_item3 = sym_var_item_init(id3);
-                sym_var_item_set_type(var_item3, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym3 = {.sym_var_item = var_item3};
-                elem_t *var3 = elem_init(SYM_VAR_ITEM, var_sym3);
-                symtable_iterator_t it3 = symtable_insert(symtable, id3, var3);
-                tmpDestRet = symtable_iterator_get_value(it3);
-
-                printf("\n DEST1 EXPRESSION\t %s\n", tmpDestLT->symbol.sym_var_item->name);
-                printf("\n DEST2 EXPRESSION\t %s\n", tmpDestEQ->symbol.sym_var_item->name);
-                printf("\n DEST3 EXPRESSION\t %s\n", tmpDestRet->symbol.sym_var_item->name);
+                //printf("\n DEST1 EXPRESSION\t %s\n", tmpDestLT->symbol.sym_var_item->name);
+                //printf("\n DEST2 EXPRESSION\t %s\n", tmpDestEQ->symbol.sym_var_item->name);
+                //printf("\n DEST3 EXPRESSION\t %s\n", tmpDestRet->symbol.sym_var_item->name);
 
                 // INSTRUCTIONS
                 instr_t *instrLT = instr_create();
@@ -609,7 +592,7 @@ void reduce()
                 // IF <=E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                // printf("\n\t\tRULE\tE -> id\n");
+                // //printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token.token_type = T_EXPR;
             } //IF E <= 5 IS ON STACK
             else if (tokenTop->token.token_type != T_EXPR)
@@ -618,7 +601,7 @@ void reduce()
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
-                //printf("\n\t\tRULE\tE -> id\n");
+                ////printf("\n\t\tRULE\tE -> id\n");
                 tokenTop->token.token_type = T_EXPR;
             }
             break;
@@ -626,24 +609,13 @@ void reduce()
             //IF E > E IS ON STACK
             if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
-                printf("\n\t\tRULE T_GREATER\tE > E\n");
+                //printf("\n\t\tRULE T_GREATER\tE > E\n");
 
                 check_types(tokenTop, tokenAfterTop);
 
-                char *id = create_id();
+                symtable_value_t dest = create_dest(tokenTop);
 
-                symtable_value_t dest;
-                // create variable and add to symtable
-                sym_var_item_t *var_item = sym_var_item_init(id);
-                sym_var_item_set_type(var_item, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym = {.sym_var_item = var_item};
-                elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
-                symtable_iterator_t it = symtable_insert(symtable, id, var);
-                dest = symtable_iterator_get_value(it);
-
-                printf("\n DEST EXPRESSION\t %s\n", dest->symbol.sym_var_item->name);
+                //printf("\n DEST EXPRESSION\t %s\n", dest->symbol.sym_var_item->name);
 
                 // INSTRUCTIONS
                 instr_t *instrGT = instr_create();
@@ -663,7 +635,7 @@ void reduce()
                 // IF $>E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                // printf("\n\t\tRULE\tE -> id\n");
+                // //printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token.token_type = T_EXPR;
             } //IF E > 5 IS ON STACK
             else if (tokenTop->token.token_type != T_EXPR)
@@ -672,7 +644,7 @@ void reduce()
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
-                //printf("\n\t\tRULE\tE -> id\n");
+                ////printf("\n\t\tRULE\tE -> id\n");
                 tokenTop->token.token_type = T_EXPR;
             }
             break;
@@ -680,48 +652,17 @@ void reduce()
             //IF E >= E IS ON STACK
             if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
-                printf("\n\t\tRULE T_GREATER_EQ\tE >= E\n");
+                //printf("\n\t\tRULE T_GREATER_EQ\tE >= E\n");
 
                 check_types(tokenTop, tokenAfterTop);
 
-                char *id1 = create_id();
-                char *id2 = create_id();
-                char *id3 = create_id();
+                symtable_value_t tmpDestGT = create_dest(tokenTop);
+                symtable_value_t tmpDestEQ = create_dest(tokenTop);
+                symtable_value_t tmpDestRet = create_dest(tokenTop);
 
-                symtable_value_t tmpDestGT, tmpDestEQ, tmpDestRet;
-
-                // create variable and add to symtable
-                // tmpDest
-                sym_var_item_t *var_item1 = sym_var_item_init(id1);
-                sym_var_item_set_type(var_item1, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym1 = {.sym_var_item = var_item1};
-                elem_t *var1 = elem_init(SYM_VAR_ITEM, var_sym1);
-                symtable_iterator_t it1 = symtable_insert(symtable, id1, var1);
-                tmpDestGT = symtable_iterator_get_value(it1);
-
-                sym_var_item_t *var_item2 = sym_var_item_init(id2);
-                sym_var_item_set_type(var_item2, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym2 = {.sym_var_item = var_item2};
-                elem_t *var2 = elem_init(SYM_VAR_ITEM, var_sym2);
-                symtable_iterator_t it2 = symtable_insert(symtable, id2, var2);
-                tmpDestEQ = symtable_iterator_get_value(it2);
-
-                sym_var_item_t *var_item3 = sym_var_item_init(id3);
-                sym_var_item_set_type(var_item3, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym3 = {.sym_var_item = var_item3};
-                elem_t *var3 = elem_init(SYM_VAR_ITEM, var_sym3);
-                symtable_iterator_t it3 = symtable_insert(symtable, id3, var3);
-                tmpDestRet = symtable_iterator_get_value(it3);
-
-                printf("\n DEST1 EXPRESSION\t %s\n", tmpDestGT->symbol.sym_var_item->name);
-                printf("\n DEST2 EXPRESSION\t %s\n", tmpDestEQ->symbol.sym_var_item->name);
-                printf("\n DEST3 EXPRESSION\t %s\n", tmpDestRet->symbol.sym_var_item->name);
+                //printf("\n DEST1 EXPRESSION\t %s\n", tmpDestGT->symbol.sym_var_item->name);
+                //printf("\n DEST2 EXPRESSION\t %s\n", tmpDestEQ->symbol.sym_var_item->name);
+                //printf("\n DEST3 EXPRESSION\t %s\n", tmpDestRet->symbol.sym_var_item->name);
 
                 // INSTRUCTIONS
                 instr_t *instrGT = instr_create();
@@ -755,7 +696,7 @@ void reduce()
                 // IF $>=E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                // printf("\n\t\tRULE\tE -> id\n");
+                // //printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token.token_type = T_EXPR;
             } //IF E >= 5 IS ON STACK
             else if (tokenTop->token.token_type != T_EXPR)
@@ -764,7 +705,7 @@ void reduce()
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
-                // printf("\n\t\tRULE\tE -> id\n");
+                // //printf("\n\t\tRULE\tE -> id\n");
                 tokenTop->token.token_type = T_EXPR;
             }
             break;
@@ -772,24 +713,13 @@ void reduce()
             //IF E == E IS ON STACK
             if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
             {
-                printf("\n\t\tRULE T_EQ\tE == E\n");
+                //printf("\n\t\tRULE T_EQ\tE == E\n");
 
                 check_types(tokenTop, tokenAfterTop);
 
-                char *id = create_id();
+                symtable_value_t dest = create_dest(tokenTop);
 
-                symtable_value_t dest;
-                // create variable and add to symtable
-                sym_var_item_t *var_item = sym_var_item_init(id);
-                sym_var_item_set_type(var_item, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym = {.sym_var_item = var_item};
-                elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
-                symtable_iterator_t it = symtable_insert(symtable, id, var);
-                dest = symtable_iterator_get_value(it);
-
-                printf("\n DEST EXPRESSION\t %s\n", dest->symbol.sym_var_item->name);
+                //printf("\n DEST EXPRESSION\t %s\n", dest->symbol.sym_var_item->name);
 
                 // INSTRUCTIONS
                 instr_t *instrEQ = instr_create();
@@ -810,7 +740,7 @@ void reduce()
                 // IF $ == E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                //printf("\n\t\tRULE\tE -> id\n");
+                ////printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token.token_type = T_EXPR;
             } //IF E == 5 IS ON STACK
             else if (tokenTop->token.token_type != T_EXPR)
@@ -819,7 +749,7 @@ void reduce()
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
-                //printf("\n\t\tRULE\tE -> id\n");
+                ////printf("\n\t\tRULE\tE -> id\n");
                 tokenTop->token.token_type = T_EXPR;
             }
             break;
@@ -830,33 +760,12 @@ void reduce()
 
                 check_types(tokenTop, tokenAfterTop);
 
-                char *id1 = create_id();
-                char *id2 = create_id();
+                symtable_value_t tmpDestEQ = create_dest(tokenTop);
+                symtable_value_t tmpDestRet = create_dest(tokenTop);
+                ;
 
-                symtable_value_t tmpDestEQ, tmpDestRet;
-
-                // create variable and add to symtable
-                // tmpDest
-                sym_var_item_t *var_item1 = sym_var_item_init(id1);
-                sym_var_item_set_type(var_item1, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym1 = {.sym_var_item = var_item1};
-                elem_t *var1 = elem_init(SYM_VAR_ITEM, var_sym1);
-                symtable_iterator_t it1 = symtable_insert(symtable, id1, var1);
-                tmpDestEQ = symtable_iterator_get_value(it1);
-
-                sym_var_item_t *var_item2 = sym_var_item_init(id2);
-                sym_var_item_set_type(var_item2, var_type_check(&(tokenTop->token)));
-                //variable_t variable;
-                //sym_var_item_set_data(var_item, variable);
-                symbol_t var_sym2 = {.sym_var_item = var_item2};
-                elem_t *var2 = elem_init(SYM_VAR_ITEM, var_sym2);
-                symtable_iterator_t it2 = symtable_insert(symtable, id2, var2);
-                tmpDestRet = symtable_iterator_get_value(it2);
-
-                printf("\n DEST1 EXPRESSION\t %s\n", tmpDestEQ->symbol.sym_var_item->name);
-                printf("\n DEST2 EXPRESSION\t %s\n", tmpDestRet->symbol.sym_var_item->name);
+                //printf("\n DEST1 EXPRESSION\t %s\n", tmpDestEQ->symbol.sym_var_item->name);
+                //printf("\n DEST2 EXPRESSION\t %s\n", tmpDestRet->symbol.sym_var_item->name);
 
                 // INSTRUCTIONS
                 instr_t *instrEQ = instr_create();
@@ -874,7 +783,7 @@ void reduce()
 
                 retExpr = tmpDestRet;
 
-                printf("\n\t\tRULE T_NEQ\tE != E\n");
+                //printf("\n\t\tRULE T_NEQ\tE != E\n");
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 != E IS ON STACK
@@ -883,7 +792,7 @@ void reduce()
                 // IF $ != E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                // printf("\n\t\tRULE\tE -> id\n");
+                // //printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->token.token_type = T_EXPR;
             } //IF E != 5 IS ON STACK
             else if (tokenTop->token.token_type != T_EXPR)
@@ -892,14 +801,14 @@ void reduce()
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
-                //printf("\n\t\tRULE\tE -> id\n");
+                ////printf("\n\t\tRULE\tE -> id\n");
                 tokenTop->token.token_type = T_EXPR;
             }
             break;
         default:
             release_resources();
             error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            //printf("\n\t\tPARS ERROR\n\n");
+            ////printf("\n\t\tPARS ERROR\n\n");
             break;
         }
     }
@@ -907,10 +816,10 @@ void reduce()
     tmp2 = tokStack.topToken;
     while (tmp2->token.token_type != T_EMPTY)
     {
-        printf("\nREDUCE STACK VALUES BOTTOM\t%d", tmp2->token.token_type);
+        //printf("\nREDUCE STACK VALUES BOTTOM\t%d", tmp2->token.token_type);
         tmp2 = tmp2->nextTok;
     }
-    printf("\nEND REDUCE\n"); */
+    //printf("\nEND REDUCE\n"); */
 }
 
 void equal()
@@ -926,7 +835,7 @@ void equal()
     }
 
     get_next_token(parsData.token);
-    //printf("\n\t\tRULE\t E -> ( E ) \n");
+    ////printf("\n\t\tRULE\t E -> ( E ) \n");
     return;
 }
 
@@ -941,7 +850,7 @@ void release_resources()
 
 symtable_value_t parse_expression()
 {
-    printf("\n\n-----START-----\n");
+    //printf("\n\n-----START-----\n");
     parsData.token = (tToken *)malloc(sizeof(tToken));
     // *(parsData.token) = next;
     parsData.token->token_type = next.token_type;
@@ -949,15 +858,15 @@ symtable_value_t parse_expression()
     stack_init(&tokStack);
     stack_init(&symbolStack);
 
-    //printf("PARS\t%d\n", tokStack.topToken->token.token_type);
-    //printf("PARS\t%d\n", symbolStack.topToken->token.token_type);
+    ////printf("PARS\t%d\n", tokStack.topToken->token.token_type);
+    ////printf("PARS\t%d\n", symbolStack.topToken->token.token_type);
 
     tToken token;
     token.token_type = T_DOLLAR;
     stack_push(&tokStack, token);
     stack_push(&symbolStack, token);
     // get_next_token(parsData.token); // TODO REMOVE IF IMPLEMENTED IN PARSER
-    //printf("\nGET TOKEN\t %d", parsData.token->token_type);
+    ////printf("\nGET TOKEN\t %d", parsData.token->token_type);
     while (1)
     {
         int indexStack, indexInput = 0;
@@ -965,16 +874,16 @@ symtable_value_t parse_expression()
         indexInput = get_index(*parsData.token);
         indexStack = get_index(symbolStack.topToken->token);
 
-        //printf("\nSTACK x INPUT:\t%d\t%d", indexStack, indexInput);
+        ////printf("\nSTACK x INPUT:\t%d\t%d", indexStack, indexInput);
 
         switch (precTable[indexStack][indexInput])
         {
         case R: /*>*/
-            printf("\nREDUCE");
+            //printf("\nREDUCE");
             reduce();
             break;
         case S: /*<*/
-            printf("\nSHIFT");
+            //printf("\nSHIFT");
             shift();
             break;
         case Eq: /*=*/
@@ -985,27 +894,27 @@ symtable_value_t parse_expression()
             error(2, "expression parser", "parse_expression", "Faulty expression");
             break;
         case A:
-            printf("\nACCEPT\n");
+            //printf("\nACCEPT\n");
 
             /*             // Kontrolne vypisy
-            //printf("\nParse end tok stack\t%d", tokStack.topToken->token.token_type);
-            //printf("\nParse end symbol stack\t%d\n", symbolStack.topToken->token.token_type);
+            ////printf("\nParse end tok stack\t%d", tokStack.topToken->token.token_type);
+            ////printf("\nParse end symbol stack\t%d\n", symbolStack.topToken->token.token_type);
             stackElemPtr tmp;
             tmp = tokStack.topToken;
             while (tmp->token.token_type != T_EMPTY)
             {
-                printf("TOKEN STACK VALUES\t%d\n", tmp->token.token_type);
+                //printf("TOKEN STACK VALUES\t%d\n", tmp->token.token_type);
                 tmp = tmp->nextTok;
             }
             tmp = symbolStack.topToken;
             while (tmp->token.token_type != T_EMPTY)
             {
-                printf("SYMBOL STACK VALUES\t%d\n", tmp->token.token_type);
+                //printf("SYMBOL STACK VALUES\t%d\n", tmp->token.token_type);
                 tmp = tmp->nextTok;
             } */
 
-            printf("\n-----END-----\n\n");
-            printf("\nTOKEN DATA\t%s\n", tokStack.topToken->data->symbol.sym_var_item->name);
+            //printf("\n-----END-----\n\n");
+            //printf("\nTOKEN DATA\t%s\n", tokStack.topToken->data->symbol.sym_var_item->name);
             release_resources();
             if (retExpr == NULL)
             {

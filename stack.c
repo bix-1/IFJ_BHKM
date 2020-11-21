@@ -28,6 +28,7 @@ void stack_init(tokenStack *stack)
     newElem->nextTok = NULL;
 
     newElem->token.token_type = T_EMPTY;
+    newElem->data = NULL;
     //newElem->token.attr.int_lit = 0; Not important ??
 
     stack->topToken = newElem;
