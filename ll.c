@@ -43,8 +43,8 @@ void list_destroy (list_t ** l)
           * next;
   while (curr != NULL) {
     if (curr->type == IC_DEF_VAR) {
-      free(curr->elem_dest_ptr->symbol.sym_var_list);
-      free(curr->elem1_ptr->symbol.sym_var_list);
+      sym_var_list_free(curr->elem_dest_ptr->symbol.sym_var_list);
+      sym_var_list_free(curr->elem1_ptr->symbol.sym_var_list);
       free(curr->elem_dest_ptr);
       free(curr->elem1_ptr);
     }
