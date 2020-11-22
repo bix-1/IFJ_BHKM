@@ -637,7 +637,6 @@ void sym_var_list_pop(sym_var_list_t *sym_var_list) {
 		}
 
 		list_item_free(current);
-	//	sym_var_item_free(current);
 	}
 }
 
@@ -650,7 +649,7 @@ sym_var_item_t *sym_var_list_next(sym_var_list_t *sym_var_list) {
 		sym_var_list->active = sym_var_list->first;
 	}
 	else {
-		sym_var_item_t * next = sym_var_list->active->next;
+		list_item_t * next = sym_var_list->active->next;
 		if (next == NULL) return NULL;
 		sym_var_list->active = next;
 	}
