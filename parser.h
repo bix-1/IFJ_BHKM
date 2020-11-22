@@ -29,7 +29,6 @@
 /*_______________MAIN_FUNCTION______________*/
 void parse();
 
-
 /*__________________TOKENS__________________*/
 // global variable needed in parser &
 // [parser -- expression parser] interface
@@ -174,7 +173,7 @@ void instr_add_else_start();
 void instr_add_else_end();
 void instr_add_for_def();
 
-void check_var_def_types();
+void check_var_def_types(instr_t *);
 void add_next_expr();
 
 // add parameter (last_elem) to last_func

@@ -179,7 +179,7 @@ void parse() {
         printf("\tDEF_VAR\t\t");
         sym_var_list_t * L = instr_get_dest(tmp)->symbol.sym_var_list;
         for (
-          sym_var_item_t * tmp = L->first->item;
+          sym_var_item_t * tmp = sym_var_list_get_active(L);
           tmp != NULL;
           tmp = sym_var_list_next(L)
         ) {
@@ -269,6 +269,7 @@ void token_cleanup() {
     free(next.attr.str_lit.str);
   }
 }
+
 
 // Getters for token attributes
 int64_t to_int(tToken *t) {
@@ -693,15 +694,26 @@ void instr_add_for_def() {
   scope_push(for_scope);
 }
 
-void check_var_def_types() {
-  printf("\n\n%s\n\n", instr_get_elem1(list->last)->symbol.sym_var_list->first->item->name);
+void check_var_def_types(instr_t * instr) {
+
+  // printf("\n\n");
+  // sym_var_list_t * L = instr_get_dest(instr)->symbol.sym_var_list;
+  // list_item_t * tmp1 = L->first;
+  // printf("%s, ", tmp1->item->name);
+  //
+  // sym_var_item_t * tmp2 = sym_var_list_get_active(L);
+  // printf("%s, ", tmp2->name);
+  //
+  // printf("\n\n");
+  // exit(0);
 
   // check whether expression types match
-  // their corresponding variables -- stored in last instr
-  instr_t * instr = list->last;
+  // their corresponding variables
+
   // dest setup
   sym_var_list_t * dest_list = instr_get_dest(instr)->symbol.sym_var_list;
   sym_var_item_t * dest = sym_var_list_get_active(dest_list);
+
   // src setup
   sym_var_list_t * src_list = instr_get_elem1(instr)->symbol.sym_var_list;
   sym_var_item_t * src = sym_var_list_get_active(src_list);
@@ -749,6 +761,10 @@ void check_var_def_types() {
       n_src, n_dest
     );
   }
+
+  // restore active attr
+  dest_list->active = dest_list->first;
+  src_list->active = src_list->first;
 }
 
 void add_next_expr() {
@@ -1161,27 +1177,44 @@ void var_def() {
 }
 
 void var_move() {
-  // create sym_var_list (for dest)
-  sym_var_list_t * var_list = sym_var_list_init();
-  symbol_t list_sym = {.sym_var_list = var_list};
-  elem_t * list_elem = elem_init(SYM_VAR_LIST, list_sym);
-  last_elem = list_elem;
+  // create instruction
+  instr_t * new_def = instr_create();
+  instr_set_type(new_def, IC_DEF_VAR);
 
+  // create dest sym_var_list
+  sym_var_list_t * var_list = sym_var_list_init();
+  symbol_t var_list_sym = {.sym_var_list = var_list};
+  elem_t * var_list_elem = elem_init(SYM_VAR_LIST, var_list_sym);
+  // append dest list
+  instr_add_dest(new_def, var_list_elem);
+
+  // create src sym_var_list
+  sym_var_list_t * exprs_list = sym_var_list_init();
+  symbol_t expr_list_sym = {.sym_var_list = exprs_list};
+  elem_t * expr_list_elem = elem_init(SYM_VAR_LIST, expr_list_sym);
+  // append src list
+  instr_add_elem1(new_def, expr_list_elem);
+
+  //======================
+  list_add(list, new_def);
+  last_elem = var_list_elem;  // (dest) now in last_elem
+
+  // get variables (dest)
   def = false; eps = false;
   match(T_VAR_ID);
-
   next_id();
   if (next.token_type == T_DEF_IDENT)
     error(
       3, "parser", "var_move", "Redefinition of variable \"%s\"",
       last_elem->symbol.sym_var_item->name
     );
+  // '='
   match(T_ASSIGNMENT);
-  // instr handled in expr_list
-  // TODO add comment
+  // get expressions (src)
+  last_elem = expr_list_elem;  // (src) now in last_elem
   expr_list();
 
-  check_var_def_types();
+  check_var_def_types(new_def);
 }
 
 void next_id() {
@@ -1193,6 +1226,7 @@ void next_id() {
   }
   def = false; eps = false;
   match(T_VAR_ID);
+
   next_id();
 }
 
@@ -1333,6 +1367,7 @@ void func_args() {
 
 void expr_list() {
   // TODO comment this segment
+  // TODO move the whole func checking to expr_parser ??
   if (next.token_type == T_IDENTIFIER) { // check if func call
     // get next char
     int c;
@@ -1359,30 +1394,9 @@ void expr_list() {
     }
   } // handling expressions
 
-  // create instruction
-  instr_t * new_def = instr_create();
-  instr_set_type(new_def, IC_DEF_VAR);
-  // append dest list
-  instr_add_dest(new_def, last_elem);
-  last_elem = NULL;
-
-  // create sym_var_list (for src)
-  sym_var_list_t * var_list = sym_var_list_init();
-  symbol_t list_sym = {.sym_var_list = var_list};
-  elem_t * list_elem = elem_init(SYM_VAR_LIST, list_sym);
-  last_elem = list_elem;
-
-  // add first expression
-  elem_t * expr = parse_expression();
-  list_item_t * list_item = list_item_init(expr->symbol.sym_var_item);
-  sym_var_list_add(last_elem->symbol.sym_var_list, list_item);
+  add_next_expr();
 
   next_expr();
-
-  // append src list
-  instr_add_elem1(new_def, last_elem);
-
-  list_add(list, new_def);
 }
 
 void next_expr() {
