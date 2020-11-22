@@ -650,8 +650,8 @@ sym_var_item_t *sym_var_list_next(sym_var_list_t *sym_var_list) {
 	}
 	else {
 		list_item_t * next = sym_var_list->active->next;
-		if (next == NULL) return NULL;
 		sym_var_list->active = next;
+		if (next == NULL) return NULL;
 	}
 
 	return sym_var_list->active->item;
