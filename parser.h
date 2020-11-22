@@ -166,15 +166,15 @@ void instr_add_func_def();
 void instr_add_func_end();
 void instr_add_var_decl();
 void instr_add_var_def();
-void instr_var_list_append_dest();
-void instr_var_list_append_src();
 void instr_add_if_end();
 void instr_add_else_start();
 void instr_add_else_end();
 void instr_add_for_def();
+void instr_add_ret();
 
 void check_var_def_types(instr_t *);
 void add_next_expr();
+void check_rets(instr_t *);
 
 // add parameter (last_elem) to last_func
 void func_add_param();

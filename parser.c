@@ -98,7 +98,7 @@ void parse() {
     tmp = list_get_next(list)
   ) {
     switch (instr_get_type(tmp)) {
-      case IC_DEF_FUN:
+      case IC_DEF_FUN: {
         printf("DEF_FUN\t  %s\n", *(instr_get_dest(tmp)->key));
         sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
         if (params != NULL) {
@@ -143,7 +143,7 @@ void parse() {
           printf("\n");
         }
       }
-      break;
+      break; }
       case IC_END_FUN:
         printf("_________________________END_FUN: ");
         printf("%s\n", *(instr_get_dest(tmp)->key));
@@ -221,9 +221,39 @@ void parse() {
       case IC_CALL_FUN:
         printf("\tFUNC CALL\t%s\n", instr_get_elem1(tmp)->symbol.sym_func->name);
       break;
-      case IC_RET_FUN:
-        // TODO
-      break;
+      case IC_RET_FUN: {
+        printf("\tRET %s    ", instr_get_dest(tmp)->symbol.sym_func->name);
+        sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
+        if (rets == NULL) {
+          printf("void");
+          break;
+        }
+        for (
+          list_item_t * tmp = rets->first;
+          tmp != NULL;
+          tmp = tmp->next
+        ) {
+          switch (tmp->item->type) {
+            case VAR_INT:
+              printf("INT");
+            break;
+            case VAR_FLOAT64:
+              printf("FLOAT64");
+            break;
+            case VAR_STRING:
+              printf("STRING");
+            break;
+            case VAR_BOOL:
+              printf("BOOL");
+            break;
+            default:
+              printf("Invalid return type");
+              exit(1);
+            break;
+          }
+          printf(", ");
+        }
+      break; }
       case IC_READ_VAR:
         printf("\tINPUT_FUNC\n");
       break;
@@ -649,20 +679,6 @@ void instr_add_var_def() {
   list_add(list, var_def);
 }
 
-// void instr_var_list_append_dest() {
-//   sym_var_list_add(
-//     instr_get_dest(list->last)->symbol.sym_var_list,
-//     last_elem->symbol.sym_var_item
-//   );
-// }
-
-// void instr_var_list_append_src() {
-//   sym_var_list_add(
-//     instr_get_elem1(list->last)->symbol.sym_var_list,
-//     last_elem->symbol.sym_var_item
-//   );
-// }
-
 void instr_add_if_def() {
   instr_t * new_if = instr_create();
   instr_set_type(new_if, IC_IF_DEF);
@@ -712,6 +728,30 @@ void instr_add_for_def() {
   strcat(for_scope, "for");
   scope_push(for_scope);
 }
+
+void instr_add_ret() {
+  // create return instruction
+  instr_t * func_ret = instr_create();
+  instr_set_type(func_ret, IC_RET_FUN);
+
+  // create function element
+  sym_func_t * func_sym = sym_func_init(*(last_func->key), NULL, NULL);
+  symbol_t func = {.sym_func = func_sym};
+  elem_t * func_elem = elem_init(SYM_FUNC, func);
+  // add to symtable -- for cleanup
+  char * index = get_unique();
+  char * name = func_sym->name;
+  char * id = malloc(sizeof(char) * (strlen(index) + strlen(name) + 1));
+  strcpy(id, index);
+  strcat(id, name);
+  symtable_insert(symtable, id, func_elem);
+  // add to instruction
+  instr_add_dest(func_ret, func_elem);
+  last_elem = func_elem;
+
+  list_add(list, func_ret);
+}
+
 
 void check_var_def_types(instr_t * instr) {
   // check whether expression types match
@@ -781,6 +821,109 @@ void add_next_expr() {
 }
 
 
+#define NAME_MAX_L 8 // strlen("FLOAT64") + \0
+void check_rets(instr_t * instr) {
+  // check whether return types match the definition
+
+  // returns setup
+  elem_t * func_rets = instr_get_dest(instr);
+  sym_var_list_t * ret_list = func_rets->symbol.sym_func->returns;
+
+  // definitions setup
+  elem_t * func_defs = symtable_iterator_get_value(
+    symtable_find(symtable, func_rets->symbol.sym_func->name)
+  );
+  sym_var_list_t * def_list = func_defs->symbol.sym_func->returns;
+
+  list_item_t * ret;
+  list_item_t * def;
+  if (ret_list == NULL) ret = NULL;
+  else ret = ret_list->first;
+  if (def_list == NULL) def = NULL;
+  else def = def_list->first;
+
+  int n_defs = 0, n_rets = 0;
+  while (def != NULL) {
+    // unmatched number of returns / defined returns
+    if (ret == NULL) {
+      // count vars
+      while (def != NULL) {
+        def = def->next;
+        n_defs++;
+      }
+      error(
+        7, "parser", "check_rets",
+        "Number of returns [%d] differs from defined [%d]",
+        n_rets, n_defs
+      );
+    }
+
+    if (def->item->type != ret->item->type) {
+      char def_type[NAME_MAX_L] = "";
+      char ret_type[NAME_MAX_L] = "";
+      switch (def->item->type) {
+        case VAR_INT:
+          strcpy(def_type, "INT");
+        break;
+        case VAR_FLOAT64:
+          strcpy(def_type, "FLOAT64");
+        break;
+        case VAR_STRING:
+          strcpy(def_type, "STRING");
+        break;
+        case VAR_BOOL:
+          strcpy(def_type, "BOOL");
+        break;
+        default:
+        break;
+      }
+      switch (ret->item->type) {
+        case VAR_INT:
+          strcpy(ret_type, "INT");
+        break;
+        case VAR_FLOAT64:
+          strcpy(ret_type, "FLOAT64");
+        break;
+        case VAR_STRING:
+          strcpy(ret_type, "STRING");
+        break;
+        case VAR_BOOL:
+          strcpy(ret_type, "BOOL");
+        break;
+        default:
+        break;
+      }
+
+      error(
+        7, "parser", "check_rets",
+        "Returning [%s] where [%s] was defined",
+        ret_type, def_type
+      );
+    }
+
+    // next step
+    def = def->next;
+    ret = ret->next;
+    n_defs++;
+    n_rets++;
+  }
+
+  // check if src also finished
+  if (ret != NULL) {
+    // count exprs
+    while (ret != NULL) {
+      ret = ret->next;
+      n_rets++;
+    }
+    error(
+      7, "parser", "check_rets",
+      "Number of returns [%d] differs from defined [%d]",
+      n_rets, n_defs
+    );
+  }
+}
+
+
 // func functions
 void func_add_param() {
   if (last_func == NULL || last_elem == NULL)
@@ -798,7 +941,7 @@ void func_add_param() {
 }
 
 void func_add_ret(elem_t *func, elem_t *ret) {
-  sym_var_list_t ** rets = &(func->symbol.sym_func->params);
+  sym_var_list_t ** rets = &(func->symbol.sym_func->returns);
   if (rets == NULL)
     error(99, "parser", "func_add_ret", "Failed to access function's returns");
   if (*rets == NULL)  // param list empty
@@ -1343,14 +1486,21 @@ void for_move() {
 
 void return_() {
   match(T_RETURN);
+
+  instr_add_ret();
+  instr_t * ret_instr = list->last;
+
   return_list();
+
+  check_rets(ret_instr);
 }
 
 void return_list() {
   if (next.token_type == T_EOL) return;
 
-  // TODO add type checking
-  parse_expression();
+  elem_t * expr = parse_expression();
+  func_add_ret(last_elem, expr);
+
   next_ret();
 }
 
@@ -1361,8 +1511,10 @@ void next_ret() {
     eps = false;
     return;
   }
-  // TODO add type checking
-  parse_expression();
+
+  elem_t * expr = parse_expression();
+  func_add_ret(last_elem, expr);
+
   next_ret();
 }
 
