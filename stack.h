@@ -26,6 +26,7 @@ typedef struct stackElem
     tToken token;
     int originalType;
     elem_t *data;
+    bool expr;
 } *stackElemPtr;
 
 /*

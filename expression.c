@@ -338,49 +338,65 @@ void reduce()
         {
         case T_PLUS:
             //IF E + E IS ON STACK
-            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
-                // STRING CONCATENATION
 
-                //printf("\n\t\tRULE T_PLUS\tE = E+E\n");
+                printf("\n\t\tRULE T_PLUS\tE = E+E\n");
 
                 symtable_value_t dest = create_dest(tokenTop);
 
-                // INSTRUCTIONS
-                instr_t *instrADD = instr_create();
-                instr_set_type(instrADD, IC_ADD_VAR);
-                instr_add_dest(instrADD, dest);
-                instr_add_elem1(instrADD, tokenAfterTop->data);
-                instr_add_elem2(instrADD, tokenTop->data);
-                list_add(list, instrADD);
+                if (tokenTop->originalType == T_STRING_VALUE && tokenAfterTop->originalType == T_STRING_VALUE)
+                {
+                    // Because valgring was fucking me up about conditional jump on uninitialised value
+                    dest->symbol.sym_var_item->data.string_t = NULL;
 
-                retExpr = tokenAfterTop->data;
+                    // STRING CONCATENATION
+                    instr_t *instrCONCAT = instr_create();
+                    instr_set_type(instrCONCAT, IC_CONCAT_STR);
+                    instr_add_dest(instrCONCAT, dest);
+                    instr_add_elem1(instrCONCAT, tokenAfterTop->data);
+                    instr_add_elem2(instrCONCAT, tokenTop->data);
+                    list_add(list, instrCONCAT);
+                }
+                else
+                {
+                    // Number addition
+                    // INSTRUCTIONS
+                    instr_t *instrADD = instr_create();
+                    instr_set_type(instrADD, IC_ADD_VAR);
+                    instr_add_dest(instrADD, dest);
+                    instr_add_elem1(instrADD, tokenAfterTop->data);
+                    instr_add_elem2(instrADD, tokenTop->data);
+                    list_add(list, instrADD);
+                }
+
+                retExpr = dest;
 
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 + E IS ON STACK
-            else if (tokenAfterTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF $+E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
 
             } //IF E + 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
+            else if (tokenTop->expr == false)
             {
                 // IF E+ IS ON STACK
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token.token_type = T_EXPR;
+                tokenTop->expr = true;
             }
             break;
         case T_MINUS:
             //IF E - E IS ON STACK
-            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
                 //printf("\n\t\tRULE T_MINUS\tE = E - E\n");
 
@@ -394,32 +410,33 @@ void reduce()
                 instr_add_elem2(instrSUB, tokenTop->data);
                 list_add(list, instrSUB);
 
-                retExpr = tokenAfterTop->data;
+                retExpr = dest;
 
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 - E IS ON STACK
-            else if (tokenAfterTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF $-E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE -\tE -> id\n");
-                tokenAfterTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
+
             } //IF E - 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
+            else if (tokenTop->expr == false)
             {
                 // IF E- IS ON STACK
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE -\tE -> id\n");
-                tokenTop->token.token_type = T_EXPR;
+                tokenTop->expr = true;
             }
             break;
         case T_MUL:
             //IF E * E IS ON STACK
-            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
                 //printf("\n\t\tRULE T_MUL\tE = E * E\n");
 
@@ -433,32 +450,32 @@ void reduce()
                 instr_add_elem2(instrMUL, tokenTop->data);
                 list_add(list, instrMUL);
 
-                retExpr = tokenAfterTop->data;
+                retExpr = dest;
 
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 * E IS ON STACK
-            else if (tokenAfterTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF $*E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE *\tE -> id\n");
-                tokenAfterTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
             } //IF E * 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF E* IS ON STACK
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE *\tE -> id\n");
-                tokenTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
             }
             break;
         case T_DIV:
             //IF E / E IS ON STACK
-            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
                 //printf("\n\t\tRULE T_DIV\tE = E / E\n");
                 // DIVIDING BY ZERO
@@ -478,32 +495,32 @@ void reduce()
                 instr_add_elem2(instrDIV, tokenTop->data);
                 list_add(list, instrDIV);
 
-                retExpr = tokenAfterTop->data;
+                retExpr = dest;
 
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 / E IS ON STACK
-            else if (tokenAfterTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF $/E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
             } //IF E / 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
+            else if (tokenTop->expr == false)
             {
                 // IF E/ IS ON STACK
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token.token_type = T_EXPR;
+                tokenTop->expr = true;
             }
             break;
         case T_LESS:
             //IF E < E IS ON STACK
-            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
                 //printf("\n\t\tRULE T_LESS\tE < E\n");
 
@@ -526,27 +543,27 @@ void reduce()
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 < E IS ON STACK
-            else if (tokenAfterTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF $<E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
                 //printf("\n\t\tRULE <\tE -> id\n");
-                tokenAfterTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
             } //IF E < 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
+            else if (tokenTop->expr == false)
             {
                 // IF E< IS ON STACK
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE <\tE -> id\n");
-                tokenTop->token.token_type = T_EXPR;
+                tokenTop->expr = true;
             }
             break;
         case T_LESS_EQ:
             //IF E <= E IS ON STACK
-            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
                 //printf("\n\t\tRULE T_LESS_EQ\tE <= E\n");
 
@@ -587,27 +604,27 @@ void reduce()
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 <= E IS ON STACK
-            else if (tokenAfterTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF <=E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
                 // //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
             } //IF E <= 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
+            else if (tokenTop->expr == false)
             {
                 // IF E<= IS ON STACK
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 ////printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token.token_type = T_EXPR;
+                tokenTop->expr = true;
             }
             break;
         case T_GREATER:
             //IF E > E IS ON STACK
-            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
                 //printf("\n\t\tRULE T_GREATER\tE > E\n");
 
@@ -630,27 +647,27 @@ void reduce()
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 > E IS ON STACK
-            else if (tokenAfterTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF $>E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
                 // //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
             } //IF E > 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
+            else if (tokenTop->expr == false)
             {
                 // IF E > IS ON STACK
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 ////printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token.token_type = T_EXPR;
+                tokenTop->expr = true;
             }
             break;
         case T_GREATER_EQ:
             //IF E >= E IS ON STACK
-            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
                 //printf("\n\t\tRULE T_GREATER_EQ\tE >= E\n");
 
@@ -691,27 +708,27 @@ void reduce()
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 >= E IS ON STACK
-            else if (tokenAfterTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF $>=E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
                 // //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
             } //IF E >= 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
+            else if (tokenTop->expr == false)
             {
                 // IF E >= IS ON STACK
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 // //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token.token_type = T_EXPR;
+                tokenTop->expr = true;
             }
             break;
         case T_EQ:
             //IF E == E IS ON STACK
-            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
                 //printf("\n\t\tRULE T_EQ\tE == E\n");
 
@@ -735,13 +752,13 @@ void reduce()
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 == E IS ON STACK
-            else if (tokenAfterTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF $ == E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
                 ////printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
             } //IF E == 5 IS ON STACK
             else if (tokenTop->token.token_type != T_EXPR)
             {
@@ -750,12 +767,12 @@ void reduce()
 
                 // TO DO INSERT INSTRUCTIONS
                 ////printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token.token_type = T_EXPR;
+                tokenTop->expr = true;
             }
             break;
         case T_NEQ:
             //IF E != E IS ON STACK
-            if (tokenTop->token.token_type == T_EXPR && tokenAfterTop->token.token_type == T_EXPR)
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
 
                 check_types(tokenTop, tokenAfterTop);
@@ -787,22 +804,22 @@ void reduce()
                 stack_pop(&symbolStack);
                 stack_pop(&tokStack);
             } //IF 5 != E IS ON STACK
-            else if (tokenAfterTop->token.token_type != T_EXPR)
+            else if (tokenAfterTop->expr == false)
             {
                 // IF $ != E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
                 // //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->token.token_type = T_EXPR;
+                tokenAfterTop->expr = true;
             } //IF E != 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
+            else if (tokenTop->expr == false)
             {
                 // IF E != IS ON STACK
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
                 ////printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->token.token_type = T_EXPR;
+                tokenTop->expr = true;
             }
             break;
         default:
@@ -850,13 +867,13 @@ void release_resources()
 
 symtable_value_t parse_expression()
 {
-    //printf("\n\n-----START-----\n");
+    printf("\n\n-----START-----\n");
     parsData.token = (tToken *)malloc(sizeof(tToken));
-    // *(parsData.token) = next;
     parsData.token->token_type = next.token_type;
     parsData.token->attr = next.attr;
     stack_init(&tokStack);
     stack_init(&symbolStack);
+    int i = 0;
 
     ////printf("PARS\t%d\n", tokStack.topToken->token.token_type);
     ////printf("PARS\t%d\n", symbolStack.topToken->token.token_type);
@@ -866,7 +883,6 @@ symtable_value_t parse_expression()
     stack_push(&tokStack, token);
     stack_push(&symbolStack, token);
     // get_next_token(parsData.token); // TODO REMOVE IF IMPLEMENTED IN PARSER
-    ////printf("\nGET TOKEN\t %d", parsData.token->token_type);
     while (1)
     {
         int indexStack, indexInput = 0;
@@ -879,11 +895,11 @@ symtable_value_t parse_expression()
         switch (precTable[indexStack][indexInput])
         {
         case R: /*>*/
-            //printf("\nREDUCE");
+            printf("\nREDUCE");
             reduce();
             break;
         case S: /*<*/
-            //printf("\nSHIFT");
+            printf("\nSHIFT");
             shift();
             break;
         case Eq: /*=*/
@@ -894,7 +910,7 @@ symtable_value_t parse_expression()
             error(2, "expression parser", "parse_expression", "Faulty expression");
             break;
         case A:
-            //printf("\nACCEPT\n");
+            printf("\nACCEPT\n");
 
             /*             // Kontrolne vypisy
             ////printf("\nParse end tok stack\t%d", tokStack.topToken->token.token_type);
@@ -919,7 +935,7 @@ symtable_value_t parse_expression()
             if (retExpr == NULL)
             {
                 // TODO ERROR
-                error(99, "expression parser", "parse_expression", " ???? ");
+                error(99, "expression parser", "parse_expression", " Missing expression ");
             }
             return retExpr;
             break;
@@ -929,5 +945,11 @@ symtable_value_t parse_expression()
             error(99, "expression parser", "parse_expression", " ???? ");
             break;
         }
+    i++;
+    if (i == 20)
+    {
+        exit(1);
+    }
+    
     }
 }
