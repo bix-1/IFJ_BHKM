@@ -34,14 +34,12 @@ void char_clear(string *attr, int c) {
 int get_next_token(tToken *token) {
     int scanner_state; // variable declaration for switch
     int c; // variable for input char
-    char *endptr; // auxiliary variable for strtod and strtol function
-    char hex[2]; // array that stores hex number for conversion
     string attr; // string struckt that stores identifers and number literals
 
-    str_init(&attr);
-
+    str_init(&attr); // string for litteral attribute init
     str_clear(&attr); // clears everything in string, if it is identifier we start storing data
 
+    // check for valid file stream
     if (source == NULL) {
         error(99,"scanner.c", "get_next_token", "Invalid input stream");
     }
@@ -54,10 +52,11 @@ int get_next_token(tToken *token) {
 
         switch (scanner_state) {
             case s_start:
-                //check for space, tab, new line ...
+                // ignoring white spaces
                 if (isspace(c)) {
                     if (c == '\n') {
                         line_num++;
+                        // f22
                         token->token_type = T_EOL;
                         while (isspace(c = getc(source))) {
                           if (c == '\n') line_num++;
@@ -80,7 +79,8 @@ int get_next_token(tToken *token) {
 
                     scanner_state = s_start;
                 } else if (isalpha(c) || c == '_') {
-                    str_add_char(&attr, (char) c); //saves first char
+                    // saving first loaded char
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_identifier;
                 } else if (isdigit(c)) {
                     // we check for useless zeros, that may signal number in different number system
@@ -105,7 +105,8 @@ int get_next_token(tToken *token) {
                             return L_SUCCESS;
                         }
                     }
-                    str_add_char(&attr, (char) c); //save first number and switch state
+                    // save first number and goes into state for integer literal
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_int_lit;
                 } else if (c == '"') {
                     // we dont save first char '"', because we dont want it in the string attribute
@@ -119,43 +120,51 @@ int get_next_token(tToken *token) {
                         continue;
                     } else if (c == '*') { // block comment
                         scanner_state = s_block_c;
-                        continue;     // TODO
+                        continue;
                     } else {
                         token->token_type = T_DIV;
                         char_clear(&attr, c);
                         return L_SUCCESS;
                     }
                 } else if (c == ',') {
+                    // f1
                     token->token_type = T_COMMA;
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == '+') {
+                    // f2
                     token->token_type = T_PLUS;
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == '-') {
+                    // f3
                     token->token_type = T_MINUS;
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == '*') {
+                    // f4
                     token->token_type = T_MUL;
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == '(') {
+                    // f6
                     token->token_type = T_L_BRACKET;
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == ')') {
+                    // f5
                     token->token_type = T_R_BRACKET;
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == ';') {
+                    // f7
                     token->token_type = T_SEMICOLON;
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == ':') {
+                    // we check for definition of id operator otherwise it is error
                     c = getc(source);
-
+                    // f8
                     if (c == '=') {
                         token->token_type = T_DEF_IDENT;
                         str_free(&attr);
@@ -165,65 +174,75 @@ int get_next_token(tToken *token) {
                         error(1,"scanner", "get_next_token", "Lexical error");
                     }
                 } else if (c == '=') {
+                    // we check for eq operator otherwise it is assignment operator
                     c = getc(source);
-
+                    // f10
                     if (c == '=') { //
                         token->token_type = T_EQ;
                         str_free(&attr);
                         return L_SUCCESS;
                     } else {
+                        // f9
                         token->token_type = T_ASSIGNMENT;
-                        char_clear(&attr, c); // we have to go one char back, because we loaded one if front of the assignment
+                        char_clear(&attr, c);
                         return L_SUCCESS;
                     }
                 } else if (c == '!') {
                     // we check for not eq operator otherwise it is error
                     c = getc(source);
-
+                    // f12
                     if (c == '=') {
                         token->token_type= T_NEQ;
                         str_free(&attr);
                         return L_SUCCESS;
                     } else {
+                        // f11
                         token->token_type = T_NEG;
                         char_clear(&attr, c);
                         return L_SUCCESS;
                     }
                 } else if (c == '>') {
+                    // check for greater or equal operator or just greater operator
                     c = getc(source);
-
-                    if (c == '=') { // >=
+                    // f14
+                    if (c == '=') {
                         token->token_type = T_GREATER_EQ;
                         str_free(&attr);
                         return L_SUCCESS;
-                    } else { // one char back and it is >
+                    } else {
+                        // f13
                         token->token_type = T_GREATER;
                         char_clear(&attr, c);
                         return L_SUCCESS;
                     }
                 } else if (c == '<') {
+                    // check for less or equal operator or just less operator
                     c = getc(source);
-
-                    if (c == '=') { // <=
+                    // f16
+                    if (c == '=') {
                         token->token_type= T_LESS_EQ;
                         str_free(&attr);
                         return L_SUCCESS;
-                    } else { // < and one char back
+                    } else {
+                        // f15
                         token->token_type = T_LESS;
                         char_clear(&attr, c);
                         return L_SUCCESS;
                     }
                 } else if (c == '{') {
+                    // f17
                     token->token_type = T_LEFT_BRACE;
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == '}') {
+                    // f18
                     token->token_type = T_RIGHT_BRACE;
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == '&') {
-                    c = getc(source); // loads another &, otherwise it is lex error
-
+                    // check for and operator or error
+                    c = getc(source);
+                    // f19
                     if (c == '&') {
                         token->token_type = T_AND;
                         str_free(&attr);
@@ -233,8 +252,9 @@ int get_next_token(tToken *token) {
                         error(1,"scanner", "get_next_token", "Lexical error");
                     }
                 } else if (c == '|') {
-                    c = getc(source); // loads another |, otherwise it is lex error
-
+                    // check for or operator, or error
+                    c = getc(source);
+                    // f20
                     if (c == '|') {
                         token->token_type = T_OR;
                         str_free(&attr);
@@ -244,6 +264,7 @@ int get_next_token(tToken *token) {
                         error(1,"scanner", "get_next_token", "Lexical error");
                     }
                 }else if (c == EOF) {
+                    // f21
                     token->token_type = T_EOF;
                     str_free(&attr);
                     return L_SUCCESS;
@@ -255,17 +276,13 @@ int get_next_token(tToken *token) {
                 break;
             // if we are reading correct char from source, then we are adding him into our string
             // otherwise we unget the char and check for the string if it is identifier or keyword
-            case s_identifier: //f151
-                // we are filling our string with indentifier
+            case s_identifier: // f23
+                // we are filling our string attribute with indentifier
                 if (isalnum(c) || c == '_') {
                     str_add_char(&attr, (char) c);
                 } else {
-                    // we initialize string attribute for identifier
-
-                   // ungetc(c, source); // we read all and we need to go one char back
-
                     // we check for keyword, if there is one we do not treat him as identifier, and
-                    // we store his token and his string attribute
+                    // return him as a own token
                     if (str_cmp_cons(&attr, "else") == 0) {
                         token->token_type = T_ELSE;
 
@@ -303,6 +320,7 @@ int get_next_token(tToken *token) {
                         token->token_type = T_FALSE;
 
                     } else {
+                        // string init for value of identifier
                         str_init(&token->attr.str_lit);
                         token->token_type= T_IDENTIFIER;
                         str_copy(&token->attr.str_lit, &attr);
@@ -312,13 +330,14 @@ int get_next_token(tToken *token) {
                     return L_SUCCESS;
                 }
                 break;
-            case s_int_lit: //f16
+            case s_int_lit:
+                // f24
                 if (isdigit(c)) {
                     str_add_char(&attr, (char) c);
-                } else if (c == 'e' || c == 'E') { // exp number
+                } else if (c == 'e' || c == 'E') { // exp number state
                     str_add_char(&attr, (char) c);
                     scanner_state = s_exp_tmp;
-                } else if (c == '.') { // decimal number
+                } else if (c == '.') { // decimal number state
                     str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_tmp;
                 } else {
@@ -328,25 +347,11 @@ int get_next_token(tToken *token) {
                     return L_SUCCESS;
                 }
                 break;
-            case s_exp_tmp: //q18
+            case s_exp_tmp:
                 if (isdigit(c)) {
-                    // nula exponenialnom cisle znamena chybu ak po nej pokracuju cisla
-                    if (c == '0') {
-                        c = getc(source);
-
-                        if (isdigit(c)) {
-                            char_clear(&attr, c);
-                            error(1,"scanner", "get_next_token", "Lexical error");
-                        }
-                        token->token_type = T_DEC_VALUE;
-                        token->attr.dec_lit = strtod(attr.str, NULL);
-                        char_clear(&attr, c);
-                        return L_SUCCESS;
-                    }
-
                     str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_lit;
-                } else if (c == '+' || c == '-') { // signed exp number
+                } else if (c == '+' || c == '-') { // signed exp number state
                     str_add_char(&attr, (char) c);
                     scanner_state = s_exp_sig_tmp;
                 } else {
@@ -354,22 +359,8 @@ int get_next_token(tToken *token) {
                     error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
-            case s_exp_sig_tmp: //r18
+            case s_exp_sig_tmp:
                 if (isdigit(c)) {
-                    // nula po znamienkovom exponenialnom cisle znamena chybu ak po nej pokracuju cisla
-                    if (c == '0') {
-                        c = getc(source);
-
-                        if (isdigit(c)) {
-                            char_clear(&attr, c);
-                            error(1,"scanner", "get_next_token", "Lexical error");
-                        }
-                        token->token_type = T_DEC_VALUE;
-                        token->attr.dec_lit = strtod(attr.str, NULL);
-                        char_clear(&attr, c);
-                        return L_SUCCESS;
-                    }
-
                     str_add_char(&attr, (char) c);
                     scanner_state = s_exp_lit;
                 } else {
@@ -377,7 +368,7 @@ int get_next_token(tToken *token) {
                     error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
-            case s_decimal_tmp: //q17
+            case s_decimal_tmp:
                 if (isdigit(c)) {
                     str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_lit;
@@ -386,10 +377,11 @@ int get_next_token(tToken *token) {
                     error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
-            case s_decimal_lit: //f17
+            case s_decimal_lit:
+                // f25
                 if (isdigit(c)) {
                     str_add_char(&attr, (char) c);
-                } else if (c == 'e' || c == 'E') { // decimal exponential number
+                } else if (c == 'e' || c == 'E') { // decimal exponential number state
                     str_add_char(&attr, (char) c);
                     scanner_state = s_exp_tmp;
                 } else {
@@ -399,7 +391,8 @@ int get_next_token(tToken *token) {
                     return L_SUCCESS;
                 }
                 break;
-            case s_exp_lit: //f18
+            case s_exp_lit:
+                // f26
                 if (isdigit(c)) {
                     str_add_char(&attr, (char) c);
                 } else {
@@ -410,15 +403,16 @@ int get_next_token(tToken *token) {
                     return L_SUCCESS;
                 }
                 break;
-            case s_line_c: //p2
+            case s_line_c:
                 while (c != EOF && c != '\n') {
                   c = fgetc(source);
                 }
                 ungetc(c, source);
                 scanner_state = s_start;
                 break;
-            case s_block_c: //p1
-                if (c == '*') { // we loaded asterix and we check if it is end iwth */
+            case s_block_c:
+                // if we loaded asterix, we load another and check for end of block comment
+                if (c == '*') {
                     c = getc(source);
 
                     if (c == '/') { // end of block comment and we go to start state
@@ -433,11 +427,12 @@ int get_next_token(tToken *token) {
                     error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
-            case s_string_tmp: //q19
+            case s_string_tmp:
                 if (c > 31) {
                     if (c == '"') { // end of string
                         scanner_state = s_string;
                     } else if (c == '\\') { // escape sequence
+                        str_add_char(&attr, (char) c);
                         scanner_state = s_esc_seq;
                     } else {
                         str_add_char(&attr, (char) c);
@@ -447,57 +442,53 @@ int get_next_token(tToken *token) {
                     error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
-            case s_esc_seq: //r19
+            case s_esc_seq:
                 if (c == '\\') {
                     str_add_char(&attr, '\\');
                     scanner_state = s_string_tmp;
                 } else if (c == 't') {
-                    str_add_char(&attr, '\t');
+                    str_add_char(&attr, 't');
                     scanner_state = s_string_tmp;
                 } else if (c == 'n') {
-                    str_add_char(&attr, '\n');
+                    str_add_char(&attr, 'n');
                     scanner_state = s_string_tmp;
                 } else if (c == 'x') {
+                    str_add_char(&attr, 'x');
                     scanner_state = s_hex_tmp;
                 } else if (c == '"') {
-                    str_add_char(&attr, '\"');
+                    str_add_char(&attr, '"');
                     scanner_state = s_string_tmp;
                 } else {
                     char_clear(&attr, (char) c);
                     error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
-            case s_hex_tmp: //t19
+            case s_hex_tmp:
                 if (c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
                     c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' ||
                     isdigit(c)) {
-                    hex[0] = (char) c; // stroring first hex number
+                    str_add_char(&attr, (char) c);
                     scanner_state = s_hex_num;
                 } else { // wrong hex number
                     char_clear(&attr, c);
                     error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
-            case s_hex_num: //u19
+            case s_hex_num:
                 if (c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
                     c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' ||
                     isdigit(c)) {
-                    long pars_tmp; // temp variable for strtol function
-                    hex[1] = (char) c; // storing second hex number
-                    pars_tmp = strtol(hex, &endptr, 16); // converting hex number into decimal number
-                    c = (int) pars_tmp;
-                    // we are storing converted hex number as char into our string literal
                     str_add_char(&attr, (char) c);
-                    scanner_state = s_string_tmp; //goes back to string reading
+                    scanner_state = s_string_tmp;
                 } else { // wrong hex number
                     char_clear(&attr, c);
                     error(1,"scanner", "get_next_token", "Lexical error");
                 }
                 break;
-            case s_string: //f19
+            case s_string: // f27
                 // we initialize string attribute for string
-
                 str_init(&token->attr.str_lit);
+                str_clear(&token->attr.str_lit);
                 token->token_type = T_STRING_VALUE;
                 str_copy(&token->attr.str_lit, &attr);
                 char_clear(&attr, c);
