@@ -114,32 +114,34 @@ void parse() {
         sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
         if (rets != NULL) {
         printf("\t\t__RETURNS:\n");
-        // for (
-        //   sym_var_item_t * tmp = sym_var_list_get_active(rets);
-        //   tmp != NULL;
-        //   tmp = sym_var_list_next(rets)
-        // ) {
-        //   printf("\t\t");
-        //   switch (tmp->type) {
-        //     case VAR_INT:
-        //     printf("INT");
-        //     break;
-        //     case VAR_FLOAT64:
-        //     printf("FLOAT64");
-        //     break;
-        //     case VAR_STRING:
-        //     printf("STRING");
-        //     break;
-        //     case VAR_BOOL:
-        //     printf("BOOL");
-        //     break;
-        //     default:
-        //     printf("Invalid return type");
-        //     exit(1);
-        //     break;
-        //   }
-        //   printf("\n");
-        // }
+        sym_var_item_t * tmp;
+        for (
+          list_item_t * it = rets->first;
+          it != NULL;
+          it = it->next
+        ) {
+          tmp = it->item;
+          printf("\t\t");
+          switch (tmp->type) {
+            case VAR_INT:
+            printf("INT");
+            break;
+            case VAR_FLOAT64:
+            printf("FLOAT64");
+            break;
+            case VAR_STRING:
+            printf("STRING");
+            break;
+            case VAR_BOOL:
+            printf("BOOL");
+            break;
+            default:
+            printf("Invalid return type");
+            exit(1);
+            break;
+          }
+          printf("\n");
+        }
       }
       break;
       case IC_END_FUN:
@@ -148,7 +150,7 @@ void parse() {
       break;
       case IC_DECL_VAR:
         printf("\tDECL_VAR");
-        printf("\t  %s", *(instr_get_dest(tmp)->key));
+        printf("\t  %s    ===    ", *(instr_get_dest(tmp)->key));
         if (
           (instr_get_type(tmp->next) >= IC_ADD_VAR &&
           instr_get_type(tmp->next) <= IC_STR2INT_VAR) ||
@@ -236,6 +238,24 @@ void parse() {
       break;
       case IC_DIV_VAR:
         printf("\t//DIV");
+      break;
+      case IC_LT_VAR:
+        printf("\t<< LT");
+      break;
+      case IC_GT_VAR:
+        printf("\t>> GT");
+      break;
+      case IC_EQ_VAR:
+        printf("\t== EQ");
+      break;
+      case IC_AND_VAR:
+        printf("\t&& AND");
+      break;
+      case IC_OR_VAR:
+        printf("\t|| OR");
+      break;
+      case IC_NOT_VAR:
+        printf("\t!! NOT");
       break;
 
 
@@ -775,9 +795,19 @@ void func_add_param() {
   // add to param list
   list_item_t * list_item = list_item_init(last_elem->symbol.sym_var_item);
   sym_var_list_add(*params, list_item);
-  // printf("\n\n%d\n\n", (*params)->first);
 }
 
+void func_add_ret(elem_t *func, elem_t *ret) {
+  sym_var_list_t ** rets = &(func->symbol.sym_func->params);
+  if (rets == NULL)
+    error(99, "parser", "func_add_ret", "Failed to access function's returns");
+  if (*rets == NULL)  // param list empty
+    *rets = sym_var_list_init();
+
+  // add to ret list
+  list_item_t * list_item = list_item_init(ret->symbol.sym_var_item);
+  sym_var_list_add(*rets, list_item);
+}
 
 
 void func_defs_init() {
@@ -1347,9 +1377,9 @@ void func_call() {
 void func_args() {
   if (next.token_type == T_R_BRACKET) return;
 
-  // TODO param assigning
+  elem_t * arg = parse_expression();
+  func_add_ret(last_func, arg);
 
-  parse_expression();
   next_expr();
 }
 

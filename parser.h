@@ -178,6 +178,7 @@ void add_next_expr();
 
 // add parameter (last_elem) to last_func
 void func_add_param();
+void func_add_ret(elem_t *func, elem_t *ret);
 
 typedef struct func_def func_def_t;
 struct func_def {
