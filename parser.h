@@ -174,6 +174,9 @@ void instr_add_else_start();
 void instr_add_else_end();
 void instr_add_for_def();
 
+void check_var_def_types();
+void add_next_expr();
+
 // add parameter (last_elem) to last_func
 void func_add_param();
 
