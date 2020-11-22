@@ -397,8 +397,6 @@ sym_var_item_t *sym_var_item_init(char *name) {
 	sym_var_item->type = VAR_UNDEFINED;
 	sym_var_item->is_const = false;
 	sym_var_item->is_global = false;
-	sym_var_item->prev = NULL;
-	sym_var_item->next = NULL;
 
 	return sym_var_item;
 }
@@ -414,6 +412,24 @@ sym_var_list_t *sym_var_list_init() {
 	sym_var_list->active = NULL;
 
 	return sym_var_list;
+}
+
+list_item_t *list_item_init(sym_var_item_t *sym_var_item) {
+	list_item_t *list_item = malloc(sizeof(list_item_t));
+
+	if (list_item == NULL) {
+		error(99, "symtable.c", "list_item_init", "Failed to create list item");
+	}
+
+	if (sym_var_item == NULL) {
+		error(99, "symtable.c", "list_item_init", "Failed to create list item");
+	}
+
+	list_item->item = sym_var_item;
+	list_item->next = NULL;
+	list_item->prev = NULL;
+
+	return list_item;
 }
 
 void sym_func_free(sym_func_t *sym_func) {
@@ -456,9 +472,25 @@ void sym_var_list_free(sym_var_list_t *sym_var_list) {
 		error(99, "symtable.c", "sym_var_list_free", "Failed to free symbol list");
 	}
 
-	sym_var_list_clear(sym_var_list);
+	// content in sym_var_list is stored in symtable and ist freed automatically
+	list_item_t *current = sym_var_list->first;
+	list_item_t *next = NULL;
+
+	while (current != NULL) {
+		next = current->next;
+		list_item_free(current);
+		current = next;
+	}
 
 	free(sym_var_list);
+}
+
+void list_item_free(list_item_t *list_item) {
+	if (list_item == NULL) {
+		error(99, "symtable.c", "list_item_free", "Failed to free list item");
+	}
+
+	free(list_item);
 }
 
 void sym_var_item_set_type(sym_var_item_t *sym_var_item, var_type_t type) {
@@ -485,11 +517,12 @@ void sym_var_item_set_data(sym_var_item_t *sym_var_item, variable_t data) {
 		}
 
 		strcpy(sym_var_item->data.string_t, data.string_t);
-		sym_var_item->default_data = data;
 	}
 	else {
 		sym_var_item->data = data;
 	}
+	
+	sym_var_item->default_data = data;
 }
 
 void sym_var_item_set_const(sym_var_item_t *sym_var_item, bool is_const) {
@@ -508,20 +541,20 @@ void sym_var_item_set_global(sym_var_item_t *sym_var_item, bool is_global) {
 	sym_var_item->is_global = is_global;
 }
 
-void sym_var_item_set_next(sym_var_item_t *sym_var_item, sym_var_item_t *next) {
-	if (sym_var_item == NULL) {
+void list_item_set_next(list_item_t *list_item, list_item_t *next) {
+	if (list_item == NULL) {
 		error(99, "symtable.c", "sym_var_item_set_next", "Failed to set next for var item");
 	}
 
-	sym_var_item->next = next;
+	list_item->next = next;
 }
 
-void sym_var_item_set_prev(sym_var_item_t *sym_var_item, sym_var_item_t *prev) {
-	if (sym_var_item == NULL) {
+void list_item_set_prev(list_item_t *list_item, list_item_t *prev) {
+	if (list_item == NULL) {
 		error(99, "symtable.c", "sym_var_item_set_prev", "Failed to set prev for var item");
 	}
 
-	sym_var_item->prev = prev;
+	list_item->prev = prev;
 }
 
 symtable_key_t elem_key(elem_t *elem) {
@@ -532,26 +565,26 @@ symtable_key_t elem_key(elem_t *elem) {
 	return *(elem->key);
 }
 
-void sym_var_list_add(sym_var_list_t *sym_var_list, sym_var_item_t *sym_var_item) {
-	if (sym_var_list == NULL || sym_var_item == NULL) {
+void sym_var_list_add(sym_var_list_t *sym_var_list, list_item_t *list_item) {
+	if (sym_var_list == NULL || list_item == NULL) {
 		error(99, "symtable.c", "sym_var_list_add", "Failed to add symbol item");
 	}
 
 	if (sym_var_list->first == NULL) {
-		sym_var_list->first = sym_var_item;
-		sym_var_list->active = sym_var_item;
-		sym_var_item_set_next(sym_var_item, NULL);
-		sym_var_item_set_prev(sym_var_item, NULL);
+		sym_var_list->first = list_item;
+		sym_var_list->active = list_item;
+		list_item_set_next(list_item, NULL);
+		list_item_set_prev(list_item, NULL);
 	}
 	else {
-		sym_var_item_t *current = sym_var_list->first;
+		list_item_t *current = sym_var_list->first;
 
 		while (current->next != NULL) {
 			current = current->next;
 		}
 
-		sym_var_item_set_next(current, sym_var_item);
-		sym_var_item_set_prev(sym_var_item, current);
+		list_item_set_next(current, list_item);
+		list_item_set_prev(list_item, current);
 	}
 }
 
@@ -562,7 +595,7 @@ size_t sym_var_list_size(sym_var_list_t *sym_var_list) {
 
 	size_t size = 0;
 
-	sym_var_item_t *current = sym_var_list->first;
+	list_item_t *current = sym_var_list->first;
 
 	while (current != NULL) {
 		size++;
@@ -581,8 +614,8 @@ void sym_var_list_pop(sym_var_list_t *sym_var_list) {
 		return;
 	}
 	else {
-		sym_var_item_t *prev = NULL;
-		sym_var_item_t *current = sym_var_list->first;
+		list_item_t *prev = NULL;
+		list_item_t *current = sym_var_list->first;
 
 		while (current->next != NULL) {
 			prev = current;
@@ -598,7 +631,8 @@ void sym_var_list_pop(sym_var_list_t *sym_var_list) {
 			prev->next = NULL;
 		}
 
-		sym_var_item_free(current);
+		list_item_free(current);
+	//	sym_var_item_free(current);
 	}
 }
 
@@ -614,7 +648,7 @@ sym_var_item_t *sym_var_list_next(sym_var_list_t *sym_var_list) {
 		sym_var_list->active = sym_var_list->active->next;
 	}
 
-	return sym_var_list->active;
+	return sym_var_list->active->item;
 }
 
 sym_var_item_t *sym_var_list_prev(sym_var_list_t *sym_var_list) {
@@ -623,7 +657,11 @@ sym_var_item_t *sym_var_list_prev(sym_var_list_t *sym_var_list) {
 	}
 
 	if (sym_var_list->active == NULL) {
-		sym_var_item_t *current = sym_var_list->first;
+		if (sym_var_list->first == NULL) {
+			return NULL;
+		}
+
+		list_item_t *current = sym_var_list->first;
 
 		while (current->next != NULL) {
 			current = current->next;
@@ -635,7 +673,7 @@ sym_var_item_t *sym_var_list_prev(sym_var_list_t *sym_var_list) {
 		sym_var_list->active = sym_var_list->active->prev;
 	}
 
-	return sym_var_list->active;
+	return sym_var_list->active->item;
 }
 
 sym_var_item_t *sym_var_list_get_active(sym_var_list_t *sym_var_list) {
@@ -643,7 +681,7 @@ sym_var_item_t *sym_var_list_get_active(sym_var_list_t *sym_var_list) {
 		error(99, "symtable.c", "sym_var_list_get_active", "Failed to get active sym var item in sym list");
 	}
 
-	return sym_var_list->active;
+	return sym_var_list->active->item;
 }
 
 void sym_var_list_clear(sym_var_list_t *sym_var_list) {
@@ -651,12 +689,15 @@ void sym_var_list_clear(sym_var_list_t *sym_var_list) {
 		error(99, "symtable.c", "sym_var_list_clear", "Failed to clear sym var items in sym list");
 	}
 
-	sym_var_item_t *current = sym_var_list->first;
-	sym_var_item_t *next = NULL;
+	list_item_t *current = sym_var_list->first;
+	list_item_t *next = NULL;
 
 	while (current != NULL) {
 		next = current->next;
-		sym_var_item_free(current);
+		if (current->item != NULL) {
+			sym_var_item_free(current->item);
+		}
+		list_item_free(current);
 		current = next;
 	}
 
@@ -669,18 +710,9 @@ void sym_var_item_change_data(sym_var_item_t *sym_var_item, variable_t data) {
 		error(99, "symtable.c", "sym_var_item_change_data", "Failed to set sym var item to new value");
 	}
 
-	if (sym_var_item->is_const) {
-		error(99, "symtable.c", "sym_var_item_change_data", "Cannot change value to const");
-	}
-
 	if (sym_var_item->type == VAR_STRING) {
-		sym_var_item->data.string_t = realloc(sym_var_item->data.string_t, strlen(data.string_t) + 1);
-
-		if (sym_var_item->data.string_t == NULL) {
-			error(99, "symtable.c", "sym_var_item_change_data", "Failed to set sym var item to new value");
-		}
-
-		strcpy(sym_var_item->data.string_t, data.string_t);
+		free(sym_var_item->default_data.string_t);
+		sym_var_item->data.string_t = data.string_t;
 	}
 	else {
 		sym_var_item->data = data;
