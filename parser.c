@@ -104,42 +104,42 @@ void parse() {
         if (params != NULL) {
           printf("\t\t__PARAMS:\n");
           for (
-            sym_var_item_t * tmp = params->first->item;
+            list_item_t * tmp = params->first;
             tmp != NULL;
-            tmp = sym_var_list_next(params)
+            tmp = tmp->next
           )
-          printf("\t\t  %s\n", tmp->name);
+          printf("\t\t  %s\n", tmp->item->name);
         }
 
         sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
         if (rets != NULL) {
         printf("\t\t__RETURNS:\n");
-        for (
-          sym_var_item_t * tmp = rets->first->item;
-          tmp != NULL;
-          tmp = sym_var_list_next(rets)
-        ) {
-          printf("\t\t");
-          switch (tmp->type) {
-            case VAR_INT:
-            printf("INT");
-            break;
-            case VAR_FLOAT64:
-            printf("FLOAT64");
-            break;
-            case VAR_STRING:
-            printf("STRING");
-            break;
-            case VAR_BOOL:
-            printf("BOOL");
-            break;
-            default:
-            printf("Invalid return type");
-            exit(1);
-            break;
-          }
-          printf("\n");
-        }
+        // for (
+        //   sym_var_item_t * tmp = sym_var_list_get_active(rets);
+        //   tmp != NULL;
+        //   tmp = sym_var_list_next(rets)
+        // ) {
+        //   printf("\t\t");
+        //   switch (tmp->type) {
+        //     case VAR_INT:
+        //     printf("INT");
+        //     break;
+        //     case VAR_FLOAT64:
+        //     printf("FLOAT64");
+        //     break;
+        //     case VAR_STRING:
+        //     printf("STRING");
+        //     break;
+        //     case VAR_BOOL:
+        //     printf("BOOL");
+        //     break;
+        //     default:
+        //     printf("Invalid return type");
+        //     exit(1);
+        //     break;
+        //   }
+        //   printf("\n");
+        // }
       }
       break;
       case IC_END_FUN:
@@ -149,7 +149,6 @@ void parse() {
       case IC_DECL_VAR:
         printf("\tDECL_VAR");
         printf("\t  %s", *(instr_get_dest(tmp)->key));
-        printf("    ===    ");
         if (
           (instr_get_type(tmp->next) >= IC_ADD_VAR &&
           instr_get_type(tmp->next) <= IC_STR2INT_VAR) ||
@@ -695,18 +694,6 @@ void instr_add_for_def() {
 }
 
 void check_var_def_types(instr_t * instr) {
-
-  // printf("\n\n");
-  // sym_var_list_t * L = instr_get_dest(instr)->symbol.sym_var_list;
-  // list_item_t * tmp1 = L->first;
-  // printf("%s, ", tmp1->item->name);
-  //
-  // sym_var_item_t * tmp2 = sym_var_list_get_active(L);
-  // printf("%s, ", tmp2->name);
-  //
-  // printf("\n\n");
-  // exit(0);
-
   // check whether expression types match
   // their corresponding variables
 
@@ -776,18 +763,19 @@ void add_next_expr() {
 
 // func functions
 void func_add_param() {
-  // TODO
-  // if (last_func == NULL || last_elem == NULL)
-  //   error(99, "parser", "type", "Failed to access function's parameters");
-  //
-  // sym_var_list_t ** params = &(last_func->symbol.sym_func->params);
-  // if (params == NULL)
-  //   error(99, "parser", "type", "Failed to access function's parameters");
-  // if (*params == NULL)  // param list empty
-  //   *params = sym_var_list_init();
-  //
-  // // add to param list
-  // sym_var_list_add(*params, last_elem->symbol.sym_var_item);
+  if (last_func == NULL || last_elem == NULL)
+    error(99, "parser", "type", "Failed to access function's parameters");
+
+  sym_var_list_t ** params = &(last_func->symbol.sym_func->params);
+  if (params == NULL)
+    error(99, "parser", "func_add_param", "Failed to access function's parameters");
+  if (*params == NULL)  // param list empty
+    *params = sym_var_list_init();
+
+  // add to param list
+  list_item_t * list_item = list_item_init(last_elem->symbol.sym_var_item);
+  sym_var_list_add(*params, list_item);
+  // printf("\n\n%d\n\n", (*params)->first);
 }
 
 
@@ -881,6 +869,7 @@ void program() {
   // start of main definition
   def = true;
   match(T_MAIN);
+  instr_add_func_def();
   // parameters
   match(T_L_BRACKET);
   if (next.token_type != T_R_BRACKET)
@@ -901,7 +890,6 @@ void program() {
   // end of func def
   match(T_LEFT_BRACE);
   match(T_EOL);
-  instr_add_func_def();
   printf("Added ---MAIN\n"); // TODO delete
   // main func body
   body();
@@ -1456,11 +1444,10 @@ void type() {
     sym_var_item_set_type(new, type);
     if (type == VAR_STRING)
       new->data.string_t = NULL;
+
     // add to return list
-
-
-    // TODO
-    // sym_var_list_add(*rets, new);
+    list_item_t * list_item = list_item_init(new);
+    sym_var_list_add(*rets, list_item);
   }
 
   last_elem = last_func;

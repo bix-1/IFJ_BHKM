@@ -683,7 +683,7 @@ sym_var_item_t *sym_var_list_prev(sym_var_list_t *sym_var_list) {
 }
 
 sym_var_item_t *sym_var_list_get_active(sym_var_list_t *sym_var_list) {
-	if (sym_var_list == NULL) {
+	if (sym_var_list == NULL || sym_var_list->active == NULL) {
 		error(99, "symtable.c", "sym_var_list_get_active", "Failed to get active sym var item in sym list");
 	}
 
