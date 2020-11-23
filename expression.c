@@ -129,14 +129,14 @@ void check_symtable(stackElemPtr elem)
     //printf("\nCHECK_SYMTABLE ORIGINAL TYPE\t%d\n", elem->originalType);
     if (elem->originalType == T_IDENTIFIER)
     {
-        //printf("\nSEARCH IDENTIFIER VARIABLE\n");
+        printf("\nSEARCH IDENTIFIER VARIABLE\n");
         eps = false;
         elem->data = id_find(scope_get_head(), to_string(&(elem->token)));
         //printf("\nID FOUND Variable \t%s\t%d\n", *(elem->data->key), elem->data->symbol.sym_var_item->data.int_t);
     }
     else
     {
-        //printf("\nADD NUMBER VARIABLE \n");
+        printf("\nADD NUMBER VARIABLE \n");
         elem->data = create_variable(elem);
         //printf("\nPRINT FOUND ID  \t%s\n", elem->data->symbol.sym_var_item->name);
     }
@@ -192,7 +192,6 @@ symtable_value_t create_variable(stackElemPtr elem)
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
     symtable_insert(symtable, id_scope, var);
-
 
     return var;
 }
@@ -276,11 +275,13 @@ void shift()
     //stackElemPtr tmp;
 
     // IF WE WANT TO PUSH NUMBERS
+
     if (get_index(*parsData.token) == OP_value || get_index(*parsData.token) == OP_STRING)
     {
         stack_push(&tokStack, *parsData.token);
 
         check_symtable(tokStack.topToken);
+        print();
     }
     else // IF WE WANT TO PUSH SYMBOLS
     {
@@ -506,7 +507,7 @@ void reduce()
                 instr_add_elem2(instrDIV, tokenTop->data);
                 list_add(list, instrDIV);
 
-tokenAfterTop->data = dest;
+                tokenAfterTop->data = dest;
                 retExpr = dest;
 
                 stack_pop(&symbolStack);
@@ -556,7 +557,7 @@ tokenAfterTop->data = dest;
                 instr_add_elem2(instrLT, tokenTop->data);
                 list_add(list, instrLT);
 
-tokenAfterTop->data = dest;
+                tokenAfterTop->data = dest;
                 retExpr = dest;
 
                 stack_pop(&symbolStack);
@@ -623,7 +624,6 @@ tokenAfterTop->data = dest;
                 instr_add_elem1(instrOR, tmpDestEQ);
                 instr_add_elem2(instrOR, tmpDestLT);
                 list_add(list, instrOR);
-
 
                 retExpr = tmpDestRet;
 
@@ -912,9 +912,9 @@ void equal()
         release_resources();
         error(2, "expression parser", "reduce", "Missing left parenthesis");
     }
+    printf("\n\t\tRULE\t E -> ( E ) \n");
 
     get_next_token(parsData.token);
-    //printf("\n\t\tRULE\t E -> ( E ) \n");
     return;
 }
 
@@ -973,17 +973,17 @@ symtable_value_t parse_expression()
 
         indexInput = get_index(*parsData.token);
         indexStack = get_index(symbolStack.topToken->token);
-        //printf("\n\nToken\t%d\n", parsData.token->token_type);
-        //printf("\nSTACK x INPUT:\t%d\t%d", indexStack, indexInput);
+        printf("\n\nToken\t%d\n", parsData.token->token_type);
+        printf("\nSTACK x INPUT:\t%d\t%d", indexStack, indexInput);
 
         switch (precTable[indexStack][indexInput])
         {
         case R: /*>*/
-            //printf("\nREDUCE");
+            printf("\nREDUCE");
             reduce();
             break;
         case S: /*<*/
-            //printf("\nSHIFT");
+            printf("\nSHIFT");
             shift();
             break;
         case Eq: /*=*/
@@ -991,19 +991,30 @@ symtable_value_t parse_expression()
             break;
         case Err: /* empty*/
             //release_resources();
-            //print();
+            printf("\nERROR\n");
+            print();
+
+            if (symbolStack.topToken->token.token_type == T_DOLLAR)
+            {
+                next.token_type = parsData.token->token_type;
+                next.attr = parsData.token->attr;
+            }
+            else
+            {
+
+                next.token_type = symbolStack.topToken->token.token_type;
+                next.attr = symbolStack.topToken->token.attr;
+            }
 
             //error(2, "expression parser", "parse_expression", "Faulty expression");
-            next.token_type = symbolStack.topToken->token.token_type;
-            next.attr = symbolStack.topToken->token.attr;
             stack_free(&symbolStack);
             stack_free(&tokStack);
             free(parsData.token);
-
+            printf("\nReturn token\t%d\n", next.token_type);
             return retExpr;
             break;
         case A:
-            //printf("\nACCEPT\n");
+            printf("\nACCEPT\n");
             //print();
 
             /*             // Kontrolne vypisy
