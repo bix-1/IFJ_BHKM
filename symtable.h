@@ -61,6 +61,7 @@ struct sym_var_item {
 	char *name;
 	bool is_const;
 	bool is_global;
+	bool is_formatted;
 	var_type_t type;
 	variable_t data;
 	variable_t default_data;
@@ -209,6 +210,9 @@ void sym_var_item_set_const(sym_var_item_t *sym_var_item, bool is_const);
 
 // setter for symbol var is global
 void sym_var_item_set_global(sym_var_item_t *sym_var_item, bool is_global);
+
+// setter for symbol var has been formatted
+void sym_var_item_set_formatted(sym_var_item_t *sym_var_item, bool is_formatted);
 
 // setter for next item in list
 void list_item_set_next(list_item_t *list_item, list_item_t *next);

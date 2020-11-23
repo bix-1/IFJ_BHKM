@@ -397,6 +397,7 @@ sym_var_item_t *sym_var_item_init(char *name) {
 	sym_var_item->type = VAR_UNDEFINED;
 	sym_var_item->is_const = false;
 	sym_var_item->is_global = false;
+	sym_var_item->is_formatted = false;
 
 	return sym_var_item;
 }
@@ -541,6 +542,14 @@ void sym_var_item_set_global(sym_var_item_t *sym_var_item, bool is_global) {
 	sym_var_item->is_global = is_global;
 }
 
+void sym_var_item_set_formatted(sym_var_item_t *sym_var_item, bool is_formatted) {
+	if (sym_var_item == NULL) {
+		error(99, "symtable.c", "sym_var_item_set_formatted", "Failed to set is_formatted for var item");
+	}
+
+	sym_var_item->is_formatted = is_formatted;
+}
+
 void list_item_set_next(list_item_t *list_item, list_item_t *next) {
 	if (list_item == NULL) {
 		error(99, "symtable.c", "sym_var_item_set_next", "Failed to set next for var item");
@@ -572,7 +581,6 @@ void sym_var_list_add(sym_var_list_t *sym_var_list, list_item_t *list_item) {
 
 	if (sym_var_list->first == NULL) {
 		sym_var_list->first = list_item;
-		sym_var_list->active = list_item;
 		list_item_set_next(list_item, NULL);
 		list_item_set_prev(list_item, NULL);
 	}
@@ -648,7 +656,12 @@ sym_var_item_t *sym_var_list_next(sym_var_list_t *sym_var_list) {
 		sym_var_list->active = sym_var_list->active->next;
 	}
 
-	return sym_var_list->active->item;
+	if (sym_var_list->active == NULL) {
+		return NULL;
+	}
+	else {
+		return sym_var_list->active->item;
+	}
 }
 
 sym_var_item_t *sym_var_list_prev(sym_var_list_t *sym_var_list) {
@@ -673,7 +686,12 @@ sym_var_item_t *sym_var_list_prev(sym_var_list_t *sym_var_list) {
 		sym_var_list->active = sym_var_list->active->prev;
 	}
 
-	return sym_var_list->active->item;
+	if (sym_var_list->active == NULL) {
+		return NULL;
+	}
+	else {
+		return sym_var_list->active->item;
+	}
 }
 
 sym_var_item_t *sym_var_list_get_active(sym_var_list_t *sym_var_list) {
