@@ -187,11 +187,11 @@ void parse() {
         printf("\tDEF_VAR\t\t");
         sym_var_list_t * L = instr_get_dest(tmp)->symbol.sym_var_list;
         for (
-          sym_var_item_t * tmp = sym_var_list_get_active(L);
+          list_item_t * tmp = L->active;
           tmp != NULL;
-          tmp = sym_var_list_next(L)
+          tmp = tmp->next
         ) {
-          printf("%s, ", tmp->name);
+          printf("%s, ", tmp->item->name);
         }
         printf("  ===  ");
       break;
@@ -767,19 +767,21 @@ void check_var_def_types(instr_t * instr) {
 
   // dest setup
   sym_var_list_t * dest_list = instr_get_dest(instr)->symbol.sym_var_list;
-  sym_var_item_t * dest = sym_var_list_get_active(dest_list);
+  list_item_t * dest_item = dest_list->active;
 
   // src setup
   sym_var_list_t * src_list = instr_get_elem1(instr)->symbol.sym_var_list;
-  sym_var_item_t * src = sym_var_list_get_active(src_list);
+  list_item_t * src_item = src_list->active;
 
+  sym_var_item_t * dest;
+  sym_var_item_t * src;
   int n_dest = 0, n_src = 0;
-  while (dest != NULL) {
+  while (dest_item != NULL) {
     // unmatched number of expressions / variables
-    if (src == NULL) {
+    if (src_item == NULL) {
       // count vars
-      while (dest != NULL) {
-        dest = sym_var_list_next(dest_list);
+      while (dest_item != NULL) {
+        dest_item = dest_item->next;
         n_dest++;
       }
       error(
@@ -789,6 +791,9 @@ void check_var_def_types(instr_t * instr) {
       );
     }
 
+    dest = dest_item->item;
+    src = src_item->item;
+
     if (dest->type != src->type)
       error(
         7, "parser", "check_var_def_types",
@@ -797,17 +802,17 @@ void check_var_def_types(instr_t * instr) {
       );
 
     // next step
-    dest = sym_var_list_next(dest_list);
-    src = sym_var_list_next(src_list);
+    dest_item = dest_item->next;
+    src_item = src_item->next;
     n_dest++;
     n_src++;
   }
 
   // check if src also finished
-  if (src != NULL) {
+  if (src_item != NULL) {
     // count exprs
-    while (src != NULL) {
-      src = sym_var_list_next(src_list);
+    while (src_item != NULL) {
+      src_item = src_item->next;
       n_src++;
     }
     error(
@@ -816,10 +821,6 @@ void check_var_def_types(instr_t * instr) {
       n_src, n_dest
     );
   }
-
-  // restore active attr
-  dest_list->active = dest_list->first;
-  src_list->active = src_list->first;
 }
 
 void add_next_expr() {
@@ -1327,11 +1328,11 @@ void ret_list_def() {
   printf("\t\tRETURNS:\n");
   printf("\t\t---");
   for (
-    sym_var_item_t * tmp = sym_var_list_get_active(rets);
+    list_item_t * tmp = rets->active;
     tmp != NULL;
-    tmp = sym_var_list_next(rets)
+    tmp = tmp->next
   ) {
-    switch (tmp->type) {
+    switch (tmp->item->type) {
       case VAR_INT:
         printf("INT, ");
         break;
