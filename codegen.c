@@ -23,6 +23,7 @@
 #define TF "TF"
 
 int fun_deep = 0;
+instr_t *last_instr = NULL;
 
 void codegen_init() {
 	fprintf(OUTPUT, ".IFJcode20\n\n");
@@ -63,9 +64,12 @@ void declr_var(instr_t instr) {
 			fprintf(OUTPUT, "MOVE %s@%s float64@%a\n", frame_dest, sym_dest->name, sym_dest->data.float64_t);
 			break;
 		case VAR_STRING: {
-			char *new_seq = escape_reformat(sym_dest->data.string_t);
-			variable_t new_data = {.string_t = new_seq};
-			sym_var_item_change_data(sym_dest, new_data);
+			if (!sym_dest->is_formatted) {
+				char *new_seq = escape_reformat(sym_dest->data.string_t);
+				variable_t new_data = {.string_t = new_seq};
+				sym_var_item_change_data(sym_dest, new_data);
+				sym_var_item_set_formatted(sym_dest, true);
+			}
 
 			fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, sym_dest->name, sym_dest->data.string_t);
 			break;
@@ -202,8 +206,6 @@ void def_fun(instr_t instr) {
 	fprintf(OUTPUT, "LABEL %s\n", sym_func->name);
 	fprintf(OUTPUT, "CREATEFRAME\n");
 
-	// TODO ?
-	sym_func->params->active = NULL;
 	sym_var_list_t *params = sym_func->params;
 
 	if (params != NULL) {
@@ -238,8 +240,6 @@ void call_fun(instr_t instr) {
 		error(99, "codegen.c", "call_fun", "NULL element");
 	}
 
-	// TODO ?
-	sym_func->params->active = NULL;
 	sym_var_list_t *params = sym_func->params;
 
 	if (params != NULL) {
@@ -254,8 +254,6 @@ void call_fun(instr_t instr) {
 
 	fprintf(OUTPUT, "CALL %s\n", sym_func->name);
 
-	// TODO ?
-	sym_func->returns->active = NULL;
 	sym_var_list_t *returns = sym_func->returns;
 
 	if (sym_func->returns != NULL) {
@@ -294,6 +292,14 @@ void call_fun(instr_t instr) {
 }
 
 void ret_fun(instr_t instr) {
+	// Same function just return and end
+	if (last_instr != NULL && last_instr->type == IC_RET_FUN && instr.type == IC_END_FUN &&
+			*(last_instr->elem_dest_ptr->key) == *(instr.elem_dest_ptr->key)) {
+		return;
+	}
+
+	// TODO : add check fun_deep (if its not 0, then EXIT instr cannot be called)
+
 	elem_t *elem_dest = instr.elem_dest_ptr;
 
 	if (elem_dest == NULL) {
@@ -306,6 +312,8 @@ void ret_fun(instr_t instr) {
 
 	fprintf(OUTPUT, "POPFRAME\n");
 
+	// check if function is main, if yes then EXIT may be called
+	// check fun_deep (if its not 1, then EXIT instr cannot be called)
 	if (strcmp(elem_dest->symbol.sym_func->name, "main") == 0) {
 		// main function
 		fprintf(OUTPUT, "EXIT int@0\n");
@@ -353,8 +361,6 @@ void write_fun(instr_t instr) {
 		error(99, "codegen.c", "write_fun", "Invalid symbol");
 	}
 
-	// TODO ?
-	sym_var_list->active = NULL;
 	sym_var_item_t *active = sym_var_list_next(sym_var_list);
 	char *frame = NULL;
 
@@ -438,6 +444,130 @@ void add_var(instr_t instr) {
 	        frame_elem2, sym_elem2->name);
 }
 
+void sub_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "sub_var", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "sub_var", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "sub_var", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "sub_var", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "sub_var", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "sub_var", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	fprintf(OUTPUT, "SUB %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+	        frame_elem2, sym_elem2->name);
+}
+
+void mul_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "mul_var", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "mul_var", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "mul_var", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "mul_var", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "mul_var", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "mul_var", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	fprintf(OUTPUT, "MUL %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+	        frame_elem2, sym_elem2->name);
+}
+
 void codegen_generate_instr() {
 	instr_t *instr = list->active;
 
@@ -469,8 +599,10 @@ void codegen_generate_instr() {
 				add_var(*instr);
 				break;
 			case IC_SUB_VAR:
+				sub_var(*instr);
 				break;
 			case IC_MUL_VAR:
+				mul_var(*instr);
 				break;
 			case IC_DIV_VAR:
 				break;
@@ -531,6 +663,7 @@ void codegen_generate_instr() {
 				error(99, "codegen.c", "codegen_generate_instr", "Invalid instruction");
 				break;
 		}
+		last_instr = instr;
 		instr = list_get_next(list);
 	}
 }
