@@ -70,6 +70,10 @@ bool eps = false;
 //    for checking whether ID is being defined or called
 bool def = false;
 
+// for checking whether function with defined return types
+// contains at least a single return call
+bool has_ret = false;
+
 
 /*_______________MAIN_FUNCTION______________*/
 void parse() {
@@ -852,9 +856,9 @@ void check_rets(instr_t * instr) {
         n_defs++;
       }
       error(
-        7, "parser", "check_rets",
-        "Number of returns [%d] differs from defined [%d]",
-        n_rets, n_defs
+        6, "parser", "check_rets",
+        "Number of returns [%d] differs from defined [%d] for function [%s]",
+        n_rets, n_defs, *(last_func->key)
       );
     }
 
@@ -895,9 +899,9 @@ void check_rets(instr_t * instr) {
       }
 
       error(
-        7, "parser", "check_rets",
-        "Returning [%s] where [%s] was defined",
-        ret_type, def_type
+        6, "parser", "check_rets",
+        "Returning [%s] where [%s] was defined for parameter [%d]",
+        ret_type, def_type, n_defs
       );
     }
 
@@ -916,11 +920,13 @@ void check_rets(instr_t * instr) {
       n_rets++;
     }
     error(
-      7, "parser", "check_rets",
-      "Number of returns [%d] differs from defined [%d]",
-      n_rets, n_defs
+      6, "parser", "check_rets",
+      "Number of returns [%d] differs from defined [%d] for function [%s]",
+      n_rets, n_defs, *(last_func->key)
     );
   }
+
+  has_ret = true;
 }
 
 
@@ -1184,6 +1190,17 @@ void func_def_type() {
     default:  // error
       match(T_LEFT_BRACE);
       break;
+  }
+
+  // each function definition ends here
+  // check whether defined return_list was matched by a return_call
+  if (last_func->symbol.sym_func->returns != NULL) {
+    if (!has_ret)
+      error(
+        7, "parser", "func_def_type",
+        "Function [%s] with nonempty return list missing a return call",
+        *(last_func->key)
+      );
   }
 }
 
