@@ -175,6 +175,7 @@ void instr_add_ret();
 void check_var_def_types(instr_t *);
 void add_next_expr();
 void check_rets(instr_t *);
+void check_args(elem_t * func, elem_t * call);
 
 // add parameter (last_elem) to last_func
 void func_add_param();
@@ -230,6 +231,7 @@ void return_list();
 void next_ret();
 void func_call();
 void func_args();
+void next_arg();
 void expr_list();
 void next_expr();
 void type();

@@ -12,6 +12,9 @@
 
 /*
 TODO:
+  replace func_call --> func_args --> [[next_expr]] with [[next_arg]]
+  in grammar
+
   params, rets
 
   refactor func comments
@@ -94,7 +97,7 @@ void parse() {
 
   // TODO delete
   // debugging instructions
-  printf("\n\n___________FUNCTIONS:___________\n");
+  printf("\n\n_________INSTRUCTIONS:__________\n");
   printf("________________________________\n");
   for (
     instr_t * tmp = list_get_active(list);
@@ -301,6 +304,8 @@ void parse() {
   }
 
   func_defs_check();
+
+  printf("\n\n");
 
   // termination
   scope_destroy();
@@ -900,8 +905,8 @@ void check_rets(instr_t * instr) {
 
       error(
         6, "parser", "check_rets",
-        "Returning [%s] where [%s] was defined for parameter [%d]",
-        ret_type, def_type, n_defs
+        "Returning [%s] where [%s] was defined for parameter [%d] of function [%s]",
+        ret_type, def_type, n_defs, *(func_defs->key)
       );
     }
 
@@ -929,6 +934,83 @@ void check_rets(instr_t * instr) {
   has_ret = true;
 }
 
+void check_args(elem_t * def_e, elem_t * call_e) {
+  sym_var_list_t * def_params = def_e->symbol.sym_func->params;
+  sym_var_list_t * call_params = call_e->symbol.sym_func->params;
+
+  list_item_t * def;
+  list_item_t * call;
+  if (def_params == NULL) def = NULL;
+  else def = def_params->first;
+  if (call_params == NULL) call = NULL;
+  else def = call_params->first;
+
+  int n_def = 0, n_call = 0;
+  while (def != NULL) {
+    // unmatched number of returns / defined returns
+    if (call == NULL) {
+      // count vars
+      while (def != NULL) {
+        def = def->next;
+        n_def++;
+      }
+      error(
+        6, "parser", "check_rets",
+        "Number of arguments [%d] differs from defined [%d] for function [%s]",
+        n_call, n_def, *(def_e->key)
+      );
+    }
+
+    if (def->item->type != call->item->type) {
+      char def_type[NAME_MAX_L] = "";
+      char call_type[NAME_MAX_L] = "";
+      switch (def->item->type) {
+        case VAR_INT:
+          strcpy(def_type, "INT");
+        break;
+        case VAR_FLOAT64:
+          strcpy(def_type, "FLOAT64");
+        break;
+        case VAR_STRING:
+          strcpy(def_type, "STRING");
+        break;
+        case VAR_BOOL:
+          strcpy(def_type, "BOOL");
+        break;
+        default:
+        break;
+      }
+      switch (call->item->type) {
+        case VAR_INT:
+          strcpy(call_type, "INT");
+        break;
+        case VAR_FLOAT64:
+          strcpy(call_type, "FLOAT64");
+        break;
+        case VAR_STRING:
+          strcpy(call_type, "STRING");
+        break;
+        case VAR_BOOL:
+          strcpy(call_type, "BOOL");
+        break;
+        default:
+        break;
+      }
+
+      error(
+        6, "parser", "check_args",
+        "[%s] argument given where [%s] was defined for parameter [%d] of function [%s]",
+        call_type, def_type, n_def, *(def_e->key)
+      );
+    }
+
+    // next step
+    def = def->next;
+    call = call->next;
+    n_def++;
+    n_call++;
+  }
+}
 
 // func functions
 void func_add_param() {
@@ -982,23 +1064,20 @@ void func_defs_add(elem_t * func) {
 }
 
 void func_defs_check() {
-  printf("\n\n\n===============================\n\n");
-  func_def_t * tmp = func_defs.first;
+  printf("\n\n__________FUNC_CALLS:___________\n");
+  printf("________________________________\n");
+  func_def_t * func_call = func_defs.first;
   char * name;
-  while (tmp != NULL) {
-    name = tmp->func->symbol.sym_func->name;
+  while (func_call != NULL) {
+    name = func_call->func->symbol.sym_func->name;
     symtable_iterator_t it = symtable_find(symtable, name);
     if (symtable_iterator_valid(it)) {
-      printf("FUNC\t%s\n", name);
-      // TODO
-
-
-
-      printf("\n");
+      printf("FUNC\t%s\n\n", name);
+      check_args(symtable_iterator_get_value(it), func_call->func);
     } else {
       error(3, "parser", "func_check", "Function '%s' called but not defined", name);
     }
-    tmp = tmp->next;
+    func_call = func_call->next;
   }
 }
 
@@ -1547,9 +1626,20 @@ void func_args() {
   if (next.token_type == T_R_BRACKET) return;
 
   elem_t * arg = parse_expression();
-  func_add_ret(last_func, arg);
+  func_add_param(last_func, arg);
 
-  next_expr();
+  next_arg();
+}
+
+void next_arg() {
+  eps = true;
+  match(T_COMMA);
+  if (eps) {
+    eps = false;
+    return;
+  }
+  elem_t * arg = parse_expression();
+  func_add_param(last_func, arg);
 }
 
 void expr_list() {
@@ -1587,7 +1677,6 @@ void expr_list() {
 }
 
 void next_expr() {
-  // check for next_expr
   eps = true;
   match(T_COMMA);
   if (eps) {
