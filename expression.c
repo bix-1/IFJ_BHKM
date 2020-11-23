@@ -357,6 +357,8 @@ void reduce()
                     list_add(list, instrADD);
                 }
 
+                tokenAfterTop->data = dest;
+
                 retExpr = dest;
 
                 stack_pop(&symbolStack);
@@ -403,6 +405,7 @@ void reduce()
                 instr_add_elem2(instrSUB, tokenTop->data);
                 list_add(list, instrSUB);
 
+                tokenAfterTop->data = dest;
                 retExpr = dest;
 
                 stack_pop(&symbolStack);
@@ -449,6 +452,7 @@ void reduce()
                 instr_add_elem2(instrMUL, tokenTop->data);
                 list_add(list, instrMUL);
 
+                tokenAfterTop->data = dest;
                 retExpr = dest;
 
                 stack_pop(&symbolStack);
@@ -500,6 +504,7 @@ void reduce()
                 instr_add_elem2(instrDIV, tokenTop->data);
                 list_add(list, instrDIV);
 
+tokenAfterTop->data = dest;
                 retExpr = dest;
 
                 stack_pop(&symbolStack);
@@ -549,6 +554,7 @@ void reduce()
                 instr_add_elem2(instrLT, tokenTop->data);
                 list_add(list, instrLT);
 
+tokenAfterTop->data = dest;
                 retExpr = dest;
 
                 stack_pop(&symbolStack);
@@ -615,6 +621,7 @@ void reduce()
                 instr_add_elem1(instrOR, tmpDestEQ);
                 instr_add_elem2(instrOR, tmpDestLT);
                 list_add(list, instrOR);
+
 
                 retExpr = tmpDestRet;
 
@@ -995,7 +1002,7 @@ symtable_value_t parse_expression()
             break;
         case A:
             //printf("\nACCEPT\n");
-            print();
+            //print();
 
             /*             // Kontrolne vypisy
             ////printf("\nParse end tok stack\t%d", tokStack.topToken->token.token_type);
@@ -1030,7 +1037,7 @@ symtable_value_t parse_expression()
             error(99, "expression parser", "parse_expression", " ???? ");
             break;
         }
-/*         print();
+        /*         print();
         i++;
         if (i == 25)
         {
