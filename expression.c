@@ -129,14 +129,14 @@ void check_symtable(stackElemPtr elem)
     //printf("\nCHECK_SYMTABLE ORIGINAL TYPE\t%d\n", elem->originalType);
     if (elem->originalType == T_IDENTIFIER)
     {
-        printf("\nSEARCH IDENTIFIER VARIABLE\n");
+       // printf("\nSEARCH IDENTIFIER VARIABLE\n");
         eps = false;
         elem->data = id_find(scope_get_head(), to_string(&(elem->token)));
         //printf("\nID FOUND Variable \t%s\t%d\n", *(elem->data->key), elem->data->symbol.sym_var_item->data.int_t);
     }
     else
     {
-        printf("\nADD NUMBER VARIABLE \n");
+       // printf("\nADD NUMBER VARIABLE \n");
         elem->data = create_variable(elem);
         //printf("\nPRINT FOUND ID  \t%s\n", elem->data->symbol.sym_var_item->name);
     }
@@ -290,7 +290,7 @@ void shift()
 
     /*     if (parsData.token->token_type == T_IDENTIFIER)
     {
-        // printf("\nTOKEN %s\n", parsData.token->attr.str_lit.str);
+        //// printf("\nTOKEN %s\n", parsData.token->attr.str_lit.str);
         //free(parsData.token->attr.str_lit.str);
     } */
 
@@ -305,7 +305,7 @@ void reduce()
     // tmp2 = tokStack.topToken;
     // while (tmp2->token.token_type != T_EMPTY)
     // {
-    //     printf("\nREDUCE STACK VALUES TOP\t%d\n", tmp2->token.token_type);
+    //    // printf("\nREDUCE STACK VALUES TOP\t%d\n", tmp2->token.token_type);
     //     tmp2 = tmp2->nextTok;
     // }
     stackElemPtr tokenTop = tokStack.topToken;               // Top member on VALUE stack
@@ -912,7 +912,7 @@ void equal()
         release_resources();
         error(2, "expression parser", "reduce", "Missing left parenthesis");
     }
-    printf("\n\t\tRULE\t E -> ( E ) \n");
+   // printf("\n\t\tRULE\t E -> ( E ) \n");
 
     get_next_token(parsData.token);
     return;
@@ -935,7 +935,7 @@ void print()
     tmpT = tokStack.topToken;
     while (tmpT->token.token_type != T_EMPTY)
     {
-        printf("\nTOKEN SHIFT VALUES\t%d", tmpT->token.token_type);
+       // printf("\nTOKEN SHIFT VALUES\t%d", tmpT->token.token_type);
         tmpT = tmpT->nextTok;
     }
 
@@ -944,7 +944,7 @@ void print()
     tmp = symbolStack.topToken;
     while (tmp->token.token_type != T_EMPTY)
     {
-        printf("\nSYMBOL SHIFT VALUES\t%d", tmp->token.token_type);
+       // printf("\nSYMBOL SHIFT VALUES\t%d", tmp->token.token_type);
         tmp = tmp->nextTok;
     }
 }
@@ -973,17 +973,17 @@ symtable_value_t parse_expression()
 
         indexInput = get_index(*parsData.token);
         indexStack = get_index(symbolStack.topToken->token);
-        printf("\n\nToken\t%d\n", parsData.token->token_type);
-        printf("\nSTACK x INPUT:\t%d\t%d", indexStack, indexInput);
+       // printf("\n\nToken\t%d\n", parsData.token->token_type);
+       // printf("\nSTACK x INPUT:\t%d\t%d", indexStack, indexInput);
 
         switch (precTable[indexStack][indexInput])
         {
         case R: /*>*/
-            printf("\nREDUCE");
+           // printf("\nREDUCE");
             reduce();
             break;
         case S: /*<*/
-            printf("\nSHIFT");
+           // printf("\nSHIFT");
             shift();
             break;
         case Eq: /*=*/
@@ -991,7 +991,7 @@ symtable_value_t parse_expression()
             break;
         case Err: /* empty*/
             //release_resources();
-            printf("\nERROR\n");
+           // printf("\nERROR\n");
             print();
 
             if (symbolStack.topToken->token.token_type == T_DOLLAR)
@@ -1010,11 +1010,11 @@ symtable_value_t parse_expression()
             stack_free(&symbolStack);
             stack_free(&tokStack);
             free(parsData.token);
-            printf("\nReturn token\t%d\n", next.token_type);
+           // printf("\nReturn token\t%d\n", next.token_type);
             return retExpr;
             break;
         case A:
-            printf("\nACCEPT\n");
+           // printf("\nACCEPT\n");
             //print();
 
             /*             // Kontrolne vypisy

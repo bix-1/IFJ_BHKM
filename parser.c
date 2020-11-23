@@ -12,10 +12,7 @@
 
 /*
 TODO:
-  replace func_call --> func_args --> [[next_expr]] with [[next_arg]]
-  in grammar
-
-  params, rets
+  handling of nonvoid returns
 
   refactor func comments
   crossreference LL.pdf & implemented rules
@@ -158,6 +155,8 @@ void parse() {
       case IC_DECL_VAR:
         printf("\tDECL_VAR");
         printf("\t  %s    ===    ", *(instr_get_dest(tmp)->key));
+        // NOTE doesn't work for indirect assignment
+        /*
         if (
           (instr_get_type(tmp->next) >= IC_ADD_VAR &&
           instr_get_type(tmp->next) <= IC_STR2INT_VAR) ||
@@ -182,6 +181,7 @@ void parse() {
           default:
           break;
         }
+        */
       break;
       case IC_DEF_VAR:
         printf("\tDEF_VAR\t\t");
@@ -1085,7 +1085,6 @@ void func_defs_check() {
   char * name;
   while (func_call != NULL) {
     name = func_call->func->symbol.sym_func->name;
-    // printf("\t\t\t\t\t\t\t\t\t-----%d\n\n", func_call->func->symbol.sym_func->params->first);
     symtable_iterator_t it = symtable_find(symtable, name);
     if (symtable_iterator_valid(it)) {
       printf("FUNC\t%s\n\n", name);
@@ -1654,7 +1653,6 @@ void next_arg() {
     eps = false;
     return;
   }
-  // printf("got here\n\n"); exit(0);
   elem_t * arg = parse_expression();
   func_add_param(last_elem, arg);
 }

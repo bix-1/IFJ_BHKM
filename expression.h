@@ -30,7 +30,7 @@ tPData parsData;
 */
 int get_index(tToken token);
 
-
+void print();
 
 symtable_value_t create_variable(stackElemPtr elem);
 char *create_id();
