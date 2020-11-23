@@ -427,9 +427,8 @@ void match(int term) {
           symbol_t func = {.sym_func = func_sym};
           elem_t * func_data = elem_init(SYM_FUNC, func);
           // add to symtable
-          symtable_iterator_t tmp =
-            symtable_insert(symtable, to_string(&next), func_data);
-          last_func = symtable_iterator_get_value(tmp);
+          symtable_insert(symtable, to_string(&next), func_data);
+          last_func = func_data;
           // add to scope
           char * new_scope = malloc(sizeof(char) * (strlen(to_string(&next))+1) );
           if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
@@ -499,8 +498,8 @@ void match(int term) {
 
           // check if var is parameter of func
           if (last_elem != NULL && last_elem->sym_type == SYM_FUNC ) {
+            func_add_param(last_elem, var);
             last_elem = var;
-            func_add_param();
           } else {
             last_elem = var;
             instr_add_var_decl();
@@ -943,7 +942,7 @@ void check_args(elem_t * def_e, elem_t * call_e) {
   if (def_params == NULL) def = NULL;
   else def = def_params->first;
   if (call_params == NULL) call = NULL;
-  else def = call_params->first;
+  else call = call_params->first;
 
   int n_def = 0, n_call = 0;
   while (def != NULL) {
@@ -955,7 +954,7 @@ void check_args(elem_t * def_e, elem_t * call_e) {
         n_def++;
       }
       error(
-        6, "parser", "check_rets",
+        6, "parser", "check_args",
         "Number of arguments [%d] differs from defined [%d] for function [%s]",
         n_call, n_def, *(def_e->key)
       );
@@ -997,6 +996,7 @@ void check_args(elem_t * def_e, elem_t * call_e) {
         break;
       }
 
+      // sym_var_list_free(call_params);
       error(
         6, "parser", "check_args",
         "[%s] argument given where [%s] was defined for parameter [%d] of function [%s]",
@@ -1010,22 +1010,37 @@ void check_args(elem_t * def_e, elem_t * call_e) {
     n_def++;
     n_call++;
   }
+
+  // check if call also finished
+  if (call != NULL) {
+    // count exprs
+    while (call != NULL) {
+      call = call->next;
+      n_call++;
+    }
+    error(
+      6, "parser", "check_args",
+      "Number of arguments [%d] differs from defined [%d] for function [%s]",
+      n_call, n_def, *(def_e->key)
+    );
+  }
 }
 
 // func functions
-void func_add_param() {
-  if (last_func == NULL || last_elem == NULL)
+void func_add_param(elem_t *func, elem_t *param) {
+  if (func == NULL || param == NULL)
     error(99, "parser", "type", "Failed to access function's parameters");
 
-  sym_var_list_t ** params = &(last_func->symbol.sym_func->params);
+  sym_var_list_t ** params = &(func->symbol.sym_func->params);
   if (params == NULL)
     error(99, "parser", "func_add_param", "Failed to access function's parameters");
   if (*params == NULL)  // param list empty
     *params = sym_var_list_init();
 
   // add to param list
-  list_item_t * list_item = list_item_init(last_elem->symbol.sym_var_item);
+  list_item_t * list_item = list_item_init(param->symbol.sym_var_item);
   sym_var_list_add(*params, list_item);
+
 }
 
 void func_add_ret(elem_t *func, elem_t *ret) {
@@ -1070,6 +1085,7 @@ void func_defs_check() {
   char * name;
   while (func_call != NULL) {
     name = func_call->func->symbol.sym_func->name;
+    // printf("\t\t\t\t\t\t\t\t\t-----%d\n\n", func_call->func->symbol.sym_func->params->first);
     symtable_iterator_t it = symtable_find(symtable, name);
     if (symtable_iterator_valid(it)) {
       printf("FUNC\t%s\n\n", name);
@@ -1626,7 +1642,7 @@ void func_args() {
   if (next.token_type == T_R_BRACKET) return;
 
   elem_t * arg = parse_expression();
-  func_add_param(last_func, arg);
+  func_add_param(last_elem, arg);
 
   next_arg();
 }
@@ -1638,8 +1654,9 @@ void next_arg() {
     eps = false;
     return;
   }
+  // printf("got here\n\n"); exit(0);
   elem_t * arg = parse_expression();
-  func_add_param(last_func, arg);
+  func_add_param(last_elem, arg);
 }
 
 void expr_list() {
@@ -1710,8 +1727,7 @@ void type() {
       break;
   }
 
-
-  if (last_elem->sym_type == SYM_VAR_ITEM) {  // assign type to last element
+  if (last_elem->sym_type == SYM_VAR_ITEM) {  // assign type to function parameter
     sym_var_item_set_type(last_elem->symbol.sym_var_item, type);
     if (type == VAR_STRING)
       last_elem->symbol.sym_var_item->data.string_t = NULL;

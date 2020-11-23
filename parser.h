@@ -177,8 +177,7 @@ void add_next_expr();
 void check_rets(instr_t *);
 void check_args(elem_t * func, elem_t * call);
 
-// add parameter (last_elem) to last_func
-void func_add_param();
+void func_add_param(elem_t *, elem_t *);
 void func_add_ret(elem_t *func, elem_t *ret);
 
 typedef struct func_def func_def_t;

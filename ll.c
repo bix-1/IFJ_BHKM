@@ -50,6 +50,16 @@ void list_destroy (list_t ** l)
     }
     else if (curr->type == IC_CALL_FUN) {
       free(curr->elem1_ptr->symbol.sym_func->name);
+      sym_var_list_t * params = curr->elem1_ptr->symbol.sym_func->params;
+      if (params != NULL) {
+        list_item_t * tmp = params->first;
+        list_item_t * next;
+        while (tmp != NULL) {
+          next = tmp->next;
+          free(tmp);
+          tmp = next;
+        }
+      }
     }
     else if (curr->type == IC_DEF_FUN) {
       // free parameters of func
