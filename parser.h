@@ -14,6 +14,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "ll.h"         // instr_t
+#include <stdbool.h>     // bool built_in()
 #include "scanner.h"
 #include "symtable.h"   // elem_t
 #include "expression.h"
@@ -24,23 +26,52 @@
 #define T_VAR_ID 1002
 
 
-
-extern tToken next;
-
-void token_cleanup();
-
+/*_______________MAIN_FUNCTION______________*/
 void parse();
 
-// tests whether next_token matches next_term
-// either matches & gets_new_token or calls error
-// -- contains all error calls that are not context-specific
+/*__________________TOKENS__________________*/
+// global variable needed in parser &
+// [parser -- expression parser] interface
+extern tToken next;
+// cleans up last token in [elem_t *] next
+void token_cleanup();
+/*_______Getters for token attributes_______*/
+int64_t to_int(tToken *t);
+double to_double(tToken *t);
+char * to_string(tToken *);
+/*
+  Function match
+  ----------------
+  Matches given terminal with current token
+
+  __PARAMETERS:
+  [int] term:    term to match with current token
+  in next:
+  [tToken *] next:    current token to match with term
+
+  __RETURNS:  _____
+
+  -----------------
+  Example of usage:
+    ___input file:
+    package ;
+    ______________
+
+    match(T_PACKAGE);
+    match(T_MAIN);
+
+  Output:
+    ERROR:	__line 1__	Syntactic analysis failed -- with exit code 2
+    parser:	match:
+          	Expected: 'main' -- Got: ';'
+*/
 void match(int term);
-// match global variable
- extern elem_t * last_elem;
- extern bool eps;
+// global variables needed by match
+extern elem_t * last_func;
+extern elem_t * last_elem;
 
 
-/*__________________SCOPE__________________*/
+/*__________________SCOPE___________________*/
 typedef struct scope_elem scope_elem_t;
 struct scope_elem {
   char * name;
@@ -51,19 +82,51 @@ struct scope_t {
   scope_elem_t * first;
 } scope;
 
-// Getters for token attributes
-int64_t to_int(tToken *t);
-double to_double(tToken *t);
-char * to_string(tToken *);
-
-// functions for scope control
+/*_______________SCOPE_CONTROL______________*/
+/*
+  Function scope_init
+  -------------------
+  Initializes global variable [scope_t] scope
+*/
 void scope_init();
+/*
+  Function scope_destroy
+  ----------------------
+  Cleans up global variable [scope_t] scope
+*/
 void scope_destroy();
+/*
+  Function scope_push
+  -------------------
+  Pushes given [char *] on scope stack
+*/
 void scope_push(char *);
+/*
+  Function scope_pop
+  ------------------
+  Removes the top element from scope stack
+*/
 void scope_pop();
+/*
+  Function scope_get_head
+  -----------------------
+  Returns [scope_elem_t *] ptr to the element on top of scope stack
+*/
 scope_elem_t * scope_get_head();
+/*
+  Function scope_get
+  ------------------
+  Returns [char *] name of the element at the top of scope stack
+  in format: <func_foo>:<index><if/else/for/for-body>:
+*/
 char * scope_get();
-char * id_add_scope(scope_elem_t *, char *);
+/*
+  Function id_add_scope
+  ---------------------
+  Returns [char *] name of given id in the context of given scope
+  in format: <format of scope_get>:id
+*/
+char * id_add_scope(scope_elem_t *scope, char *id);
 /*
   Function id_find
   ----------------
@@ -73,8 +136,9 @@ char * id_add_scope(scope_elem_t *, char *);
   [scope_elem_t]  scope:    scope in which to start looking
   [char *]        id:       name to look for
 
-  __RETURNS:  ---
-    [elem_t *] in last_elem
+  __RETURNS:
+  in last_elem:
+    [elem_t *] last_elem:   ptr to matched element
 
   -----------------
   Example of usage:
@@ -89,10 +153,12 @@ char * id_add_scope(scope_elem_t *, char *);
     parser:	match:
           	Variable "Y" undefined
 */
-void id_find(scope_elem_t *scope, char *id);
+elem_t * id_find(scope_elem_t *scope, char *id);
+
+char * get_unique();
 
 
-// skip all empty spaces
+// skips all empty spaces
 void skip_empty();
 
 // additional instructions-related functions
@@ -100,17 +166,44 @@ void instr_add_func_def();
 void instr_add_func_end();
 void instr_add_var_decl();
 void instr_add_var_def();
-void instr_var_list_append_dest();
-void instr_var_list_append_src();
 void instr_add_if_end();
 void instr_add_else_start();
 void instr_add_else_end();
 void instr_add_for_def();
+void instr_add_ret();
+
+void check_var_def_types(instr_t *);
+void add_next_expr();
+void check_rets(instr_t *);
+void check_args(elem_t * func, elem_t * call);
 
 // add parameter (last_elem) to last_func
 void func_add_param();
+void func_add_ret(elem_t *func, elem_t *ret);
 
-// LL grammar nonterminals
+typedef struct func_def func_def_t;
+struct func_def {
+  elem_t * func;
+  func_def_t * next;
+};
+
+struct func_defs_t {
+  func_def_t * first;
+} func_defs;
+
+void func_defs_init();
+void func_defs_destroy();
+void func_defs_add(elem_t *);
+void func_defs_check();
+
+bool built_in();
+/*
+  ___________FUNCTIONS_REPRESENTING___________
+  ___________LL_GRAMMAR_NONTERMINALS__________
+
+  For more info check implementation in parser.c
+  or documentation in doc/LL.pdf
+*/
 void program();
 void prolog();
 void func_list_pre();
@@ -124,7 +217,6 @@ void ret_list_def();
 void next_ret_def();
 void body();
 void command();
-void var_();
 void var_def();
 void var_move();
 void next_id();
@@ -139,6 +231,7 @@ void return_list();
 void next_ret();
 void func_call();
 void func_args();
+void next_arg();
 void expr_list();
 void next_expr();
 void type();

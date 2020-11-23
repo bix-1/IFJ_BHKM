@@ -321,6 +321,9 @@ int get_next_token(tToken *token) {
                 } else if (c == '.') { // decimal number
                     str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_tmp;
+                } else if (isalpha(c)) {
+                    char_clear(&attr, c);
+                    error(2, "scanner", "get_next_token", "Invalid identifier");
                 } else {
                     token->token_type = T_INT_VALUE;
                     token->attr.int_lit = strtol(attr.str, NULL, 10);
@@ -330,6 +333,20 @@ int get_next_token(tToken *token) {
                 break;
             case s_exp_tmp: //q18
                 if (isdigit(c)) {
+                    // nula exponenialnom cisle znamena chybu ak po nej pokracuju cisla
+                    if (c == '0') {
+                        c = getc(source);
+
+                        if (isdigit(c)) {
+                            char_clear(&attr, c);
+                            error(1,"scanner", "get_next_token", "Lexical error");
+                        }
+                        token->token_type = T_DEC_VALUE;
+                        token->attr.dec_lit = strtod(attr.str, NULL);
+                        char_clear(&attr, c);
+                        return L_SUCCESS;
+                    }
+
                     str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_lit;
                 } else if (c == '+' || c == '-') { // signed exp number
@@ -342,6 +359,20 @@ int get_next_token(tToken *token) {
                 break;
             case s_exp_sig_tmp: //r18
                 if (isdigit(c)) {
+                    // nula po znamienkovom exponenialnom cisle znamena chybu ak po nej pokracuju cisla
+                    if (c == '0') {
+                        c = getc(source);
+
+                        if (isdigit(c)) {
+                            char_clear(&attr, c);
+                            error(1,"scanner", "get_next_token", "Lexical error");
+                        }
+                        token->token_type = T_DEC_VALUE;
+                        token->attr.dec_lit = strtod(attr.str, NULL);
+                        char_clear(&attr, c);
+                        return L_SUCCESS;
+                    }
+
                     str_add_char(&attr, (char) c);
                     scanner_state = s_exp_lit;
                 } else {
@@ -472,8 +503,7 @@ int get_next_token(tToken *token) {
                 str_init(&token->attr.str_lit);
                 token->token_type = T_STRING_VALUE;
                 str_copy(&token->attr.str_lit, &attr);
-                str_free(&attr);
-                ungetc(c, source);
+                char_clear(&attr, c);
                 return L_SUCCESS;
                 break;
             default:

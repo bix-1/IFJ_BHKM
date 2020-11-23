@@ -67,6 +67,7 @@ tokenStack symbolStack; // Symbol stack
 tokenStack tokStack;    // Token stack
 int exprNumber = 0;
 symtable_value_t retExpr = NULL;
+bool eps;
 
 int get_index(tToken token)
 {
@@ -130,8 +131,7 @@ void check_symtable(stackElemPtr elem)
     {
         //printf("\nSEARCH IDENTIFIER VARIABLE\n");
         eps = false;
-        id_find(scope_get_head(), to_string(&(elem->token)));
-        elem->data = last_elem;
+        elem->data = id_find(scope_get_head(), to_string(&(elem->token)));
         //printf("\nID FOUND Variable \t%s\t%d\n", *(elem->data->key), elem->data->symbol.sym_var_item->data.int_t);
     }
     else
@@ -161,7 +161,6 @@ symtable_value_t create_dest(stackElemPtr elem)
 
 symtable_value_t create_variable(stackElemPtr elem)
 {
-
     char *id = create_id();
     char *id_scope = id_add_scope(scope_get_head(), id);
     // create variable and add to symtable
@@ -187,10 +186,13 @@ symtable_value_t create_variable(stackElemPtr elem)
         error(99, "expression parser", "create_variable", "Memory allocation failed");
         break;
     }
+
     sym_var_item_set_data(var_item, variable);
+
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
-    symtable_iterator_t it = symtable_insert(symtable, id_scope, var);
+    symtable_insert(symtable, id_scope, var);
+
 
     return var;
 }
@@ -241,8 +243,8 @@ int var_type_check(tToken *token)
     default:
         break;
     }
-
     // TODO ADD ERROR
+    return -1; // PLACEHOLDER TODO remove
 }
 
 void check_types(stackElemPtr top, stackElemPtr afterTop)

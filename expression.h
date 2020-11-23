@@ -66,7 +66,7 @@ void check_expr(tToken *token);
 void shift();
 
 /*
-*   Function reduces the expression with rule based on the precedence table 
+*   Function reduces the expression with rule based on the precedence table
 */
 void reduce();
 

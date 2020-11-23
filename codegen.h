@@ -183,8 +183,8 @@ typedef enum instr_type {
 	 * ==========================
 	 * Note:
 	 *
-	 * This instruction only indicates end of function. Return parameters
-	 * are stored in symbol func and they will be propagated to variables from
+	 * Need symbol func for name of func, for main
+	 * Return parameters are stored in symbol func and they will be set to variables from
 	 * IC_CALL_FUN in case that function has assigned at least 1 return value.
 	 * Otherwise it was called without assigning return value.
 	 *
@@ -192,12 +192,16 @@ typedef enum instr_type {
 	IC_RET_FUN,
 
 	/*
-	 * Helper instruction. Indicates end of function definition
+	 * Helper instruction. Indicates end of function definition.
 	 *
-	 * elem_dest: NULL
+	 * elem_dest: symbol func
 	 * elem_1: NULL
 	 * elem_2: NULL
 	 *
+	 * ==========================
+	 * Note:
+	 *
+	 * Need symbol func for name of func, for main
 	 *
 	 */
 	IC_END_FUN,

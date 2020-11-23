@@ -163,6 +163,7 @@ void error(
   symtable_free( symtable );
   token_cleanup();
   scope_destroy();
+  func_defs_destroy();
 
   exit( errCode );
 }
