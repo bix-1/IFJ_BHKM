@@ -46,8 +46,8 @@ return_list: /*eps*/ | EXPR next_ret;
 next_ret: /*eps*/ | ',' EXPR next_ret;
 //--------FUNCTION CALLS-------------------------------
 func_call: FUNC_ID '(' func_args ')';
-func_args: /*eps*/ | expr_list;
-
+func_args: /*eps*/ | EXPR next_arg;
+next_arg: /*eps*/ | ',' EXPR next_arg;
 
 //--------EXPRESSIONS----------------------------------
 expr_list: EXPR next_expr | func_call;

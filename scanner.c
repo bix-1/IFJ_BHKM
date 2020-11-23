@@ -340,6 +340,9 @@ int get_next_token(tToken *token) {
                 } else if (c == '.') { // decimal number state
                     str_add_char(&attr, (char) c);
                     scanner_state = s_decimal_tmp;
+                } else if (isalpha(c)) {
+                    char_clear(&attr, c);
+                    error(2, "scanner", "get_next_token", "Invalid identifier");
                 } else {
                     token->token_type = T_INT_VALUE;
                     token->attr.int_lit = strtol(attr.str, NULL, 10);

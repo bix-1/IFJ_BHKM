@@ -14,6 +14,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "ll.h"         // instr_t
+#include <stdbool.h>     // bool built_in()
 #include "scanner.h"
 #include "symtable.h"   // elem_t
 #include "expression.h"
@@ -26,7 +28,6 @@
 
 /*_______________MAIN_FUNCTION______________*/
 void parse();
-
 
 /*__________________TOKENS__________________*/
 // global variable needed in parser &
@@ -94,11 +95,38 @@ void scope_init();
   Cleans up global variable [scope_t] scope
 */
 void scope_destroy();
+/*
+  Function scope_push
+  -------------------
+  Pushes given [char *] on scope stack
+*/
 void scope_push(char *);
+/*
+  Function scope_pop
+  ------------------
+  Removes the top element from scope stack
+*/
 void scope_pop();
+/*
+  Function scope_get_head
+  -----------------------
+  Returns [scope_elem_t *] ptr to the element on top of scope stack
+*/
 scope_elem_t * scope_get_head();
+/*
+  Function scope_get
+  ------------------
+  Returns [char *] name of the element at the top of scope stack
+  in format: <func_foo>:<index><if/else/for/for-body>:
+*/
 char * scope_get();
-char * id_add_scope(scope_elem_t *, char *);
+/*
+  Function id_add_scope
+  ---------------------
+  Returns [char *] name of given id in the context of given scope
+  in format: <format of scope_get>:id
+*/
+char * id_add_scope(scope_elem_t *scope, char *id);
 /*
   Function id_find
   ----------------
@@ -125,7 +153,9 @@ char * id_add_scope(scope_elem_t *, char *);
     parser:	match:
           	Variable "Y" undefined
 */
-void id_find(scope_elem_t *scope, char *id);
+elem_t * id_find(scope_elem_t *scope, char *id);
+
+char * get_unique();
 
 
 // skips all empty spaces
@@ -136,17 +166,36 @@ void instr_add_func_def();
 void instr_add_func_end();
 void instr_add_var_decl();
 void instr_add_var_def();
-void instr_var_list_append_dest();
-void instr_var_list_append_src();
 void instr_add_if_end();
 void instr_add_else_start();
 void instr_add_else_end();
 void instr_add_for_def();
+void instr_add_ret();
 
-// add parameter (last_elem) to last_func
-void func_add_param();
+void check_var_def_types(instr_t *);
+void add_next_expr();
+void check_rets(instr_t *);
+void check_args(elem_t * func, elem_t * call);
 
+void func_add_param(elem_t *, elem_t *);
+void func_add_ret(elem_t *func, elem_t *ret);
 
+typedef struct func_def func_def_t;
+struct func_def {
+  elem_t * func;
+  func_def_t * next;
+};
+
+struct func_defs_t {
+  func_def_t * first;
+} func_defs;
+
+void func_defs_init();
+void func_defs_destroy();
+void func_defs_add(elem_t *);
+void func_defs_check();
+
+bool built_in();
 /*
   ___________FUNCTIONS_REPRESENTING___________
   ___________LL_GRAMMAR_NONTERMINALS__________
@@ -167,7 +216,6 @@ void ret_list_def();
 void next_ret_def();
 void body();
 void command();
-void var_();
 void var_def();
 void var_move();
 void next_id();
@@ -182,6 +230,7 @@ void return_list();
 void next_ret();
 void func_call();
 void func_args();
+void next_arg();
 void expr_list();
 void next_expr();
 void type();

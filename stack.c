@@ -28,6 +28,8 @@ void stack_init(tokenStack *stack)
     newElem->nextTok = NULL;
 
     newElem->token.token_type = T_EMPTY;
+    newElem->data = NULL;
+    newElem->expr = false;
     //newElem->token.attr.int_lit = 0; Not important ??
 
     stack->topToken = newElem;
@@ -48,6 +50,9 @@ void stack_push(tokenStack *stack, tToken tokPush)
 
     newElem->token.token_type = tokPush.token_type;
     newElem->token.attr = tokPush.attr;
+    newElem->originalType = tokPush.token_type;
+    newElem->data = NULL;
+    newElem->expr = false;
 
     // Push the token
     //printf("STACK TOP\t%p\t%d\t%d\n", stack->topToken, stack->topToken->token.token_type);
@@ -64,6 +69,7 @@ void stack_pop(tokenStack *stack)
     {
         stackElemPtr tmp = stack->topToken;
         stack->topToken = stack->topToken->nextTok;
+        tmp->data = NULL;
         free(tmp);
     }
     else
@@ -97,6 +103,7 @@ void stack_free(tokenStack *stack)
     {
         tmp = stack->topToken;
         stack->topToken = stack->topToken->nextTok;
+        tmp->data = NULL;
         free(tmp);
     }
 }

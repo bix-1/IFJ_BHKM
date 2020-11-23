@@ -461,8 +461,10 @@ void sym_var_item_free(sym_var_item_t *sym_var_item) {
 		free(sym_var_item->name);
 
 	if (sym_var_item->type == VAR_STRING) {
-		if (sym_var_item->data.string_t != NULL)
+		if (sym_var_item->data.string_t != NULL) {
 			free(sym_var_item->data.string_t);
+			free(sym_var_item->default_data.string_t);
+		}
 	}
 
 	free(sym_var_item);
@@ -473,7 +475,8 @@ void sym_var_list_free(sym_var_list_t *sym_var_list) {
 		error(99, "symtable.c", "sym_var_list_free", "Failed to free symbol list");
 	}
 
-	// content in sym_var_list is stored in symtable and ist freed automatically
+	// content of sym_var_list is stored in symtable
+	// and is freed separately as elem_ts
 	list_item_t *current = sym_var_list->first;
 	list_item_t *next = NULL;
 
@@ -522,7 +525,7 @@ void sym_var_item_set_data(sym_var_item_t *sym_var_item, variable_t data) {
 	else {
 		sym_var_item->data = data;
 	}
-	
+
 	sym_var_item->default_data = data;
 }
 
@@ -593,6 +596,8 @@ void sym_var_list_add(sym_var_list_t *sym_var_list, list_item_t *list_item) {
 
 		list_item_set_next(current, list_item);
 		list_item_set_prev(list_item, current);
+
+		list_item_set_next(list_item, NULL);
 	}
 }
 
@@ -640,7 +645,6 @@ void sym_var_list_pop(sym_var_list_t *sym_var_list) {
 		}
 
 		list_item_free(current);
-	//	sym_var_item_free(current);
 	}
 }
 
@@ -653,7 +657,9 @@ sym_var_item_t *sym_var_list_next(sym_var_list_t *sym_var_list) {
 		sym_var_list->active = sym_var_list->first;
 	}
 	else {
-		sym_var_list->active = sym_var_list->active->next;
+		list_item_t * next = sym_var_list->active->next;
+		sym_var_list->active = next;
+		if (next == NULL) return NULL;
 	}
 
 	if (sym_var_list->active == NULL) {
@@ -695,7 +701,7 @@ sym_var_item_t *sym_var_list_prev(sym_var_list_t *sym_var_list) {
 }
 
 sym_var_item_t *sym_var_list_get_active(sym_var_list_t *sym_var_list) {
-	if (sym_var_list == NULL) {
+	if (sym_var_list == NULL || sym_var_list->active == NULL) {
 		error(99, "symtable.c", "sym_var_list_get_active", "Failed to get active sym var item in sym list");
 	}
 

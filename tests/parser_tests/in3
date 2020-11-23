@@ -1,10 +1,10 @@
 package main
 
 func 		foo      (     ) 	{
-     
-		
 
-		
+
+
+
 }
 
 func main() {
@@ -17,4 +17,5 @@ func fee (S string, I int) {
 }
 
 func fuu () (string, int) {
+  return "", 0
 }

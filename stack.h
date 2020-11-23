@@ -14,6 +14,7 @@
 #define IFJ_BHKM_STACK_H
 
 #include "scanner.h"
+#include "symtable.h"
 
 
 /*
@@ -23,6 +24,9 @@ typedef struct stackElem
 {
     struct stackElem *nextTok;
     tToken token;
+    int originalType;
+    elem_t *data;
+    bool expr;
 } *stackElemPtr;
 
 /*
