@@ -325,6 +325,7 @@ void token_cleanup() {
     ) && next.attr.str_lit.str != NULL
   ) {
     free(next.attr.str_lit.str);
+    next.attr.str_lit.str = NULL;
   }
 }
 
