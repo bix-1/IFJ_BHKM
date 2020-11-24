@@ -93,7 +93,6 @@ int main() {
 
 	codegen();
 
-	// FIXME : fix free issues
 	test_free_all();
 	return EXIT_SUCCESS;
 }

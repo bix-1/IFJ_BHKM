@@ -18,7 +18,7 @@ int symtable_key = 0;
 
 // Linked list struct to easily free strings
 typedef struct keys_to_free keys_to_free_t;
-struct keys_to_free  {
+struct keys_to_free {
 	char *ptr;
 	keys_to_free_t *next;
 };
@@ -48,15 +48,16 @@ void test_init() {
 
 // Destructor
 void test_free_all() {
-	/*keys_to_free_t *current = free_list;
+	keys_to_free_t *current = free_list;
 
 	while (current != NULL) {
 		keys_to_free_t *temp = current->next;
 		free(current->ptr);
 		free(current);
-		current = temp->next;
-	}*/
-	free(free_list);
+		current = temp;
+	}
+
+//	free(free_list);
 
 	symtable_free(symtable);
 	list_destroy(&list);
@@ -66,16 +67,16 @@ void append_to_free(char *key) {
 	keys_to_free_t *current = free_list;
 	keys_to_free_t *prev = NULL;
 
-	while (current != NULL) {
-		prev = current;
-		current = current->next;
-	}
-
-	if (prev == NULL) {
+	if (current->ptr == NULL) {
 		current->ptr = key;
 		current->next = NULL;
 	}
 	else {
+		while (current != NULL) {
+			prev = current;
+			current = current->next;
+		}
+
 		keys_to_free_t *new = malloc(sizeof(keys_to_free_t));
 		if (new == NULL) {
 			error(99, "test_codegen_helper.c", "append_to_free", "NULL element");
@@ -102,7 +103,7 @@ elem_t *create_function(char *name, sym_var_list_t *params, sym_var_list_t *retu
 		error(99, "test_codegen_helper.c", "create_var_item", "NULL element");
 	}
 	strcpy(name_str, name);
-	//append_to_free(name_str);
+	append_to_free(name_str);
 
 	sym_func_t *sym_func = sym_func_init(name_str, params, returns);
 
@@ -144,7 +145,6 @@ elem_t *create_var_item(char *name, var_type_t var_type, variable_t data, bool i
 			error(99, "test_codegen_helper.c", "create_var_item", "NULL element");
 		}
 		strcpy(data_str, data.string_t);
-		append_to_free(data_str);
 		variable_t var = {.string_t = data_str};
 		sym_var_item_set_data(sym_var_item, var);
 	}
@@ -191,9 +191,9 @@ elem_t *create_var_list() {
 }
 
 void var_list_add(sym_var_list_t *sym_var_list, sym_var_item_t *sym_var_item) {
-	list_item_t *list_item = list_item_init();
+	list_item_t *list_item = list_item_init(sym_var_item);
 
-	list_item->item = sym_var_item;
+	//list_item->item = sym_var_item;
 	sym_var_list_add(sym_var_list, list_item);
 }
 
