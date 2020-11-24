@@ -1,0 +1,21 @@
+package main
+
+func foo (a int, b int) (int) {
+  return 5
+}
+
+func main () {
+  a := 0
+  a = foo(0,0)
+  b := 0.0
+  c := 0
+  a, b, c = fee(a)
+}
+
+func fee (a int) (int, float64, int) {
+  a = foo(a,0)
+  return a, 0.0, a
+  b := 0.0
+  c := 0
+  a,b,c = fee(0)
+}
