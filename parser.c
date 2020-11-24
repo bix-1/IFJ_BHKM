@@ -325,6 +325,7 @@ void token_cleanup() {
     ) && next.attr.str_lit.str != NULL
   ) {
     free(next.attr.str_lit.str);
+    next.attr.str_lit.str = NULL;
   }
 }
 
@@ -509,10 +510,12 @@ void match(int term) {
       else {  // var_call expected
         if (last_elem->sym_type == SYM_VAR_LIST) {
           elem_t * var = id_find(scope_get_head(), to_string(&next));
+          token_cleanup(); // elem found & token.attr no longer needed
           list_item_t * list_item = list_item_init(var->symbol.sym_var_item);
           sym_var_list_add(last_elem->symbol.sym_var_list, list_item);
         } else {
           last_elem = id_find(scope_get_head(), to_string(&next));
+          token_cleanup(); // elem found & token.attr no longer needed
         }
       }
       break;
@@ -628,7 +631,6 @@ elem_t * id_find(scope_elem_t *scope, char *old_id) {
     it = symtable_find(symtable, id);
     free(id);
     if (symtable_iterator_valid(it)) {  // found in symtable
-      token_cleanup();
       return symtable_iterator_get_value(it);
     } else {  // move to the next
       tmp_scope = tmp_scope->next;
