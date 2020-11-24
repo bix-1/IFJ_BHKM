@@ -1656,6 +1656,8 @@ void next_arg() {
   }
   elem_t * arg = parse_expression();
   func_add_param(last_elem, arg);
+
+  next_arg();
 }
 
 void expr_list() {
