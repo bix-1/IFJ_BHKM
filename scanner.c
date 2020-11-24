@@ -35,6 +35,7 @@ int get_next_token(tToken *token) {
     int scanner_state; // variable declaration for switch
     int c; // variable for input char
     string attr; // string struckt that stores identifers and number literals
+    int eol = 0; // special variable that decides if we return EOL token before comment
 
     str_init(&attr); // string for litteral attribute init
     str_clear(&attr); // clears everything in string, if it is identifier we start storing data
@@ -68,6 +69,7 @@ int get_next_token(tToken *token) {
                             continue;
                           }
                           else if (c == '*') {
+                              eol = 1;
                             scanner_state = s_block_c;
                             continue;
                           }
@@ -419,12 +421,34 @@ int get_next_token(tToken *token) {
                     c = getc(source);
 
                     if (c == '/') { // end of block comment and we go to start state
+                        if (eol == 1) {
+                            return L_SUCCESS;
+                        }
                         scanner_state = s_start;
                     } else {
                         ungetc(c, source);
                     }
                 } else if (c == '\n'){ // we increment line number for error message
-                   line_num++;
+                    token->token_type = T_EOL;
+                    // if there is multi-line block comment we return EOL
+                    // this while will keep on getting chars, until he gets end od block comment */
+                    while (1) {
+                        c = getc(source);
+                        if (c == '*') {
+                            c = getc(source);
+                            if (c == '/') {
+                                return L_SUCCESS;
+                            } else {
+                                ungetc(c, source);
+                            }
+                        }
+
+                        if (c == EOF) {
+                            char_clear(&attr, c);
+                            error(1,"scanner", "get_next_token", "Lexical error");
+                        }
+                    }
+                    line_num++;
                 } else if (c == EOF) { // block comment without end
                     char_clear(&attr, c);
                     error(1,"scanner", "get_next_token", "Lexical error");
