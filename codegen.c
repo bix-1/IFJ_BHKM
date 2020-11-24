@@ -22,7 +22,7 @@
 #define LF "LF"
 #define TF "TF"
 
-int fun_deep = 0;
+int main_fun_deep = 0;
 instr_t *last_instr = NULL;
 
 void codegen_init() {
@@ -289,16 +289,19 @@ void call_fun(instr_t instr) {
 			return_active = sym_var_list_next(returns);
 		}
 	}
+
+	if (strcmp(elem_dest->symbol.sym_func->name, "main") == 0) {
+		// main function
+		main_fun_deep++;
+	}
 }
 
 void ret_fun(instr_t instr) {
 	// Same function just return and end
 	if (last_instr != NULL && last_instr->type == IC_RET_FUN && instr.type == IC_END_FUN &&
-			*(last_instr->elem_dest_ptr->key) == *(instr.elem_dest_ptr->key)) {
+	    *(last_instr->elem_dest_ptr->key) == *(instr.elem_dest_ptr->key)) {
 		return;
 	}
-
-	// TODO : add check fun_deep (if its not 0, then EXIT instr cannot be called)
 
 	elem_t *elem_dest = instr.elem_dest_ptr;
 
@@ -313,72 +316,19 @@ void ret_fun(instr_t instr) {
 	fprintf(OUTPUT, "POPFRAME\n");
 
 	// check if function is main, if yes then EXIT may be called
-	// check fun_deep (if its not 1, then EXIT instr cannot be called)
+	// check main_fun_deep (if its not 1, then EXIT instr cannot be called)
 	if (strcmp(elem_dest->symbol.sym_func->name, "main") == 0) {
 		// main function
-		fprintf(OUTPUT, "EXIT int@0\n");
+		if (main_fun_deep == 1) {
+			fprintf(OUTPUT, "EXIT int@0\n\n");
+		}
+		else {
+			fprintf(OUTPUT, "RETURN\n\n");
+		}
+		main_fun_deep--;
 	}
 	else {
 		fprintf(OUTPUT, "RETURN\n\n");
-	}
-}
-
-/*void end_fun(instr_t instr) {
-	elem_t *elem_dest = instr.elem_dest_ptr;
-
-	if (elem_dest == NULL) {
-		error(99, "codegen.c", "end_fun", "NULL element");
-	}
-
-	if (elem_dest->sym_type != SYM_FUNC) {
-		error(99, "codegen.c", "end_fun", "Invalid symbol");
-	}
-
-	sym_func_t *sym_func = elem_dest->symbol.sym_func;
-
-	if (sym_func == NULL) {
-		error(99, "codegen.c", "end_fun", "NULL element");
-	}
-
-	fprintf(OUTPUT, "POPFRAME");
-	fprintf(OUTPUT, "RETURN\n");
-}*/
-
-void write_fun(instr_t instr) {
-	elem_t *elem_dest = instr.elem_dest_ptr;
-
-	if (elem_dest == NULL) {
-		error(99, "codegen.c", "write_fun", "NULL element");
-	}
-
-	if (elem_dest->sym_type != SYM_VAR_LIST) {
-		error(99, "codegen.c", "write_fun", "Invalid symbol");
-	}
-
-	sym_var_list_t *sym_var_list = instr.elem_dest_ptr->symbol.sym_var_list;
-
-	if (sym_var_list == NULL) {
-		error(99, "codegen.c", "write_fun", "Invalid symbol");
-	}
-
-	sym_var_item_t *active = sym_var_list_next(sym_var_list);
-	char *frame = NULL;
-
-	while (active != NULL) {
-		if (active->is_global) {
-			frame = GF;
-		}
-		else {
-			frame = LF;
-		}
-
-		if (active->type == VAR_UNDEFINED) {
-			error(99, "codegen.c", "write_fun", "Invalid data type");
-		}
-
-		fprintf(OUTPUT, "WRITE %s@%s\n", frame, active->name);
-
-		active = sym_var_list_next(sym_var_list);
 	}
 }
 
@@ -440,8 +390,14 @@ void add_var(instr_t instr) {
 		frame_elem2 = LF;
 	}
 
-	fprintf(OUTPUT, "ADD %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-	        frame_elem2, sym_elem2->name);
+	if ((sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
+	    (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT)) {
+		fprintf(OUTPUT, "ADD %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
+	else {
+		error(99, "codegen.c", "add_var", "Incompatible data types");
+	}
 }
 
 void sub_var(instr_t instr) {
@@ -502,8 +458,14 @@ void sub_var(instr_t instr) {
 		frame_elem2 = LF;
 	}
 
-	fprintf(OUTPUT, "SUB %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-	        frame_elem2, sym_elem2->name);
+	if ((sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
+	    (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT)) {
+		fprintf(OUTPUT, "SUB %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
+	else {
+		error(99, "codegen.c", "sub_var", "Incompatible data types");
+	}
 }
 
 void mul_var(instr_t instr) {
@@ -564,8 +526,792 @@ void mul_var(instr_t instr) {
 		frame_elem2 = LF;
 	}
 
-	fprintf(OUTPUT, "MUL %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+	if ((sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
+	    (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT)) {
+		fprintf(OUTPUT, "MUL %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
+	else {
+		error(99, "codegen.c", "mul_var", "Incompatible data types");
+	}
+}
+
+void div_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "div_var", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "div_var", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "div_var", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "div_var", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "div_var", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "div_var", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	if (sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) {
+		// float div
+		fprintf(OUTPUT, "DIV %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
+	else if (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) {
+		// int div
+		fprintf(OUTPUT, "IDIV %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
+	else {
+		error(99, "codegen.c", "div_var", "Incompatible data types");
+	}
+}
+
+void lt_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "lt_var", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "lt_var", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "lt_var", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "lt_var", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "lt_var", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "lt_var", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	if (sym_dest->type != VAR_BOOL) {
+		error(99, "codegen.c", "lt_var", "Incompatible data type");
+	}
+
+	if ((sym_elem1->type == VAR_BOOL && sym_elem2->type == VAR_BOOL) ||
+	    (sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) ||
+	    (sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
+	    (sym_elem1->type == VAR_STRING && sym_elem2->type == VAR_STRING)) {
+		fprintf(OUTPUT, "LT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
+	else {
+		error(99, "codegen.c", "lt_var", "Incompatible data types");
+	}
+}
+
+void gt_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "gt_var", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "gt_var", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "gt_var", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "gt_var", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "gt_var", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "gt_var", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	if (sym_dest->type != VAR_BOOL) {
+		error(99, "codegen.c", "gt_var", "Incompatible data type");
+	}
+
+	if ((sym_elem1->type == VAR_BOOL && sym_elem2->type == VAR_BOOL) ||
+	    (sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) ||
+	    (sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
+	    (sym_elem1->type == VAR_STRING && sym_elem2->type == VAR_STRING)) {
+		fprintf(OUTPUT, "GT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
+	else {
+		error(99, "codegen.c", "gt_var", "Incompatible data types");
+	}
+}
+
+void eq_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "eq_var", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "eq_var", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "eq_var", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "eq_var", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "eq_var", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "eq_var", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	if (sym_dest->type != VAR_BOOL) {
+		error(99, "codegen.c", "eq_var", "Incompatible data type");
+	}
+
+	if ((sym_elem1->type == VAR_BOOL && sym_elem2->type == VAR_BOOL) ||
+	    (sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) ||
+	    (sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
+	    (sym_elem1->type == VAR_STRING && sym_elem2->type == VAR_STRING)) {
+		fprintf(OUTPUT, "EQ %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
+	else {
+		error(99, "codegen.c", "eq_var", "Incompatible data types");
+	}
+}
+
+void and_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "and_var", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "and_var", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "and_var", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "and_var", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "and_var", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "and_var", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	if (sym_dest->type != VAR_BOOL || sym_elem1->type != VAR_BOOL || sym_elem2->type != VAR_BOOL) {
+		error(99, "codegen.c", "and_var", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "AND %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
 	        frame_elem2, sym_elem2->name);
+}
+
+void or_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "or_var", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "or_var", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "or_var", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "or_var", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "or_var", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "or_var", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	if (sym_dest->type != VAR_BOOL || sym_elem1->type != VAR_BOOL || sym_elem2->type != VAR_BOOL) {
+		error(99, "codegen.c", "or_var", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "OR %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+	        frame_elem2, sym_elem2->name);
+}
+
+void not_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "not_var", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "not_var", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "not_var", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "not_var", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_dest->type != VAR_BOOL || sym_elem1->type != VAR_BOOL) {
+		error(99, "codegen.c", "not_var", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "NOT %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+}
+
+void int2float(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "int2float", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "int2float", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "int2float", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "int2float", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_dest->type != VAR_FLOAT64) {
+		error(99, "codegen.c", "int2float", "Incompatible data type");
+	}
+
+	if (sym_elem1->type != VAR_INT) {
+		error(99, "codegen.c", "int2float", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "INT2FLOAT %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+}
+
+void float2int(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "float2int", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "float2int", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "float2int", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "float2int", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_dest->type != VAR_INT) {
+		error(99, "codegen.c", "float2int", "Incompatible data type");
+	}
+
+	if (sym_elem1->type != VAR_FLOAT64) {
+		error(99, "codegen.c", "float2int", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "FLOAT2INT %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+}
+
+void int2char(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "int2char", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "int2char", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "int2char", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "int2char", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_dest->type != VAR_STRING) {
+		error(99, "codegen.c", "int2char", "Incompatible data type");
+	}
+
+	if (sym_elem1->type != VAR_INT) {
+		error(99, "codegen.c", "int2char", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "INT2CHAR %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+}
+
+void str2int(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "str2int", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "str2int", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "str2int", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "str2int", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "str2int", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "str2int", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	if (sym_dest->type != VAR_INT) {
+		error(99, "codegen.c", "str2int", "Incompatible data type");
+	}
+
+	if (sym_elem1->type != VAR_STRING) {
+		error(99, "codegen.c", "str2int", "Incompatible data type");
+	}
+
+	if (sym_elem2->type != VAR_INT) {
+		error(99, "codegen.c", "str2int", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "STR2INT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+	        frame_elem2, sym_elem2->name);
+}
+
+void read_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "read_var", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "read_var", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_dest->type == VAR_INT) {
+		fprintf(OUTPUT, "READ %s@%s int\n", frame_dest, sym_dest->name);
+	}
+	else if (sym_dest->type == VAR_FLOAT64) {
+		fprintf(OUTPUT, "READ %s@%s float\n", frame_dest, sym_dest->name);
+	}
+	else if (sym_dest->type == VAR_STRING) {
+		fprintf(OUTPUT, "READ %s@%s string\n", frame_dest, sym_dest->name);
+	}
+	else if (sym_dest->type == VAR_BOOL) {
+		fprintf(OUTPUT, "READ %s@%s bool\n", frame_dest, sym_dest->name);
+	}
+	else {
+		error(99, "codegen.c", "read_var", "Invalid data type");
+	}
+}
+
+void write_var(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "write_var", "NULL element");
+	}
+
+	if (elem_dest->sym_type != SYM_VAR_LIST) {
+		error(99, "codegen.c", "write_var", "Invalid symbol");
+	}
+
+	sym_var_list_t *sym_var_list = instr.elem_dest_ptr->symbol.sym_var_list;
+
+	if (sym_var_list == NULL) {
+		error(99, "codegen.c", "write_var", "Invalid symbol");
+	}
+
+	sym_var_item_t *active = sym_var_list_next(sym_var_list);
+	char *frame = NULL;
+
+	while (active != NULL) {
+		if (active->is_global) {
+			frame = GF;
+		}
+		else {
+			frame = LF;
+		}
+
+		if (active->type == VAR_UNDEFINED) {
+			error(99, "codegen.c", "write_var", "Invalid data type");
+		}
+
+		fprintf(OUTPUT, "WRITE %s@%s\n", frame, active->name);
+
+		active = sym_var_list_next(sym_var_list);
+	}
 }
 
 void codegen_generate_instr() {
@@ -605,31 +1351,43 @@ void codegen_generate_instr() {
 				mul_var(*instr);
 				break;
 			case IC_DIV_VAR:
+				div_var(*instr);
 				break;
 			case IC_LT_VAR:
+				lt_var(*instr);
 				break;
 			case IC_GT_VAR:
+				gt_var(*instr);
 				break;
 			case IC_EQ_VAR:
+				eq_var(*instr);
 				break;
 			case IC_AND_VAR:
+				and_var(*instr);
 				break;
 			case IC_OR_VAR:
+				or_var(*instr);
 				break;
 			case IC_NOT_VAR:
+				not_var(*instr);
 				break;
 			case IC_INT2FLOAT_VAR:
+				int2float(*instr);
 				break;
 			case IC_FLOAT2INT_VAR:
+				float2int(*instr);
 				break;
 			case IC_INT2CHAR_VAR:
+				int2char(*instr);
 				break;
 			case IC_STR2INT_VAR:
+				str2int(*instr);
 				break;
 			case IC_READ_VAR:
+				read_var(*instr);
 				break;
 			case IC_WRITE_VAR:
-				write_fun(*instr);
+				write_var(*instr);
 				break;
 			case IC_CONCAT_STR:
 				break;
