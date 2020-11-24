@@ -12,7 +12,7 @@
 
 /*
 TODO:
-  handling of nonvoid returns
+  func call as return
 
   refactor func comments
   crossreference LL.pdf & implemented rules
@@ -187,7 +187,7 @@ void parse() {
         printf("\tDEF_VAR\t\t");
         sym_var_list_t * L = instr_get_dest(tmp)->symbol.sym_var_list;
         for (
-          list_item_t * tmp = L->active;
+          list_item_t * tmp = L->first;
           tmp != NULL;
           tmp = tmp->next
         ) {
@@ -508,15 +508,14 @@ void match(int term) {
         }
       }
       else {  // var_call expected
+        elem_t * elem = id_find(scope_get_head(), to_string(&next));
+        token_cleanup(); // elem found & token.attr no longer needed
+
         if (last_elem->sym_type == SYM_VAR_LIST) {
-          elem_t * var = id_find(scope_get_head(), to_string(&next));
-          token_cleanup(); // elem found & token.attr no longer needed
-          list_item_t * list_item = list_item_init(var->symbol.sym_var_item);
+          list_item_t * list_item = list_item_init(elem->symbol.sym_var_item);
           sym_var_list_add(last_elem->symbol.sym_var_list, list_item);
-        } else {
-          last_elem = id_find(scope_get_head(), to_string(&next));
-          token_cleanup(); // elem found & token.attr no longer needed
         }
+        else last_elem = elem;
       }
       break;
 
@@ -631,6 +630,7 @@ elem_t * id_find(scope_elem_t *scope, char *old_id) {
     it = symtable_find(symtable, id);
     free(id);
     if (symtable_iterator_valid(it)) {  // found in symtable
+      eps = false;
       return symtable_iterator_get_value(it);
     } else {  // move to the next
       tmp_scope = tmp_scope->next;
@@ -769,11 +769,11 @@ void check_var_def_types(instr_t * instr) {
 
   // dest setup
   sym_var_list_t * dest_list = instr_get_dest(instr)->symbol.sym_var_list;
-  list_item_t * dest_item = dest_list->active;
+  list_item_t * dest_item = dest_list->first;
 
   // src setup
   sym_var_list_t * src_list = instr_get_elem1(instr)->symbol.sym_var_list;
-  list_item_t * src_item = src_list->active;
+  list_item_t * src_item = src_list->first;
 
   sym_var_item_t * dest;
   sym_var_item_t * src;
@@ -833,11 +833,10 @@ void add_next_expr() {
 
 
 #define NAME_MAX_L 8 // strlen("FLOAT64") + \0
-void check_rets(instr_t * instr) {
+void check_ret(elem_t * func_rets) {
   // check whether return types match the definition
 
   // returns setup
-  elem_t * func_rets = instr_get_dest(instr);
   sym_var_list_t * ret_list = func_rets->symbol.sym_func->returns;
 
   // definitions setup
@@ -936,7 +935,7 @@ void check_rets(instr_t * instr) {
   has_ret = true;
 }
 
-void check_args(elem_t * def_e, elem_t * call_e) {
+void check_func_call_args(elem_t * def_e, elem_t * call_e) {
   sym_var_list_t * def_params = def_e->symbol.sym_func->params;
   sym_var_list_t * call_params = call_e->symbol.sym_func->params;
 
@@ -1029,6 +1028,99 @@ void check_args(elem_t * def_e, elem_t * call_e) {
   }
 }
 
+void check_func_call_rets(elem_t * def_e, elem_t * call_e) {
+  sym_var_list_t * def_rets = def_e->symbol.sym_func->returns;
+  sym_var_list_t * call_rets = call_e->symbol.sym_func->returns;
+
+  list_item_t * def;
+  list_item_t * call;
+  if (def_rets == NULL) def = NULL;
+  else def = def_rets->first;
+  if (call_rets == NULL) call = NULL;
+  else call = call_rets->first;
+
+  int n_def = 0, n_call = 0;
+  while (def != NULL) {
+    // unmatched number of returns / defined returns
+    if (call == NULL) {
+      // count vars
+      while (def != NULL) {
+        def = def->next;
+        n_def++;
+      }
+      error(
+        6, "parser", "function call assignment",
+        "Number of  [%d] differs from defined [%d] returns of function [%s]",
+        n_call, n_def, *(def_e->key)
+      );
+    }
+
+    if (def->item->type != call->item->type) {
+      char def_type[NAME_MAX_L] = "";
+      char call_type[NAME_MAX_L] = "";
+      switch (def->item->type) {
+        case VAR_INT:
+          strcpy(def_type, "INT");
+        break;
+        case VAR_FLOAT64:
+          strcpy(def_type, "FLOAT64");
+        break;
+        case VAR_STRING:
+          strcpy(def_type, "STRING");
+        break;
+        case VAR_BOOL:
+          strcpy(def_type, "BOOL");
+        break;
+        default:
+        break;
+      }
+      switch (call->item->type) {
+        case VAR_INT:
+          strcpy(call_type, "INT");
+        break;
+        case VAR_FLOAT64:
+          strcpy(call_type, "FLOAT64");
+        break;
+        case VAR_STRING:
+          strcpy(call_type, "STRING");
+        break;
+        case VAR_BOOL:
+          strcpy(call_type, "BOOL");
+        break;
+        default:
+        break;
+      }
+
+      // sym_var_list_free(call_params);
+      error(
+        6, "parser", "function call assignment",
+        "Assignment to [%s] where [%s] was defined for return [%d] of function [%s]",
+        call_type, def_type, n_def, *(def_e->key)
+      );
+    }
+
+    // next step
+    def = def->next;
+    call = call->next;
+    n_def++;
+    n_call++;
+  }
+
+  // check if call also finished
+  if (call != NULL) {
+    // count exprs
+    while (call != NULL) {
+      call = call->next;
+      n_call++;
+    }
+    error(
+      6, "parser", "check_func_call_rets",
+      "Number of func_call destinations [%d] differs from defined [%d] returns of function [%s]",
+      n_call, n_def, *(def_e->key)
+    );
+  }
+}
+
 // func functions
 void func_add_param(elem_t *func, elem_t *param) {
   if (func == NULL || param == NULL)
@@ -1046,7 +1138,10 @@ void func_add_param(elem_t *func, elem_t *param) {
 
 }
 
-void func_add_ret(elem_t *func, elem_t *ret) {
+void func_add_ret(elem_t *func, sym_var_item_t *ret) {
+  if (func == NULL || ret == NULL)
+    error(99, "parser", "type", "Failed to access function's returns");
+
   sym_var_list_t ** rets = &(func->symbol.sym_func->returns);
   if (rets == NULL)
     error(99, "parser", "func_add_ret", "Failed to access function's returns");
@@ -1054,7 +1149,7 @@ void func_add_ret(elem_t *func, elem_t *ret) {
     *rets = sym_var_list_init();
 
   // add to ret list
-  list_item_t * list_item = list_item_init(ret->symbol.sym_var_item);
+  list_item_t * list_item = list_item_init(ret);
   sym_var_list_add(*rets, list_item);
 }
 
@@ -1091,7 +1186,9 @@ void func_defs_check() {
     symtable_iterator_t it = symtable_find(symtable, name);
     if (symtable_iterator_valid(it)) {
       printf("FUNC\t%s\n\n", name);
-      check_args(symtable_iterator_get_value(it), func_call->func);
+      elem_t * elem = symtable_iterator_get_value(it);
+      check_func_call_args(elem, func_call->func);
+      check_func_call_rets(elem, func_call->func);
     } else {
       error(3, "parser", "func_check", "Function '%s' called but not defined", name);
     }
@@ -1330,7 +1427,7 @@ void ret_list_def() {
   printf("\t\tRETURNS:\n");
   printf("\t\t---");
   for (
-    list_item_t * tmp = rets->active;
+    list_item_t * tmp = rets->first;
     tmp != NULL;
     tmp = tmp->next
   ) {
@@ -1474,6 +1571,7 @@ void var_move() {
   list_add(list, new_def);
   last_elem = var_list_elem;  // (dest) now in last_elem
 
+
   // get variables (dest)
   def = false; eps = false;
   match(T_VAR_ID);
@@ -1489,7 +1587,8 @@ void var_move() {
   last_elem = expr_list_elem;  // (src) now in last_elem
   expr_list();
 
-  check_var_def_types(new_def);
+  // types checked in check_func_call_rets
+  if (new_def->type != IC_CALL_FUN) check_var_def_types(new_def);
 }
 
 void next_id() {
@@ -1602,18 +1701,17 @@ void return_() {
   match(T_RETURN);
 
   instr_add_ret();
-  instr_t * ret_instr = list->last;
 
   return_list();
 
-  check_rets(ret_instr);
+  check_ret(instr_get_dest(list->last));
 }
 
 void return_list() {
   if (next.token_type == T_EOL) return;
 
   elem_t * expr = parse_expression();
-  func_add_ret(last_elem, expr);
+  func_add_ret(last_elem, expr->symbol.sym_var_item);
 
   next_ret();
 }
@@ -1627,7 +1725,7 @@ void next_ret() {
   }
 
   elem_t * expr = parse_expression();
-  func_add_ret(last_elem, expr);
+  func_add_ret(last_elem, expr->symbol.sym_var_item);
 
   next_ret();
 }
@@ -1663,31 +1761,55 @@ void next_arg() {
 }
 
 void expr_list() {
-  // TODO comment this segment
-  // TODO move the whole func checking to expr_parser ??
   if (next.token_type == T_IDENTIFIER) { // check if func call
-    // get next char
-    int c;
-    // TODO skip comments
-    while ((c = getc(source)) == ' ');
-    ungetc(c, source);
+    eps = true;
+    elem_t * var = id_find(scope_get_head(), to_string(&next));
+    if (eps || var->sym_type == SYM_FUNC) {
+      eps = false;
 
+      instr_t * def_instr = list->last;
 
-    if (c == '(') {
-      func_call();  // TODO handle
-      if (next.token_type == T_EOL) { // x = foo()
-        printf("\t\t\t\t\tsingle func\n\n");
+      func_call();
 
-        // TODO instr for func call
+      instr_t * func_instr = def_instr->next;
 
-        return;
+      // TODO FUNCEXP: func as expr -- check && handle
+      // NOTE move the whole func checking to expr_parser ??
+      if (next.token_type != T_EOL) {
+        error(
+          2, "parser", "FUNCEXP: NOT IMPLEMENTED YET",
+          "Expected: '%s' -- Got: '%s'", T_EOL, next.token_type
+        );
       }
-      // TODO --- part of FUNEXP
-      // func is part of an expression
-      // send to expr_parser via last_elem??
-      // or handle the whole thing in expr_parser
-      printf("died here\n\n");
-      exit(1);
+      // =============================================
+
+      // handling assignment of functions returns
+
+
+      elem_t * func = instr_get_elem1(func_instr);
+      sym_var_list_t * dest = instr_get_dest(def_instr)->symbol.sym_var_list;
+
+        // type
+      instr_set_type(def_instr, IC_CALL_FUN);
+        // elem1 -- func
+      free(instr_get_elem1(def_instr)->symbol.sym_var_list);
+      free(instr_get_elem1(def_instr));
+      instr_add_elem1(def_instr, func);
+        // linking
+      def_instr->next = func_instr->next;
+      if (list->last == func_instr) list->last = def_instr;
+      instr_add_dest(func_instr, NULL);
+      instr_add_elem1(func_instr, NULL);
+      instr_delete(func_instr);
+
+      list_item_t * ret = dest->first;
+      while (ret != NULL) {
+        func_add_ret(func, ret->item);
+        ret = ret->next;
+      }
+
+
+      return;
     }
   } // handling expressions
 

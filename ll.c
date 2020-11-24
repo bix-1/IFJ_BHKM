@@ -42,57 +42,8 @@ void list_destroy (list_t ** l)
   instr_t * curr = (*l)->first,
           * next;
   while (curr != NULL) {
-    if (curr->type == IC_DEF_VAR) {
-      sym_var_list_free(curr->elem_dest_ptr->symbol.sym_var_list);
-      sym_var_list_free(curr->elem1_ptr->symbol.sym_var_list);
-      free(curr->elem_dest_ptr);
-      free(curr->elem1_ptr);
-    }
-    else if (curr->type == IC_CALL_FUN) {
-      free(curr->elem1_ptr->symbol.sym_func->name);
-      sym_var_list_t * params = curr->elem1_ptr->symbol.sym_func->params;
-      if (params != NULL) {
-        list_item_t * tmp = params->first;
-        list_item_t * next;
-        while (tmp != NULL) {
-          next = tmp->next;
-          free(tmp);
-          tmp = next;
-        }
-      }
-    }
-    else if (curr->type == IC_DEF_FUN) {
-      // free parameters of func
-      sym_var_list_t ** params = &(instr_get_dest(curr)->symbol.sym_func->params);
-      if (*params != NULL) {
-        list_item_t * tmp = (*params)->first;
-        list_item_t * next;
-        while (tmp != NULL) {
-          next = tmp->next;
-          free(tmp);
-          tmp = next;
-        }
-        free(*params);
-        *params = NULL;
-      }
-      // free returns of func
-      sym_var_list_t ** rets = &(instr_get_dest(curr)->symbol.sym_func->returns);
-      if (*rets != NULL) {
-        list_item_t * tmp = (*rets)->first;
-        list_item_t * next;
-        while (tmp != NULL) {
-          sym_var_item_free(tmp->item);
-          next = tmp->next;
-          free(tmp);
-          tmp = next;
-        }
-        free(*rets);
-        *rets = NULL;
-      }
-    }
-
     next = curr->next;
-    free( curr );
+    instr_delete(curr);
     curr = next;
   }
 
@@ -188,6 +139,72 @@ void instr_init(instr_t **i, instr_type_t t)
   (*i)->elem1_ptr = NULL;
   (*i)->elem2_ptr = NULL;
   (*i)->next = NULL;
+}
+
+void instr_delete(instr_t *i)
+{
+  if (i == NULL) return;
+  if (i->type == IC_DEF_VAR) {
+    sym_var_list_t * list1 = i->elem_dest_ptr->symbol.sym_var_list;
+    sym_var_list_t * list2 = i->elem1_ptr->symbol.sym_var_list;
+    if (list1 != NULL) sym_var_list_free(list1);
+    if (list2 != NULL) sym_var_list_free(list2);
+    free(i->elem_dest_ptr);
+    free(i->elem1_ptr);
+  }
+  else if (i->type == IC_CALL_FUN) {
+    if (i->elem_dest_ptr != NULL) {
+      sym_var_list_t * dest = i->elem_dest_ptr->symbol.sym_var_list;
+      if (dest != NULL) {
+        sym_var_list_free(dest);
+      }
+      free(i->elem_dest_ptr);
+    }
+    if (i->elem1_ptr != NULL) {
+      free(i->elem1_ptr->symbol.sym_func->name);
+      sym_var_list_t * params = i->elem1_ptr->symbol.sym_func->params;
+      if (params != NULL) {
+        list_item_t * tmp = params->first;
+        list_item_t * next;
+        while (tmp != NULL) {
+          next = tmp->next;
+          free(tmp);
+          tmp = next;
+        }
+      }
+    }
+  }
+  else if (i->type == IC_DEF_FUN) {
+    // free parameters of func
+    sym_var_list_t ** params = &(i->elem_dest_ptr->symbol.sym_func->params);
+    if (*params != NULL) {
+      list_item_t * tmp = (*params)->first;
+      list_item_t * next;
+      while (tmp != NULL) {
+        next = tmp->next;
+        free(tmp);
+        tmp = next;
+      }
+      free(*params);
+      *params = NULL;
+    }
+    // free returns of func
+    sym_var_list_t ** rets = &(i->elem_dest_ptr->symbol.sym_func->returns);
+    if (*rets != NULL) {
+      list_item_t * tmp = (*rets)->first;
+      list_item_t * next;
+      while (tmp != NULL) {
+        sym_var_item_free(tmp->item);
+        next = tmp->next;
+        free(tmp);
+        tmp = next;
+      }
+      free(*rets);
+      *rets = NULL;
+    }
+  }
+
+  free( i );
 }
 
 void instr_set_type (instr_t *i, instr_type_t t)

@@ -172,13 +172,16 @@ void instr_add_else_end();
 void instr_add_for_def();
 void instr_add_ret();
 
-void check_var_def_types(instr_t *);
 void add_next_expr();
-void check_rets(instr_t *);
-void check_args(elem_t * func, elem_t * call);
+
+// checks
+void check_var_def_types(instr_t *);
+void check_ret(elem_t *func_ret);
+void check_func_call_args(elem_t * func, elem_t * call);
+void check_func_call_rets(elem_t * func, elem_t * dest);
 
 void func_add_param(elem_t *, elem_t *);
-void func_add_ret(elem_t *func, elem_t *ret);
+void func_add_ret(elem_t * func, sym_var_item_t * ret);
 
 typedef struct func_def func_def_t;
 struct func_def {
