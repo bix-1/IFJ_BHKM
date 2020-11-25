@@ -545,6 +545,9 @@ typedef enum instr_type {
 	 * x = concat("Hello ", "world!")
 	 * x = concat(a, b)
 	 *
+	 * If dest element is not string - Error
+	 * If src1 element is not string - Error
+	 * If src2 element is not string - Error
 	 *
 	 */
 	IC_CONCAT_STR,
