@@ -1543,6 +1543,7 @@ void var_def() {
   match(T_VAR_ID);
   match(T_DEF_IDENT);
   elem_t * expr = parse_expression();
+  printf("\t\t\t\t\t\t%s\n\n", *(expr->key));
   // set type of declared variable
   last_elem->symbol.sym_var_item->type = expr->symbol.sym_var_item->type;
   instr_add_elem1(list->last, expr);
