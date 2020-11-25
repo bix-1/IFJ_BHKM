@@ -371,7 +371,7 @@ void match(int term) {
       last_func = symtable_iterator_get_value(tmp);
       // add to scope
       char * new_scope = malloc(sizeof(char) * 5);
-      if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
+      if (new_scope == NULL) error(99, "parser", NULL, "Memory allocation failed");
       strcpy(new_scope, to_string(&next));
       U_ID = 0; // new founc -- can reset counter
       scope_push(new_scope);
@@ -432,7 +432,7 @@ void match(int term) {
           last_func = func_data;
           // add to scope
           char * new_scope = malloc(sizeof(char) * (strlen(to_string(&next))+1) );
-          if (new_scope == NULL) error(99, "parser", "", "Memory allocation failed");
+          if (new_scope == NULL) error(99, "parser", NULL, "Memory allocation failed");
           strcpy(new_scope, to_string(&next));
           U_ID = 0; // new founc -- can reset counter
           scope_push(new_scope);
@@ -604,7 +604,7 @@ char * id_add_scope(scope_elem_t * tmp_scope, char * old_id) {
     sizeof(char) *  // prefix + : + name + \0
     (strlen(scope_name) + strlen(old_id) + 2)
   );
-  if (new_id == NULL) error(99, "parser", "", "Memory allocation failed");
+  if (new_id == NULL) error(99, "parser", NULL, "Memory allocation failed");
   new_id[0] = '\0';
   strcat(new_id, scope_name);
   strcat(new_id, old_id);

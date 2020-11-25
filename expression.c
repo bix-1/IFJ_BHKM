@@ -971,7 +971,7 @@ symtable_value_t parse_expression()
    // printf("\n\n-----START-----\n");
     if (get_index(next) == OP_dollar)
     {
-        return NULL;
+      error(2, "expression parser", NULL, "Missing an expression");
     }
     parsData.token = (tToken *)malloc(sizeof(tToken));
     parsData.token->token_type = next.token_type;

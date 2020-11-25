@@ -133,9 +133,13 @@ void error(
 
   fprintf(
     stderr,
-    "ERROR:\t__line %d__\t%s -- with exit code %d\n%s:\t%s:\n\t",
-    errLine+1, tmp, errCode, file, func
+    "ERROR:\t__line %d__\t%s -- with exit code %d\n%s:",
+    errLine+1, tmp, errCode, file
   );
+  if (func != NULL) {
+    fprintf(stderr, "\t%s:", func);
+  }
+  fprintf(stderr, "\n\t");
 
   // Handling error msg
   if ( msg != NULL ){
