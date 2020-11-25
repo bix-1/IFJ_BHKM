@@ -649,6 +649,36 @@ typedef enum instr_type {
 	IC_IF_END,
 
 	/*
+	 * Helper instruction. Indicates incoming condition instructions for else-if
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_ELSEIF_DEF,
+
+	/*
+	 * Helper instruction. Indicates start of else-if perform instructions
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_ELSEIF_START,
+
+	/*
+	 * Helper instruction. Indicates end of else-if perform instructions
+	 *
+	 * elem_dest: NULL
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 */
+	IC_ELSEIF_END,
+
+	/*
 	 * Helper instruction. Indicates start of else perform instructions
 	 *
 	 * elem_dest: NULL
