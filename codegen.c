@@ -1314,6 +1314,251 @@ void write_var(instr_t instr) {
 	}
 }
 
+void concat_str(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "concat_str", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "concat_str", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "concat_str", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "concat_str", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "concat_str", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "concat_str", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	if (sym_dest->type != VAR_STRING || sym_elem1->type != VAR_STRING || sym_elem2->type != VAR_STRING) {
+		error(99, "codegen.c", "concat_str", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "CONCAT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+	        frame_elem2, sym_elem2->name);
+}
+
+void strlen_str(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "strlen_str", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "strlen_str", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "strlen_str", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "strlen_str", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_dest->type != VAR_INT || sym_elem1->type != VAR_STRING) {
+		error(99, "codegen.c", "strlen_str", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "STRLEN %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+}
+
+void getchar_str(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "getchar_str", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "getchar_str", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "getchar_str", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "getchar_str", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "getchar_str", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "getchar_str", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	if (sym_dest->type != VAR_STRING || sym_elem1->type != VAR_STRING || sym_elem2->type != VAR_INT) {
+		error(99, "codegen.c", "getchar_str", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "GETCHAR %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+	        frame_elem2, sym_elem2->name);
+}
+
+void setchar_str(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem2 = instr.elem2_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "setchar_str", "NULL element");
+	}
+
+	if (elem1 == NULL) {
+		error(99, "codegen.c", "setchar_str", "NULL element");
+	}
+
+	if (elem2 == NULL) {
+		error(99, "codegen.c", "setchar_str", "NULL element");
+	}
+
+	char *frame_dest = NULL;
+	char *frame_elem1 = NULL;
+	char *frame_elem2 = NULL;
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "setchar_str", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "setchar_str", "NULL symbol");
+	}
+
+	if (sym_elem2 == NULL) {
+		error(99, "codegen.c", "setchar_str", "NULL symbol");
+	}
+
+	if (sym_dest->is_global) {
+		frame_dest = GF;
+	}
+	else {
+		frame_dest = LF;
+	}
+
+	if (sym_elem1->is_global) {
+		frame_elem1 = GF;
+	}
+	else {
+		frame_elem1 = LF;
+	}
+
+	if (sym_elem2->is_global) {
+		frame_elem2 = GF;
+	}
+	else {
+		frame_elem2 = LF;
+	}
+
+	if (sym_dest->type != VAR_STRING || sym_elem1->type != VAR_STRING || sym_elem2->type != VAR_INT) {
+		error(99, "codegen.c", "setchar_str", "Incompatible data type");
+	}
+
+	fprintf(OUTPUT, "SETCHAR %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+	        frame_elem2, sym_elem2->name);
+}
+
 void codegen_generate_instr() {
 	instr_t *instr = list->active;
 
@@ -1390,18 +1635,28 @@ void codegen_generate_instr() {
 				write_var(*instr);
 				break;
 			case IC_CONCAT_STR:
+				concat_str(*instr);
 				break;
 			case IC_STRLEN_STR:
+				strlen_str(*instr);
 				break;
 			case IC_GETCHAR_STR:
+				getchar_str(*instr);
 				break;
 			case IC_SETCHAR_STR:
+				setchar_str(*instr);
 				break;
 			case IC_IF_DEF:
 				break;
 			case IC_IF_START:
 				break;
 			case IC_IF_END:
+				break;
+			case IC_ELSEIF_DEF:
+				break;
+			case IC_ELSEIF_START:
+				break;
+			case IC_ELSEIF_END:
 				break;
 			case IC_ELSE_START:
 				break;
