@@ -152,7 +152,7 @@ void instr_delete(instr_t *i)
     free(i->elem_dest_ptr);
     free(i->elem1_ptr);
   }
-  else if (i->type == IC_CALL_FUN) {
+  else if (i->type == IC_CALL_FUN || i->type == IC_READ_VAR) {
     if (i->elem_dest_ptr != NULL) {
       sym_var_list_t * dest = i->elem_dest_ptr->symbol.sym_var_list;
       if (dest != NULL) {
