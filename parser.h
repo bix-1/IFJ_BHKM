@@ -164,6 +164,7 @@ void skip_empty();
 // additional instructions-related functions
 void instr_add_func_def();
 void instr_add_func_end();
+void instr_add_func_call(instr_type_t type);
 void instr_add_var_decl();
 void instr_add_var_def();
 void instr_add_if_end();
@@ -175,7 +176,7 @@ void instr_add_ret();
 void add_next_expr();
 
 // checks
-void check_var_def_types(instr_t *);
+void check_var_def_types(elem_t *dest_elem, elem_t *src_elem);
 void check_ret(elem_t *func_ret);
 void check_func_call_args(elem_t * func, elem_t * call);
 void check_func_call_rets(elem_t * func, elem_t * dest);
@@ -198,7 +199,8 @@ void func_defs_destroy();
 void func_defs_add(elem_t *);
 void func_defs_check();
 
-bool built_in();
+bool check_built_in();      // check if func is built-in
+void add_built_in();  // add built-in functions to symtable
 /*
   ___________FUNCTIONS_REPRESENTING___________
   ___________LL_GRAMMAR_NONTERMINALS__________
