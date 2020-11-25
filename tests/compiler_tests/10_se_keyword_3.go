@@ -1,8 +1,12 @@
 package main
 
+fnc foo1_() {
+}
+
 func main () {
 
-// ok
- //
- a:= 3
+
+
+
 }
+

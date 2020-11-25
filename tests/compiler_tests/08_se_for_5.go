@@ -1,8 +1,7 @@
 package main
 
 func main () {
-
-// ok
- //
- a:= 3
+	s:=""
+	for ;4;s:="" {
+}
 }

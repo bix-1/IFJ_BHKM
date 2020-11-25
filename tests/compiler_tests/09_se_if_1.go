@@ -2,7 +2,11 @@ package main
 
 func main () {
 
-// ok
- //
- a:= 3
+if lop {
+} else {
+]
+
+
 }
+
+
