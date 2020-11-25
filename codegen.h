@@ -602,15 +602,15 @@ typedef enum instr_type {
 	 * elem_2: symbol var || symbol const (src1)
 	 *
 	 * Example:
-	 * x = setc("c", 2)
-	 * x = setc("x", 0)
+	 * x = setc(2, "c")
+	 * x = setc(0, "x")
 	 *
 	 * ==========================
 	 * Note:
 	 *
 	 * If dest element is not string (1 char) - Error
-	 * If src1 element is not string - Error
-	 * If src2 element is not int - Error
+	 * If src1 element is not int - Error
+	 * If src2 element is not string - Error
 	 * If src2 int value is out of index of dest string - Error
 	 *
 	 */
