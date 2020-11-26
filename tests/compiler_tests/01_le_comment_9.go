@@ -10,7 +10,7 @@ func main () {
   **
   */      // foo
   ////
-  // koksdajonedjnoaeu-12
+  // 
   a := 0
   if 1 > /*commmmm*/ 0 {
   } else { //fffffffffff
