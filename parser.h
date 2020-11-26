@@ -181,7 +181,7 @@ void check_ret(elem_t *func_ret);
 void check_func_call_args(elem_t * func, elem_t * call);
 void check_func_call_rets(elem_t * func, elem_t * dest);
 
-void func_add_param(elem_t *, elem_t *);
+void func_add_param(elem_t *func, sym_var_item_t * ret);
 void func_add_ret(elem_t * func, sym_var_item_t * ret);
 
 typedef struct func_def func_def_t;
@@ -199,7 +199,7 @@ void func_defs_destroy();
 void func_defs_add(elem_t *);
 void func_defs_check();
 
-bool check_built_in();      // check if func is built-in
+instr_type_t get_func_instr_type(char *);      // check if func is built-in
 void add_built_in();  // add built-in functions to symtable
 /*
   ___________FUNCTIONS_REPRESENTING___________
