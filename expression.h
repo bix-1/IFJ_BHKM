@@ -13,7 +13,6 @@
 #ifndef IFJ_BHKM_EXPRESSION_H
 #define IFJ_BHKM_EXPRESSION_H
 
-
 #include "stack.h"
 #include "scanner.h"
 
@@ -65,7 +64,7 @@ void check_string(stackElemPtr top, stackElemPtr afterTop, tToken *symbol);
 /*
 *   Function returns VAR_TYPE
 */
-int var_type_check(tToken *token);
+int var_type_check(stackElemPtr elem);
 
 /*
 *   Function which checks if the term is missing from operation
