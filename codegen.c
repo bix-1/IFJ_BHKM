@@ -264,8 +264,40 @@ void call_fun(instr_t instr) {
 		sym_var_item_t *param_active = sym_var_list_next(params);
 
 		while (param_active != NULL) {
-			char *frame = LF;
-			fprintf(OUTPUT, "PUSHS %s@%s\n", frame, param_active->name);
+			char *frame = get_frame(param_active);
+			if (param_active->is_const) {
+				switch (param_active->type) {
+					case VAR_INT:
+						fprintf(OUTPUT, "PUSHS int@%d\n", param_active->data.int_t);
+						break;
+					case VAR_FLOAT64:
+						fprintf(OUTPUT, "PUSHS float@%a\n", param_active->data.float64_t);
+						break;
+					case VAR_STRING:
+						fprintf(OUTPUT, "PUSHS string@%s\n", param_active->data.string_t);
+						break;
+					case VAR_BOOL:
+						if (param_active->data.bool_t) {
+							fprintf(OUTPUT, "PUSHS bool@true\n");
+						}
+						else {
+							fprintf(OUTPUT, "PUSHS bool@false\n");
+						}
+						break;
+					case VAR_NIL:
+						fprintf(OUTPUT, "PUSHS nil@nil\n");
+						break;
+					case VAR_UNDEFINED:
+						error(99, "codegen.c", "call_fun", "Undefined data type");
+						break;
+					default:
+						error(99, "codegen.c", "call_fun", "Wrong data type");
+						break;
+				}
+			}
+			else {
+				fprintf(OUTPUT, "PUSHS %s@%s\n", frame, param_active->name);
+			}
 			param_active = sym_var_list_next(params);
 		}
 	}
@@ -291,7 +323,7 @@ void call_fun(instr_t instr) {
 		size_t elem1_size = sym_var_list_size(elem1->symbol.sym_func->returns);
 
 		if (dest_size != elem1_size) {
-			error(99, "codegen.c", "def_var", "Different var list sizes");
+			error(99, "codegen.c", "call_var", "Different var list sizes");
 		}
 
 		sym_var_item_t *return_active = sym_var_list_next(returns);
@@ -299,11 +331,45 @@ void call_fun(instr_t instr) {
 
 		while (dest != NULL && return_active != NULL) {
 			if (dest->type != return_active->type) {
-				error(99, "codegen.c", "def_var", "Different data type");
+				error(99, "codegen.c", "call_var", "Different data type");
 			}
 			char *frame_dest = LF;
 			char *frame_input = TF;
-			fprintf(OUTPUT, "MOVE %s@%s %s@%s\n", frame_dest, dest->name, frame_input, return_active->name);
+			if (return_active->is_const) {
+				switch (return_active->type) {
+					case VAR_INT:
+						fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, dest->name,
+			  return_active->data.int_t);
+						break;
+					case VAR_FLOAT64:
+						fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, dest->name,
+			  return_active->data.float64_t);
+						break;
+					case VAR_STRING:
+						fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, dest->name,
+			  return_active->data.string_t);
+						break;
+					case VAR_BOOL:
+						if (return_active->data.bool_t) {
+							fprintf(OUTPUT, "MOVE %s@%s bool@true\n", frame_dest, dest->name);
+						}
+						else {
+							fprintf(OUTPUT, "MOVE %s@%s bool@false\n", frame_dest, dest->name);
+						}
+						break;
+					case VAR_NIL:
+						fprintf(OUTPUT, "MOVE %s@%s nil@nil\n", frame_dest, dest->name);
+						break;
+					case VAR_UNDEFINED:
+						error(99, "codegen.c", "call_fun", "Undefined data type");
+						break;
+					default:
+						error(99, "codegen.c", "call_fun", "Wrong data type");
+						break;
+				}
+			}else {
+				fprintf(OUTPUT, "MOVE %s@%s %s@%s\n", frame_dest, dest->name, frame_input, return_active->name);
+			}
 			return_active = sym_var_list_next(returns);
 		}
 	}
@@ -641,7 +707,7 @@ void div_var(instr_t instr) {
 	char *frame_dest = get_frame(sym_dest);
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
-	
+
 	var_type_t type = -1;
 
 	if (sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) {
