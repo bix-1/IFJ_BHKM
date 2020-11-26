@@ -169,7 +169,7 @@ void error(
   token_cleanup();
   scope_destroy();
   func_defs_destroy();
-  jmp_label_stack_free();
+  jmp_label_stack_free_all();
 
   exit( errCode );
 }

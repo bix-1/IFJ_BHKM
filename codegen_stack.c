@@ -10,9 +10,15 @@
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
 
-#include "codegen_stack.h"
-#include "error.h"
 #include <stdio.h>
+#include "error.h"
+#include "codegen_stack.h"
+
+jmp_label_stack_t *skip_labels_bottom = NULL;
+jmp_label_stack_top_t *skip_labels_top = NULL;
+
+jmp_label_stack_t *end_labels_bottom = NULL;
+jmp_label_stack_top_t *end_labels_top = NULL;
 
 void jmp_label_stack_init() {
 	// Skip labels
@@ -116,6 +122,11 @@ void jmp_label_stack_clear(jmp_label_stack_t *stack, jmp_label_stack_top_t *top)
 	while (stack != top->top) {
 		jmp_label_stack_pop(stack, top);
 	}
+}
+
+void jmp_label_stack_free_all() {
+	jmp_label_stack_free(skip_labels_bottom, skip_labels_top);
+	jmp_label_stack_free(end_labels_bottom, end_labels_top);
 }
 
 void jmp_label_stack_free(jmp_label_stack_t *stack, jmp_label_stack_top_t *top) {
