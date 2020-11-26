@@ -8,7 +8,7 @@
 
 
 CC = gcc
-CFLAGS = -std=c99 -Wall -Wextra -pedantic
+CFLAGS = -std=c99 -Wall -Wextra -pedantic -g
 TMPS = *.o *.a *.tgz ${wildcard test_*[^.][^c]} parser ifj20
 AR = ar -csr
 LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a
