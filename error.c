@@ -12,13 +12,14 @@
 
 
 #include "error.h"
-#include "ll.h"         // cleaning up linked list
-#include "symtable.h"   // cleaning up hash table
-#include "scanner.h"    // get_err_line
-#include "parser.h"     // free(next), T_MAIN
+#include "ll.h"             // cleaning up linked list
+#include "symtable.h"       // cleaning up hash table
+#include "scanner.h"        // get_err_line
+#include "parser.h"         // free(next), T_MAIN
+#include "codegen_stack.h"  // free codegen labels stack
 #include <stdio.h>
-#include <string.h>     // string operations
-#include <stdarg.h>     // va_start, va_end
+#include <string.h>         // string operations
+#include <stdarg.h>         // va_start, va_end
 
 
 const char * code_to_name(int in) {
@@ -168,6 +169,7 @@ void error(
   token_cleanup();
   scope_destroy();
   func_defs_destroy();
+  jmp_label_stack_free();
 
   exit( errCode );
 }
