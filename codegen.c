@@ -173,7 +173,7 @@ void def_var(instr_t instr) {
 					fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t);
 					break;
 				case VAR_FLOAT64:
-					fprintf(OUTPUT, "MOVE %s@%s float64@%a\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t);
+					fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t);
 					break;
 				case VAR_STRING:
 					fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, sym_dest->name, sym_elem1->data.string_t);
@@ -383,19 +383,55 @@ void add_var(instr_t instr) {
 		error(99, "codegen.c", "add_var", "NULL symbol");
 	}
 
-	// TODO : add check for const
-
 	char *frame_dest = get_frame(sym_dest);
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
 
-	if ((sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
-	    (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT)) {
-		fprintf(OUTPUT, "ADD %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        frame_elem2, sym_elem2->name);
+	var_type_t type = -1;
+
+	if (sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) {
+		type = VAR_FLOAT64;
+	}
+	else if (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) {
+		type = VAR_INT;
 	}
 	else {
 		error(99, "codegen.c", "add_var", "Incompatible data types");
+	}
+
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "ADD %s@%s int@%d int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t,
+		   sym_elem2->data.int_t);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "ADD %s@%s float@%a float@%a\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t,
+		   sym_elem2->data.float64_t);
+		}
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "ADD %s@%s int@%d %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.int_t,
+			        frame_elem2, sym_elem2->name);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "ADD %s@%s float@%a %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t,
+			        frame_elem2, sym_elem2->name);
+		}
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "ADD %s@%s %s@%s int@%d\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		   sym_elem2->data.int_t);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "ADD %s@%s %s@%s float@%a\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+			        sym_elem2->data.float64_t);
+		}
+	}
+	else {
+		fprintf(OUTPUT, "ADD %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
 	}
 }
 
@@ -436,13 +472,51 @@ void sub_var(instr_t instr) {
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
 
-	if ((sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
-	    (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT)) {
-		fprintf(OUTPUT, "SUB %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        frame_elem2, sym_elem2->name);
+	var_type_t type = -1;
+
+	if (sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) {
+		type = VAR_FLOAT64;
+	}
+	else if (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) {
+		type = VAR_INT;
 	}
 	else {
 		error(99, "codegen.c", "sub_var", "Incompatible data types");
+	}
+
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "SUB %s@%s int@%d int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t,
+			        sym_elem2->data.int_t);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "SUB %s@%s float@%a float@%a\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t,
+			        sym_elem2->data.float64_t);
+		}
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "SUB %s@%s int@%d %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.int_t,
+			        frame_elem2, sym_elem2->name);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "SUB %s@%s float@%a %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t,
+			        frame_elem2, sym_elem2->name);
+		}
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "SUB %s@%s %s@%s int@%d\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+			        sym_elem2->data.int_t);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "SUB %s@%s %s@%s float@%a\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+			        sym_elem2->data.float64_t);
+		}
+	}
+	else {
+		fprintf(OUTPUT, "SUB %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
 	}
 }
 
@@ -483,13 +557,51 @@ void mul_var(instr_t instr) {
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
 
-	if ((sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
-	    (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT)) {
-		fprintf(OUTPUT, "MUL %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        frame_elem2, sym_elem2->name);
+	var_type_t type = -1;
+
+	if (sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) {
+		type = VAR_FLOAT64;
+	}
+	else if (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) {
+		type = VAR_INT;
 	}
 	else {
 		error(99, "codegen.c", "mul_var", "Incompatible data types");
+	}
+
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "MUL %s@%s int@%d int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t,
+			        sym_elem2->data.int_t);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "MUL %s@%s float@%a float@%a\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t,
+			        sym_elem2->data.float64_t);
+		}
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "MUL %s@%s int@%d %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.int_t,
+			        frame_elem2, sym_elem2->name);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "MUL %s@%s float@%a %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t,
+			        frame_elem2, sym_elem2->name);
+		}
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "MUL %s@%s %s@%s int@%d\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+			        sym_elem2->data.int_t);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "MUL %s@%s %s@%s float@%a\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+			        sym_elem2->data.float64_t);
+		}
+	}
+	else {
+		fprintf(OUTPUT, "MUL %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
 	}
 }
 
@@ -529,19 +641,58 @@ void div_var(instr_t instr) {
 	char *frame_dest = get_frame(sym_dest);
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
+	
+	var_type_t type = -1;
 
 	if (sym_dest->type == VAR_FLOAT64 && sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) {
-		// float div
-		fprintf(OUTPUT, "DIV %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        frame_elem2, sym_elem2->name);
+		type = VAR_FLOAT64;
 	}
 	else if (sym_dest->type == VAR_INT && sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) {
-		// int div
-		fprintf(OUTPUT, "IDIV %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        frame_elem2, sym_elem2->name);
+		type = VAR_INT;
 	}
 	else {
 		error(99, "codegen.c", "div_var", "Incompatible data types");
+	}
+
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "IDIV %s@%s int@%d int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t,
+			        sym_elem2->data.int_t);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "DIV %s@%s float@%a float@%a\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t,
+			        sym_elem2->data.float64_t);
+		}
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "IDIV %s@%s int@%d %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.int_t,
+			        frame_elem2, sym_elem2->name);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "DIV %s@%s float@%a %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t,
+			        frame_elem2, sym_elem2->name);
+		}
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "IDIV %s@%s %s@%s int@%d\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+			        sym_elem2->data.int_t);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "DIV %s@%s %s@%s float@%a\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+			        sym_elem2->data.float64_t);
+		}
+	}
+	else {
+		if (type == VAR_INT) {
+			fprintf(OUTPUT, "IDIV %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+			        frame_elem2, sym_elem2->name);
+		}
+		else if (type == VAR_FLOAT64) {
+			fprintf(OUTPUT, "DIV %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+			        frame_elem2, sym_elem2->name);
+		}
 	}
 }
 
