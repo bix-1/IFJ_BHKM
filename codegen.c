@@ -13,8 +13,8 @@
 #include "codegen.h"
 #include "symtable.h"
 #include "ll.h"
+#include "codegen_stack.h"
 #include "error.h"
-
 #include "escape_format.h"
 
 #define OUTPUT stdout
@@ -22,20 +22,50 @@
 #define LF "LF"
 #define TF "TF"
 
+#define IF_SKIP "if-skip-"
+#define IF_END "if-end-"
+
 int main_fun_deep = 1;      // main function is called once on start
 instr_t *last_instr = NULL;
+int skip_index = 0;
+int end_index = 0;
 
 void codegen_init() {
+	jmp_label_stack_init();
+
 	fprintf(OUTPUT, ".IFJcode20\n\n");
 	fprintf(OUTPUT, "JUMP main\n\n");
 }
 
 char *get_frame(sym_var_item_t *sym_var_item) {
-	if (sym_var_item->is_global){
+	if (sym_var_item->is_global) {
 		return GF;
 	}
 	else {
 		return LF;
+	}
+}
+
+// Compare current and next instruction and create jump if conditions are met
+void try_create_jump(instr_t instr) {
+	if (instr.next == NULL) {
+		error(99, "codegen.c", "try_create_jump", "Unexpected end of condition");
+	}
+
+	elem_t *elem_dest = instr.elem_dest_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "try_create_jump", "NULL pointer");
+	}
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+
+	char *frame_dest = get_frame(sym_dest);
+
+	if (instr.next->type == IC_IF_START || instr.next->type == IC_ELSEIF_START) {
+		jmp_label_stack_push(skip_labels_top, skip_index);
+		fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", IF_SKIP, skip_index, frame_dest, sym_dest->name);
+		skip_index++;
 	}
 }
 
@@ -353,6 +383,8 @@ void add_var(instr_t instr) {
 		error(99, "codegen.c", "add_var", "NULL symbol");
 	}
 
+	// TODO : add check for const
+
 	char *frame_dest = get_frame(sym_dest);
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
@@ -564,6 +596,8 @@ void lt_var(instr_t instr) {
 	else {
 		error(99, "codegen.c", "lt_var", "Incompatible data types");
 	}
+
+	try_create_jump(instr);
 }
 
 void gt_var(instr_t instr) {
@@ -617,6 +651,8 @@ void gt_var(instr_t instr) {
 	else {
 		error(99, "codegen.c", "gt_var", "Incompatible data types");
 	}
+
+	try_create_jump(instr);
 }
 
 void eq_var(instr_t instr) {
@@ -670,6 +706,8 @@ void eq_var(instr_t instr) {
 	else {
 		error(99, "codegen.c", "eq_var", "Incompatible data types");
 	}
+
+	try_create_jump(instr);
 }
 
 void and_var(instr_t instr) {
@@ -715,6 +753,8 @@ void and_var(instr_t instr) {
 
 	fprintf(OUTPUT, "AND %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
 	        frame_elem2, sym_elem2->name);
+
+	try_create_jump(instr);
 }
 
 void or_var(instr_t instr) {
@@ -760,6 +800,8 @@ void or_var(instr_t instr) {
 
 	fprintf(OUTPUT, "OR %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
 	        frame_elem2, sym_elem2->name);
+
+	try_create_jump(instr);
 }
 
 void not_var(instr_t instr) {
@@ -793,6 +835,8 @@ void not_var(instr_t instr) {
 	}
 
 	fprintf(OUTPUT, "NOT %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+
+	try_create_jump(instr);
 }
 
 void int2float(instr_t instr) {
@@ -1008,6 +1052,8 @@ void write_var(instr_t instr) {
 		error(99, "codegen.c", "write_var", "Invalid symbol");
 	}
 
+	// TODO : add check for const
+
 	sym_var_item_t *active = sym_var_list_next(sym_var_list);
 	char *frame = NULL;
 
@@ -1192,6 +1238,60 @@ void setchar_str(instr_t instr) {
 	        frame_elem2, sym_elem2->name);
 }
 
+void if_def(instr_t instr) {
+	jmp_label_stack_push(end_labels_top, end_index);
+	end_index++;
+}
+
+void if_start(instr_t instr) {
+	fprintf(OUTPUT, "CREATEFRAME\n");
+	fprintf(OUTPUT, "PUSHFRAME\n");
+}
+
+void if_end(instr_t instr) {
+	fprintf(OUTPUT, "POPFRAME\n");
+	fprintf(OUTPUT, "JUMP %s%d\n", IF_END, jmp_label_stack_top(end_labels_top));
+	fprintf(OUTPUT, "LABEL %s%d\n", IF_SKIP, jmp_label_stack_pop(skip_labels_bottom, skip_labels_top));
+
+	if (instr.next->type != IC_ELSEIF_DEF && instr.next->type != IC_ELSE_START) {
+		// if block end
+		fprintf(OUTPUT, "LABEL %s%d\n", IF_END, jmp_label_stack_pop(end_labels_bottom, end_labels_top));
+	}
+}
+
+void elseif_def(instr_t instr) {
+	//
+}
+
+void elseif_start(instr_t instr) {
+	fprintf(OUTPUT, "CREATEFRAME\n");
+	fprintf(OUTPUT, "PUSHFRAME\n");
+}
+
+void elseif_end(instr_t instr) {
+	fprintf(OUTPUT, "POPFRAME\n");
+	fprintf(OUTPUT, "JUMP %s%d\n", IF_END, jmp_label_stack_top(end_labels_top));
+	fprintf(OUTPUT, "LABEL %s%d\n", IF_SKIP, jmp_label_stack_pop(skip_labels_bottom, skip_labels_top));
+
+	if (instr.next->type != IC_ELSEIF_DEF && instr.next->type != IC_ELSE_START) {
+		// if block end
+		fprintf(OUTPUT, "LABEL %s%d\n", IF_END, jmp_label_stack_pop(end_labels_bottom, end_labels_top));
+	}
+}
+
+void else_start(instr_t instr) {
+	fprintf(OUTPUT, "CREATEFRAME\n");
+	fprintf(OUTPUT, "PUSHFRAME\n");
+}
+
+void else_end(instr_t instr) {
+	fprintf(OUTPUT, "POPFRAME\n");
+	fprintf(OUTPUT, "JUMP %s%d\n", IF_END, jmp_label_stack_top(end_labels_top));
+
+	// if block end
+	fprintf(OUTPUT, "LABEL %s%d\n", IF_END, jmp_label_stack_pop(end_labels_bottom, end_labels_top));
+}
+
 void codegen_generate_instr() {
 	instr_t *instr = list->active;
 
@@ -1280,20 +1380,28 @@ void codegen_generate_instr() {
 				setchar_str(*instr);
 				break;
 			case IC_IF_DEF:
+				if_def(*instr);
 				break;
 			case IC_IF_START:
+				if_start(*instr);
 				break;
 			case IC_IF_END:
+				if_end(*instr);
 				break;
 			case IC_ELSEIF_DEF:
+				elseif_def(*instr);
 				break;
 			case IC_ELSEIF_START:
+				elseif_start(*instr);
 				break;
 			case IC_ELSEIF_END:
+				elseif_end(*instr);
 				break;
 			case IC_ELSE_START:
+				else_start(*instr);
 				break;
 			case IC_ELSE_END:
+				else_end(*instr);
 				break;
 			case IC_FOR_DEF:
 				break;

@@ -17,6 +17,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "codegen_stack.h"
+
 // Define intermediate code instructions
 typedef enum instr_type {
 	/*
