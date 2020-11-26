@@ -32,7 +32,19 @@ int get_index(tToken token);
 
 void print();
 
+/*
+*   Function creates variable in symtable
+*/
 symtable_value_t create_variable(stackElemPtr elem);
+
+/*
+*   Function creates destination in symtable for instruction
+*/
+symtable_value_t create_dest(stackElemPtr elem);
+
+/*
+*   Function crates unique id
+*/
 char *create_id();
 
 /*
@@ -46,9 +58,9 @@ void check_symtable(stackElemPtr elem);
 void var_data_set(tToken *token, sym_var_item_t *var);
 
 /*
-*   Function checks whether the token types are same
+*   Function checks whether both token types are string
 */
-void check_types(stackElemPtr top, stackElemPtr afterTop);
+void check_string(stackElemPtr top, stackElemPtr afterTop, tToken *symbol);
 
 /*
 *   Function returns VAR_TYPE
