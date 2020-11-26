@@ -15,29 +15,51 @@
 #include <stdio.h>
 
 void jmp_label_stack_init() {
-	jmp_label_stack_bottom = malloc(sizeof(jmp_label_stack_t));
+	// Skip labels
+	skip_labels_bottom = malloc(sizeof(jmp_label_stack_t));
 
-	if (jmp_label_stack_bottom == NULL) {
+	if (skip_labels_bottom == NULL) {
 		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
 	}
 
 	// Most bottom of stack must be always defined, its not used for data
-	jmp_label_stack_bottom->value = 0;
-	jmp_label_stack_bottom->next = NULL;
-	jmp_label_stack_bottom->prev = NULL;
+	skip_labels_bottom->value = 0;
+	skip_labels_bottom->next = NULL;
+	skip_labels_bottom->prev = NULL;
 
-	jmp_label_stack_top = malloc(sizeof(jmp_label_stack_top_t));
+	skip_labels_top = malloc(sizeof(jmp_label_stack_top_t));
 
-	if (jmp_label_stack_top == NULL) {
+	if (skip_labels_top == NULL) {
 		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
 	}
 
 	// Top points to bottom of stack
-	jmp_label_stack_top->top = jmp_label_stack_bottom;
+	skip_labels_top->top = skip_labels_bottom;
+
+	// End labels
+	end_labels_bottom = malloc(sizeof(jmp_label_stack_t));
+
+	if (end_labels_bottom == NULL) {
+		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
+	}
+
+	// Most bottom of stack must be always defined, its not used for data
+	end_labels_bottom->value = 0;
+	end_labels_bottom->next = NULL;
+	end_labels_bottom->prev = NULL;
+
+	end_labels_top = malloc(sizeof(jmp_label_stack_top_t));
+
+	if (end_labels_top == NULL) {
+		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
+	}
+
+	// Top points to bottom of stack
+	end_labels_top->top = end_labels_bottom;
 }
 
-void jmp_label_stack_push(int value) {
-	if (jmp_label_stack_top == NULL) {
+void jmp_label_stack_push(jmp_label_stack_top_t *top, int value) {
+	if (top == NULL) {
 		error(99, "codegen_stack.c", "jmp_label_stack_push", "NULL pointer");
 	}
 
@@ -49,67 +71,71 @@ void jmp_label_stack_push(int value) {
 
 	new_item->value = value;
 	new_item->next = NULL;
-	new_item->prev = jmp_label_stack_top->top;
+	new_item->prev = top->top;
 
-	jmp_label_stack_top->top->next = new_item;
-	jmp_label_stack_top->top = new_item;
+	top->top->next = new_item;
+	top->top = new_item;
 }
 
-int jmp_label_stack_pop() {
-	if (jmp_label_stack_bottom == NULL) {
+int jmp_label_stack_pop(jmp_label_stack_t *stack, jmp_label_stack_top_t *top) {
+	if (stack == NULL) {
 		error(99, "codegen_stack.c", "jmp_label_stack_push", "NULL pointer");
 	}
 
-	if (jmp_label_stack_top == NULL) {
+	if (top == NULL) {
 		error(99, "codegen_stack.c", "jmp_label_stack_push", "NULL pointer");
 	}
 
-	if (jmp_label_stack_top->top == jmp_label_stack_bottom) {
+	if (top->top == stack) {
 		error(99, "codegen_stack.c", "jmp_label_stack_push", "Cannot pop bottom");
 	}
 
-	jmp_label_stack_t *temp = jmp_label_stack_top->top;
+	jmp_label_stack_t *temp = top->top;
 	int pop_value = temp->value;
 
-	jmp_label_stack_top->top = temp->prev;
-	jmp_label_stack_top->top->next = NULL;
+	top->top = temp->prev;
+	top->top->next = NULL;
 
 	free(temp);
 	return pop_value;
 }
 
-void jmp_label_stack_empty() {
-	if (jmp_label_stack_bottom == NULL) {
+int jmp_label_stack_top(jmp_label_stack_top_t *top) {
+	return top->top->value;
+}
+
+void jmp_label_stack_clear(jmp_label_stack_t *stack, jmp_label_stack_top_t *top) {
+	if (stack == NULL) {
 		error(99, "codegen_stack.c", "jmp_label_stack_push", "NULL pointer");
 	}
 
-	if (jmp_label_stack_top == NULL) {
+	if (top == NULL) {
 		error(99, "codegen_stack.c", "jmp_label_stack_push", "NULL pointer");
 	}
 
-	while (jmp_label_stack_bottom != jmp_label_stack_top->top) {
-		jmp_label_stack_pop();
+	while (stack != top->top) {
+		jmp_label_stack_pop(stack, top);
 	}
 }
 
-void jmp_label_stack_free() {
-	if (jmp_label_stack_bottom == NULL && jmp_label_stack_top == NULL) {
+void jmp_label_stack_free(jmp_label_stack_t *stack, jmp_label_stack_top_t *top) {
+	if (stack == NULL && top == NULL) {
 		return;
 	}
 
-	if (jmp_label_stack_bottom != NULL && jmp_label_stack_top != NULL) {
-		jmp_label_stack_empty();
+	if (stack != NULL && top != NULL) {
+		jmp_label_stack_clear(stack, top);
 
-		free(jmp_label_stack_bottom);
-		free(jmp_label_stack_top);
+		free(stack);
+		free(top);
 	}
 	else {
-		if (jmp_label_stack_bottom != NULL) {
-			free(jmp_label_stack_bottom);
+		if (stack != NULL) {
+			free(stack);
 		}
 
-		if (jmp_label_stack_top != NULL) {
-			free(jmp_label_stack_top);
+		if (top != NULL) {
+			free(top);
 		}
 	}
 }

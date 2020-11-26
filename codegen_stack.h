@@ -28,13 +28,17 @@ struct jmp_label_stack_top {
 };
 
 void jmp_label_stack_init();
-void jmp_label_stack_push(int value);
-int jmp_label_stack_pop();
-void jmp_label_stack_empty();
-void jmp_label_stack_free();
+void jmp_label_stack_push(jmp_label_stack_top_t *top, int value);
+int jmp_label_stack_pop(jmp_label_stack_t *stack, jmp_label_stack_top_t *top);
+int jmp_label_stack_top(jmp_label_stack_top_t *top);
+void jmp_label_stack_clear(jmp_label_stack_t *stack, jmp_label_stack_top_t *top);
+void jmp_label_stack_free(jmp_label_stack_t *stack, jmp_label_stack_top_t *top);
 
 // global jump label stack
-jmp_label_stack_t *jmp_label_stack_bottom = NULL;
-jmp_label_stack_top_t *jmp_label_stack_top = NULL;
+jmp_label_stack_t *skip_labels_bottom = NULL;
+jmp_label_stack_top_t *skip_labels_top = NULL;
+
+jmp_label_stack_t *end_labels_bottom = NULL;
+jmp_label_stack_top_t *end_labels_top = NULL;
 
 #endif // CODEGEN_STACK_H
