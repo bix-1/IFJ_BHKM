@@ -132,7 +132,12 @@ typedef enum instr_type {
 	/*
 	 * Function call with or without single/multiple values return
 	 *
-	 * elem_dest: symbol var_list
+
+	 name:	func->name
+	 dest:	func->returns
+	 src:		func->params
+
+	 * elem_dest: NULL
 	 * elem_1: symbol func
 	 * elem_2: NULL
 	 *
@@ -419,7 +424,11 @@ typedef enum instr_type {
 	/*
 	 * Int to float type cast
 	 *
-	 * elem_dest: symbol var (dest)
+	 name:	instr->type
+	 dest:	func->returns
+	 src:		func->params
+
+	 * elem_dest: NULL
 	 * elem_1: symbol var || symbol const (src1)
 	 * elem_2: NULL
 	 *

@@ -302,6 +302,13 @@ void parse() {
         printf("\tWRITE_VAR");
         // printf("\t\t\t%d\n", instr_get_dest(tmp)->symbol.sym_var_list->first->item->default_data.int_t);
         break;
+      case IC_INT2FLOAT_VAR:
+        printf("\tINT2FLOAT");
+        // printf("\t%d --> ", instr_get_elem1(tmp)->symbol.sym_var_list->first->item->default_data.int_t);
+        break;
+      case IC_FLOAT2INT_VAR:
+        printf("\tFLOAT2INT");
+        break;
 
       default:
         printf("_instr type [%d] not implemented_", instr_get_type(tmp));
@@ -1358,8 +1365,7 @@ instr_type_t get_func_instr_type(char * func) {
     !strcmp(func, "inputi") ||  // int
     !strcmp(func, "inputf") ||  // float
     !strcmp(func, "inputb")     // bool
-  )
-    return IC_READ_VAR;
+  ) return IC_READ_VAR;
   if (!strcmp(func, "print"))     return IC_WRITE_VAR;
   if (!strcmp(func, "int2float")) return IC_INT2FLOAT_VAR;
   if (!strcmp(func, "float2int")) return IC_FLOAT2INT_VAR;
@@ -1901,6 +1907,13 @@ void func_call() {
       elem_t * dest = elem_init(SYM_VAR_LIST, dest_list_sym);
       instr_add_dest(list->last, dest);
       break; }
+    case IC_INT2FLOAT_VAR: {
+      symbol_t src_list_sym = {.sym_var_list = last_elem->symbol.sym_func->params};
+      elem_t * src = elem_init(SYM_VAR_LIST, src_list_sym);
+      instr_add_elem1(list->last, src);
+      break; }
+    case FLOAT2INT:
+      break;
     default:
       break;
   }
