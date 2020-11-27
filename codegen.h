@@ -555,8 +555,8 @@ typedef enum instr_type {
 	 * elem_1: NULL
 	 * elem_2: NULL
 	 *
-	 * symbol func:     params  -> n: [...]
-	 *                  returns -> 1: [symbol var (dest)]
+	 * symbol func:     params  -> n: [symbol var list]
+	 *                  returns -> 0: []
 	 *
 	 * Example:
 	 * x = print("Hello world!")
