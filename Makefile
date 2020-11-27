@@ -88,7 +88,7 @@ test_parser2: tests/test_parser.c parser.a expr_parser.a
 test_symtable: tests/test_symtable.c symtable.c
 	${CC} ${CFLAGS} $^ -o $@
 
-run_parser: test_parser2
+run_parser: ifj20
 	@bash tests/parser_tests/test.sh
 #------ end of Testing -----#
 

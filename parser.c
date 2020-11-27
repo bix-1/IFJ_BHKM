@@ -658,11 +658,7 @@ elem_t * id_find(scope_elem_t *scope, char *old_id) {
     // check for end of scope
     if (tmp_scope == NULL) {
       if (eps) return NULL;
-      else {
-    stack_free(&symbolStack);
-    stack_free(&tokStack);
-    free(parsData.token);
-        error(3, "parser", "match", "Variable \"%s\" undefined", old_id);}
+      error(3, "parser", "match", "Variable \"%s\" undefined", old_id);
     }
     // get variable's contextual ID
     id = id_add_scope(tmp_scope, old_id);
