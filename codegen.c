@@ -1640,7 +1640,7 @@ void write_var(instr_t instr) {
 		error(99, "codegen.c", "write_var", "NULL element");
 	}
 
-	if (elem_dest->sym_type != SYM_VAR_LIST) {
+	if (elem_dest->sym_type != SYM_FUNC) {
 		error(99, "codegen.c", "write_var", "Invalid symbol");
 	}
 
@@ -1880,6 +1880,10 @@ void setchar_str(instr_t instr) {
 	        frame_elem2, sym_elem2->name);
 }
 
+void substr_str(instr_t instr) {
+
+}
+
 void if_def(instr_t instr) {
 	jmp_label_stack_push(end_labels_top, end_index);
 	end_index++;
@@ -2022,6 +2026,7 @@ void codegen_generate_instr() {
 				setchar_str(*instr);
 				break;
 			case IC_SUBSTR_STR:
+				substr_str(*instr);
 				break;
 			case IC_IF_DEF:
 				if_def(*instr);
