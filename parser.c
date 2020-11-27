@@ -93,15 +93,15 @@ void parse() {
 
   add_built_in();
 
+
   printf("\n\n___________SYMTABLE:____________\n");
   printf("________________________________\n");
 
-  // parsing
+
+  // start of parsing
   program();
 
 
-  // TODO delete
-  // debugging instructions
   printf("\n\n_________INSTRUCTIONS:__________\n");
   printf("________________________________\n");
   for (
@@ -272,9 +272,6 @@ void parse() {
           printf(", ");
         }
         break; }
-      case IC_READ_VAR:
-        printf("\tINPUT_FUNC\n");
-        break;
       case IC_ADD_VAR:
         printf("\t++ADD");
         break;
@@ -305,17 +302,31 @@ void parse() {
       case IC_NOT_VAR:
         printf("\t!! NOT");
         break;
+      case IC_READ_VAR:
+        printf("\tREAD_VAR");
+        break;
       case IC_WRITE_VAR:
         printf("\tWRITE_VAR");
-        // printf("\t\t\t%d\n", instr_get_dest(tmp)->symbol.sym_var_list->first->item->default_data.int_t);
         break;
       case IC_INT2FLOAT_VAR:
         printf("\tINT2FLOAT");
-        // printf("\t%d --> ", instr_get_elem1(tmp)->symbol.sym_var_list->first->item->default_data.int_t);
         break;
       case IC_FLOAT2INT_VAR:
         printf("\tFLOAT2INT");
         break;
+      case IC_STRLEN_STR:
+        printf("\tLEN");
+        break;
+      case IC_SUBSTR_STR:
+        printf("\tSUBSTR");
+        break;
+      case IC_STR2INT_VAR:
+        printf("\tSTR2INT");
+        break;
+      case IC_GETCHAR_STR:
+        printf("\tGETCHAR");
+        break;
+
 
       default:
         printf("_instr type [%d] not implemented_", instr_get_type(tmp));
@@ -426,6 +437,11 @@ void match(int term) {
         }
         next.token_type = T_MAIN;
         goto default_err;
+      }
+
+      if (!strcmp(to_string(&next), "_")) {
+        if (def)  error (2, "parser", NULL, "Redefinition of special variable \"_\"");
+        else      error (2, "parser", NULL, "Unable to read from special variable \"_\"");
       }
 
       // expected func definition && func != main
@@ -628,6 +644,10 @@ char * id_add_scope(scope_elem_t * tmp_scope, char * old_id) {
 }
 
 elem_t * id_find(scope_elem_t *scope, char *old_id) {
+  if (!strcmp(old_id, "_")) {
+    error (2, "parser", NULL, "Unable to read from special variable \"_\"");
+  }
+
   char * id;
   scope_elem_t * tmp_scope = scope;
   symtable_iterator_t it;
@@ -1390,7 +1410,8 @@ void add_built_in() {
         func_def_add_ret(func, VAR_INT);
         break;
       case CHR:
-        func_def_add_param(func, VAR_STRING);
+        func_def_add_param(func, VAR_INT);
+        func_def_add_ret(func, VAR_STRING);
         func_def_add_ret(func, VAR_INT);
         break;
       default:
@@ -1410,10 +1431,9 @@ instr_type_t get_func_instr_type(char * func) {
   if (!strcmp(func, "int2float")) return IC_INT2FLOAT_VAR;
   if (!strcmp(func, "float2int")) return IC_FLOAT2INT_VAR;
   if (!strcmp(func, "len"))       return IC_STRLEN_STR;
-  // if (!strcmp(func, "SUBSTR"))    return ;
-  // if (!strcmp(func, "ORD"))       return ;
-  // if (!strcmp(func, "CHR"))       return ;
-  // TODO add instructions
+  if (!strcmp(func, "SUBSTR"))    return IC_SUBSTR_STR;
+  if (!strcmp(func, "ORD"))       return IC_STR2INT_VAR;
+  if (!strcmp(func, "CHR"))       return IC_GETCHAR_STR;
 
   return IC_CALL_FUN;
 }
@@ -1729,6 +1749,9 @@ void var_(char * id) { // collect dest
 void var_def(char * id) {
   if (next.token_type != T_DEF_IDENT)
     error(2, "parser", NULL, "Invalid definition");
+  if (!strcmp(to_string(&next), "_")) {
+    error (2, "parser", NULL, "Redefinition of special variable \"_\"");
+  }
 
   next.token_type = T_IDENTIFIER;
   next.attr.str_lit.str = id;
