@@ -20,7 +20,7 @@ all: ifj20
 pack:
 	tar -czvf xhladk15.tgz *.c *.h Makefile
 
-ifj20: ifj20.c parser.a expr_parser.a
+ifj20: ifj20.c parser.a expr_parser.a codegen_stack.o
 	${CC} ${CFLAGS} $^ -o $@
 
 
