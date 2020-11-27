@@ -1950,7 +1950,7 @@ void else_end(instr_t instr) {
 	fprintf(OUTPUT, "LABEL %s%d\n", IF_END, jmp_label_stack_pop(end_labels_bottom, end_labels_top));
 }
 
-void for_def(instr_t instr) {
+void for_def_codegen(instr_t instr) {
 	//
 }
 
@@ -2096,7 +2096,7 @@ void codegen_generate_instr() {
 				else_end(*instr);
 				break;
 			case IC_FOR_DEF:
-				for_def(*instr);
+				for_def_codegen(*instr);
 				break;
 			case IC_FOR_COND:
 				for_cond(*instr);
