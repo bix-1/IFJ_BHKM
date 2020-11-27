@@ -170,6 +170,7 @@ void error(
   scope_destroy();
   func_defs_destroy();
   jmp_label_stack_free_all();
+  release_resources();
 
   exit( errCode );
 }

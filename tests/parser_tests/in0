@@ -1,0 +1,22 @@
+package main
+
+func main () {
+  s := ""
+  i := 0
+  f := 0.0
+  //b := false
+  s,i = inputs()
+  i,i = inputi()
+  f,i = inputf()
+  //b,i = inputb()
+  print()
+  print("", "ff", "uu")
+  print("f", i,  "c")
+  f = int2float(i)
+  i = float2int(f)
+  i = len(s)
+  i = len("fff")
+  s,i = substr("fff", i, 0)
+  i,i = ord(s, 5)
+  s,i = chr(5)
+}

@@ -156,6 +156,7 @@ char * id_add_scope(scope_elem_t *scope, char *id);
 elem_t * id_find(scope_elem_t *scope, char *id);
 
 char * get_unique();
+char * make_unique(elem_t *);
 
 
 // skips all empty spaces
@@ -181,7 +182,7 @@ void check_ret(elem_t *func_ret);
 void check_func_call_args(elem_t * func, elem_t * call);
 void check_func_call_rets(elem_t * func, elem_t * dest);
 
-void func_add_param(elem_t *, elem_t *);
+void func_add_param(elem_t *func, sym_var_item_t * ret);
 void func_add_ret(elem_t * func, sym_var_item_t * ret);
 
 typedef struct func_def func_def_t;
@@ -199,8 +200,11 @@ void func_defs_destroy();
 void func_defs_add(elem_t *);
 void func_defs_check();
 
-bool check_built_in();      // check if func is built-in
+instr_type_t get_func_instr_type(char *);      // check if func is built-in
 void add_built_in();  // add built-in functions to symtable
+
+elem_t * try_func(tToken * token);
+
 /*
   ___________FUNCTIONS_REPRESENTING___________
   ___________LL_GRAMMAR_NONTERMINALS__________
@@ -221,8 +225,9 @@ void ret_list_def();
 void next_ret_def();
 void body();
 void command();
-void var_def();
-void var_move();
+void var_(char * id);
+void var_def(char * id);
+void var_move(char * id);
 void next_id();
 void if_();
 void if_cont();
@@ -233,7 +238,7 @@ void for_move();
 void return_();
 void return_list();
 void next_ret();
-void func_call();
+elem_t * func_call(char * name);
 void func_args();
 void next_arg();
 void expr_list();
