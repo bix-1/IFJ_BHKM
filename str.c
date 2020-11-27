@@ -24,7 +24,7 @@ void str_init(string *s) {
     }
 
     s->str[0] = '\0';
-    s->str_lenght = 0;
+    s->str_lenght = 8;
     s->str_alloc_size = STR_LEN_INC;
 }
 

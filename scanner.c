@@ -525,7 +525,10 @@ int get_next_token(tToken *token) {
                 str_clear(&token->attr.str_lit);
                 token->token_type = T_STRING_VALUE;
                 char *ss = attr.str;
-                attr.str = escape_reformat(attr.str);
+                char *temp = escape_reformat(ss);
+                attr.str = temp;
+                attr.str_lenght = (int) strlen(attr.str) + 1;
+                attr.str_alloc_size = (int) strlen(attr.str) + 1;
                 free(ss);
                 str_copy(&token->attr.str_lit, &attr);
                 char_clear(&attr, c);
