@@ -241,8 +241,7 @@ void def_fun(instr_t instr) {
 }
 
 void call_fun(instr_t instr) {
-	elem_t *elem_dest = instr.elem_dest_ptr;
-	elem_t *elem1 = instr.elem1_ptr;
+	elem_t *elem1 = instr.elem_dest_ptr;
 
 	if (elem1 == NULL) {
 		error(99, "codegen.c", "call_fun", "NULL element");
@@ -306,30 +305,16 @@ void call_fun(instr_t instr) {
 
 	sym_var_list_t *returns = sym_func->returns;
 
-/*	if (sym_func->returns != NULL) {
-		sym_func->returns->active = NULL;
-	}*/
+	if (returns != NULL) {
+		sym_var_item_t *return_active = sym_var_list_prev(returns);
 
-/*	if (elem_dest != NULL && elem_dest->symbol.sym_var_list != NULL) {
-		elem_dest->symbol.sym_var_list->active = NULL;
-	}*/
-
-	if (elem_dest != NULL && returns != NULL) {
-		if (elem_dest->sym_type != SYM_VAR_LIST) {
-			error(99, "codegen.c", "call_fun", "Invalid symbol, not var list");
+		while (return_active != NULL) {
+			char *frame = get_frame(return_active);
+			fprintf(OUTPUT, "POPS %s@%s\n", frame, return_active->name);
+			return_active = sym_var_list_prev(returns);
 		}
 
-		size_t dest_size = sym_var_list_size(elem_dest->symbol.sym_var_list);
-		size_t elem1_size = sym_var_list_size(elem1->symbol.sym_func->returns);
-
-		if (dest_size != elem1_size) {
-			error(99, "codegen.c", "call_var", "Different var list sizes");
-		}
-
-		sym_var_item_t *return_active = sym_var_list_next(returns);
-		sym_var_item_t *dest = sym_var_list_next(elem_dest->symbol.sym_var_list);
-
-		while (dest != NULL && return_active != NULL) {
+		/*while (dest != NULL && return_active != NULL) {
 			if (dest->type != return_active->type) {
 				error(99, "codegen.c", "call_var", "Different data type");
 			}
@@ -372,7 +357,7 @@ void call_fun(instr_t instr) {
 				fprintf(OUTPUT, "MOVE %s@%s %s@%s\n", frame_dest, dest->name, frame_input, return_active->name);
 			}
 			return_active = sym_var_list_next(returns);
-		}
+		}*/
 	}
 
 	if (strcmp(elem1->symbol.sym_func->name, "main") == 0) {
@@ -396,6 +381,17 @@ void ret_fun(instr_t instr) {
 
 	if (elem_dest->sym_type != SYM_FUNC) {
 		error(99, "codegen.c", "ret_fun", "Invalid symbol");
+	}
+
+	sym_var_list_t *returns = elem_dest->symbol.sym_func->returns;
+	if (returns != NULL) {
+		sym_var_item_t *return_active = sym_var_list_next(returns);
+
+		while (return_active != NULL) {
+			char *frame = get_frame(return_active);
+			fprintf(OUTPUT, "PUSHS %s@%s\n", frame, return_active->name);
+			return_active = sym_var_list_next(returns);
+		}
 	}
 
 	fprintf(OUTPUT, "POPFRAME\n");
