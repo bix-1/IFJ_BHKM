@@ -109,7 +109,7 @@ void declr_var(instr_t instr) {
 			fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, sym_dest->data.int_t);
 			break;
 		case VAR_FLOAT64:
-			fprintf(OUTPUT, "MOVE %s@%s float64@%a\n", frame_dest, sym_dest->name, sym_dest->data.float64_t);
+			fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, sym_dest->name, sym_dest->data.float64_t);
 			break;
 		case VAR_STRING: {
 			/*if (!sym_dest->is_formatted) {
