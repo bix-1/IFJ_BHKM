@@ -1551,6 +1551,10 @@ void str2int(instr_t instr) {
 		error(99, "codegen.c", "str2int", "NULL symbol");
 	}
 
+	if (sym_err == NULL) {
+		error(99, "codegen.c", "str2int", "NULL symbol");
+	}
+
 	if (sym_elem1 == NULL) {
 		error(99, "codegen.c", "str2int", "NULL symbol");
 	}
@@ -1692,24 +1696,14 @@ void write_var(instr_t instr) {
 
 void concat_str(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
-	elem_t *elem1 = instr.elem1_ptr;
-	elem_t *elem2 = instr.elem2_ptr;
 
 	if (elem_dest == NULL) {
 		error(99, "codegen.c", "concat_str", "NULL element");
 	}
 
-	if (elem1 == NULL) {
-		error(99, "codegen.c", "concat_str", "NULL element");
-	}
-
-	if (elem2 == NULL) {
-		error(99, "codegen.c", "concat_str", "NULL element");
-	}
-
-	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
-	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
-	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
+	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
+	sym_var_item_t *sym_elem2 = elem_dest->symbol.sym_func->params->first->next->item;
 
 	if (sym_dest == NULL) {
 		error(99, "codegen.c", "concat_str", "NULL symbol");
@@ -1731,24 +1725,33 @@ void concat_str(instr_t instr) {
 		error(99, "codegen.c", "concat_str", "Incompatible data type");
 	}
 
-	fprintf(OUTPUT, "CONCAT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-	        frame_elem2, sym_elem2->name);
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		fprintf(OUTPUT, "CONCAT %s@%s string@%s string@%s\n", frame_dest, sym_dest->name, sym_elem1->data.string_t,
+		        sym_elem2->data.string_t);
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		fprintf(OUTPUT, "CONCAT %s@%s string@%s %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.string_t,
+		        frame_elem2, sym_elem2->name);
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		fprintf(OUTPUT, "CONCAT %s@%s %s@%s string@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        sym_elem2->data.string_t);
+	}
+	else {
+		fprintf(OUTPUT, "CONCAT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
 }
 
 void strlen_str(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
-	elem_t *elem1 = instr.elem1_ptr;
 
 	if (elem_dest == NULL) {
 		error(99, "codegen.c", "strlen_str", "NULL element");
 	}
 
-	if (elem1 == NULL) {
-		error(99, "codegen.c", "strlen_str", "NULL element");
-	}
-
-	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
-	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
+	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
 
 	if (sym_dest == NULL) {
 		error(99, "codegen.c", "strlen_str", "NULL symbol");
@@ -1765,31 +1768,31 @@ void strlen_str(instr_t instr) {
 		error(99, "codegen.c", "strlen_str", "Incompatible data type");
 	}
 
-	fprintf(OUTPUT, "STRLEN %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+	if (sym_elem1->is_const) {
+		fprintf(OUTPUT, "STRLEN %s@%s string@%s\n", frame_dest, sym_dest->name, sym_elem1->data.string_t);
+	}
+	else {
+		fprintf(OUTPUT, "STRLEN %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+	}
 }
 
 void getchar_str(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
-	elem_t *elem1 = instr.elem1_ptr;
-	elem_t *elem2 = instr.elem2_ptr;
 
 	if (elem_dest == NULL) {
 		error(99, "codegen.c", "getchar_str", "NULL element");
 	}
 
-	if (elem1 == NULL) {
-		error(99, "codegen.c", "getchar_str", "NULL element");
-	}
-
-	if (elem2 == NULL) {
-		error(99, "codegen.c", "getchar_str", "NULL element");
-	}
-
-	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
-	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
-	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
+	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
+	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
+	sym_var_item_t *sym_elem2 = elem_dest->symbol.sym_func->params->first->next->item;
 
 	if (sym_dest == NULL) {
+		error(99, "codegen.c", "getchar_str", "NULL symbol");
+	}
+
+	if (sym_err == NULL) {
 		error(99, "codegen.c", "getchar_str", "NULL symbol");
 	}
 
@@ -1801,6 +1804,10 @@ void getchar_str(instr_t instr) {
 		error(99, "codegen.c", "getchar_str", "NULL symbol");
 	}
 
+	// TODO : create new scope to check sym_err error
+	// ...
+	// valid:
+
 	char *frame_dest = get_frame(sym_dest);
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
@@ -1809,11 +1816,26 @@ void getchar_str(instr_t instr) {
 		error(99, "codegen.c", "getchar_str", "Incompatible data type");
 	}
 
-	fprintf(OUTPUT, "GETCHAR %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-	        frame_elem2, sym_elem2->name);
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		fprintf(OUTPUT, "GETCHAR %s@%s string@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.string_t,
+		        sym_elem2->data.int_t);
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		fprintf(OUTPUT, "GETCHAR %s@%s string@%s %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.string_t,
+		        frame_elem2, sym_elem2->name);
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		fprintf(OUTPUT, "GETCHAR %s@%s %s@%s int@%d\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        sym_elem2->data.int_t);
+	}
+	else {
+		fprintf(OUTPUT, "GETCHAR %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
 }
 
 void setchar_str(instr_t instr) {
+	// TODO : not used directly, remove later
 	elem_t *elem_dest = instr.elem_dest_ptr;
 	elem_t *elem1 = instr.elem1_ptr;
 	elem_t *elem2 = instr.elem2_ptr;
