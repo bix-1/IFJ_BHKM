@@ -78,8 +78,8 @@ void try_create_jump(instr_t instr) {
 	else if (instr.next->type == IC_FOR_STEP) {
 		jmp_label_stack_push(for_body_top, for_body_index);
 		jmp_label_stack_push(for_end_top, for_end_index);
-		fprintf(OUTPUT, "JUMPIFEQ %s%d %s@%s bool@true", FOR_BODY, for_body_index, frame_dest, sym_dest->name);
-		fprintf(OUTPUT, "JUMPINFEQ %s%d %s@%s bool@true", FOR_END, for_end_index, frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "JUMPIFEQ %s%d %s@%s bool@true\n", FOR_BODY, for_body_index, frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", FOR_END, for_end_index, frame_dest, sym_dest->name);
 		for_body_index++;
 		for_end_index++;
 	}

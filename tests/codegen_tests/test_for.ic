@@ -1,0 +1,40 @@
+.IFJcode20
+
+JUMP main
+
+LABEL main
+CREATEFRAME
+PUSHFRAME
+DEFVAR LF@a
+MOVE LF@a int@42
+
+#FOR START
+
+#IC_FOR_DEF
+DEFVAR LF@i
+MOVE LF@i int@0
+DEFVAR LF@b
+
+#IC_FOR_COND
+LABEL for-cond-1
+LT LF@b LF@i int@10
+JUMPIFEQ for-body-1 LF@b bool@true
+JUMPIFNEQ for-end-1 LF@b bool@true
+
+#IC_FOR_STEP
+LABEL for-step-1
+ADD LF@i LF@i int@1
+JUMP for-cond-1
+
+#IC_FOR_BODY_START
+LABEL for-body-1
+WRITE LF@i
+WRITE string@\010
+
+#IC_FOR_BODY_END
+JUMP for-step-1
+LABEL for-end-1
+#FOR END
+
+POPFRAME
+EXIT int@0
