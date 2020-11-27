@@ -487,8 +487,21 @@ void match(int term) {
         }
       }
       else { // func call expected
-        instr_type_t type = get_func_instr_type(to_string(&next));
-        instr_add_func_call(type);
+        // create function element
+        sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
+        symbol_t func = {.sym_func = func_sym};
+        elem_t * func_elem = elem_init(SYM_FUNC, func);
+        // add to symtable
+        char * index = get_unique();
+        char i_name[strlen(index) + strlen(to_string(&next)) + 1];
+        strcpy(i_name, index);
+        strcat(i_name, to_string(&next));
+        char * func_name = id_add_scope(scope_get_head(), i_name);
+        symtable_insert(symtable, func_name, func_elem);
+        last_elem = func_elem;
+
+        // instr_type_t type = get_func_instr_type(to_string(&next));
+        // instr_add_func_call(type);
 
         func_defs_add(last_elem);
       }
@@ -723,23 +736,25 @@ void instr_add_func_end() {
 }
 
 void instr_add_func_call(instr_type_t type) {
-  // create function element
-  sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
-  symbol_t func = {.sym_func = func_sym};
-  elem_t * func_elem = elem_init(SYM_FUNC, func);
-  // add to symtable
-  char * index = get_unique();
-  char i_name[strlen(index) + strlen(to_string(&next)) + 1];
-  strcpy(i_name, index);
-  strcat(i_name, to_string(&next));
-  char * func_name = id_add_scope(scope_get_head(), i_name);
-  symtable_insert(symtable, func_name, func_elem);
+  // // create function element
+  // sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
+  // symbol_t func = {.sym_func = func_sym};
+  // elem_t * func_elem = elem_init(SYM_FUNC, func);
+  // // add to symtable
+  // char * index = get_unique();
+  // char i_name[strlen(index) + strlen(to_string(&next)) + 1];
+  // strcpy(i_name, index);
+  // strcat(i_name, to_string(&next));
+  // char * func_name = id_add_scope(scope_get_head(), i_name);
+  // symtable_insert(symtable, func_name, func_elem);
   // create instruction
+
+
   instr_t * func_call = instr_create();
   instr_set_type(func_call, type);
-  instr_add_dest(func_call, func_elem);
+  instr_add_dest(func_call, last_elem);
   list_add(list, func_call);
-  last_elem = func_elem;
+  // last_elem = func_elem;
 
  // printf("\t---func call:\t%s\t\t\n", func_name);
 }
@@ -1980,6 +1995,12 @@ elem_t * func_call(char * name) {
   // '(' already matched in try_func
   func_args();
   match(T_R_BRACKET);
+
+  // printf("%s\n\n", *(last_elem->key));
+  // exit(0);
+
+  instr_type_t type = get_func_instr_type(last_elem->symbol.sym_func->name);
+  instr_add_func_call(type);
 
   return func;
 }
