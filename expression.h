@@ -16,6 +16,9 @@
 #include "stack.h"
 #include "scanner.h"
 
+extern tokenStack symbolStack; // Symbol stack
+extern tokenStack tokStack;    // Token stack
+
 typedef struct parserData
 {
     tToken *token;

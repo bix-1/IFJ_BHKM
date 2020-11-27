@@ -516,6 +516,7 @@ void match(int term) {
           sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
           symbol_t var_sym = {.sym_var_item = var_item};
           elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
+          var->symbol.sym_var_item->data.string_t = NULL;
           // add to symtable
           symtable_insert(symtable, id, var);
 
@@ -657,7 +658,11 @@ elem_t * id_find(scope_elem_t *scope, char *old_id) {
     // check for end of scope
     if (tmp_scope == NULL) {
       if (eps) return NULL;
-      else error(3, "parser", "match", "Variable \"%s\" undefined", old_id);
+      else {
+    stack_free(&symbolStack);
+    stack_free(&tokStack);
+    free(parsData.token);
+        error(3, "parser", "match", "Variable \"%s\" undefined", old_id);}
     }
     // get variable's contextual ID
     id = id_add_scope(tmp_scope, old_id);
