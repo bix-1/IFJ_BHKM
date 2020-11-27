@@ -12,6 +12,7 @@
 
 #include "error.h"
 #include "scanner.h"
+#include "escape_format.h"
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -36,6 +37,8 @@ int get_next_token(tToken *token) {
     int c; // variable for input char
     string attr; // string struckt that stores identifers and number literals
     //int eol = 0; // special variable that decides if we return EOL token before comment
+    char hex [2];
+    char *endptr;
 
     str_init(&attr); // string for litteral attribute init
     str_clear(&attr); // clears everything in string, if it is identifier we start storing data
@@ -459,7 +462,7 @@ int get_next_token(tToken *token) {
                     if (c == '"') { // end of string
                         scanner_state = s_string;
                     } else if (c == '\\') { // escape sequence
-                        str_add_char(&attr, (char) c);
+                        //str_add_char(&attr, (char) c);
                         scanner_state = s_esc_seq;
                     } else {
                         str_add_char(&attr, (char) c);
@@ -474,16 +477,15 @@ int get_next_token(tToken *token) {
                     str_add_char(&attr, '\\');
                     scanner_state = s_string_tmp;
                 } else if (c == 't') {
-                    str_add_char(&attr, 't');
+                    str_add_char(&attr, '\t');
                     scanner_state = s_string_tmp;
                 } else if (c == 'n') {
-                    str_add_char(&attr, 'n');
+                    str_add_char(&attr, '\n');
                     scanner_state = s_string_tmp;
                 } else if (c == 'x') {
-                    str_add_char(&attr, 'x');
                     scanner_state = s_hex_tmp;
                 } else if (c == '"') {
-                    str_add_char(&attr, '"');
+                    str_add_char(&attr, '\"');
                     scanner_state = s_string_tmp;
                 } else {
                     char_clear(&attr, (char) c);
@@ -494,7 +496,7 @@ int get_next_token(tToken *token) {
                 if (c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
                     c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' ||
                     isdigit(c)) {
-                    str_add_char(&attr, (char) c);
+                    hex[0] = (char) c;
                     scanner_state = s_hex_num;
                 } else { // wrong hex number
                     char_clear(&attr, c);
@@ -505,6 +507,11 @@ int get_next_token(tToken *token) {
                 if (c == 'a' || c == 'b' || c == 'c' || c == 'd' || c == 'e' || c == 'f' ||
                     c == 'A' || c == 'B' || c == 'C' || c == 'D' || c == 'E' || c == 'F' ||
                     isdigit(c)) {
+                    long pars_tmp; // temp variable for strtol function
+                    hex[1] = (char) c; // storing second hex number
+                    pars_tmp = strtol(hex, &endptr, 16); // converting hex number into decimal number
+                    c = (int) pars_tmp;
+                    //sprintf(attr.str, "%s", hex);
                     str_add_char(&attr, (char) c);
                     scanner_state = s_string_tmp;
                 } else { // wrong hex number
@@ -517,6 +524,9 @@ int get_next_token(tToken *token) {
                 str_init(&token->attr.str_lit);
                 str_clear(&token->attr.str_lit);
                 token->token_type = T_STRING_VALUE;
+                char *ss = attr.str;
+                attr.str = escape_reformat(attr.str);
+                free(ss);
                 str_copy(&token->attr.str_lit, &attr);
                 char_clear(&attr, c);
                 return L_SUCCESS;

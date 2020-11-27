@@ -11,7 +11,7 @@ CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic
 TMPS = *.o *.a *.tgz ${wildcard test_*[^.][^c]} parser ifj20
 AR = ar -csr
-LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a
+LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a escape_format.a
 
 .PHONY: run_parser pack
 
@@ -25,7 +25,7 @@ ifj20: ifj20.c parser.a expr_parser.a
 
 
 ########## Static libraries ##########
-scanner.a: scanner.o error.o str.o
+scanner.a: scanner.o error.o str.o escape_format.o
 	rm -f $@
 	${AR} $@ $^
 
