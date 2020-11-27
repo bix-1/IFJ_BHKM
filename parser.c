@@ -105,9 +105,9 @@ void parse() {
   printf("\n\n_________INSTRUCTIONS:__________\n");
   printf("________________________________\n");
   for (
-    instr_t * tmp = list_get_active(list);
+    instr_t * tmp = list->first;
     tmp != NULL;
-    tmp = list_get_next(list)
+    tmp = tmp->next
   ) {
     switch (instr_get_type(tmp)) {
       case IC_DEF_FUN: {
@@ -342,8 +342,12 @@ void parse() {
   // termination
   scope_destroy();
   func_defs_destroy();
+
+  codegen();
+
   list_destroy(&list);
   symtable_free(symtable);
+  jmp_label_stack_free_all();
 }
 
 

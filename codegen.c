@@ -1982,7 +1982,7 @@ void for_body_end(instr_t instr) {
 }
 
 void codegen_generate_instr() {
-	instr_t *instr = list->active;
+	instr_t *instr = list_get_active(list);
 
 	if (instr == NULL) {
 		error(99, "codegen.c", "codegen_generate_instr", "Empty instructions list");
