@@ -442,11 +442,11 @@ void sym_func_free(sym_func_t *sym_func) {
 	sym_var_list_t *sym_func_returns = sym_func->returns;
 
 	if (sym_func_params != NULL) {
-		sym_var_list_free(sym_func_params);
+		// sym_var_list_free(sym_func_params);
 	}
 
 	if (sym_func_returns != NULL) {
-		sym_var_list_free(sym_func_returns);
+		// sym_var_list_free(sym_func_returns);
 	}
 
 	free(sym_func->name);

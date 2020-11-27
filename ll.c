@@ -145,21 +145,21 @@ void instr_delete(instr_t *i)
 {
   if (i == NULL) return;
   if (i->type == IC_DEF_VAR) {
-    sym_var_list_t * list1 = i->elem_dest_ptr->symbol.sym_var_list;
-    sym_var_list_t * list2 = i->elem1_ptr->symbol.sym_var_list;
-    if (list1 != NULL) sym_var_list_free(list1);
-    if (list2 != NULL) sym_var_list_free(list2);
-    free(i->elem_dest_ptr);
-    free(i->elem1_ptr);
+    // sym_var_list_t * list1 = i->elem_dest_ptr->symbol.sym_var_list;
+    // sym_var_list_t * list2 = i->elem1_ptr->symbol.sym_var_list;
+    // if (list1 != NULL) sym_var_list_free(list1);
+    // if (list2 != NULL) sym_var_list_free(list2);
+    // free(i->elem_dest_ptr);
+    // free(i->elem1_ptr);
   }
   else if (i->type == IC_CALL_FUN || i->type == IC_READ_VAR) {
-    if (i->elem_dest_ptr != NULL) {
-      sym_var_list_t * dest = i->elem_dest_ptr->symbol.sym_var_list;
-      if (dest != NULL) {
-        sym_var_list_free(dest);
-      }
-      free(i->elem_dest_ptr);
-    }
+    // if (i->elem_dest_ptr != NULL) {
+    //   sym_var_list_t * dest = i->elem_dest_ptr->symbol.sym_var_list;
+    //   if (dest != NULL) {
+        // sym_var_list_free(dest);
+      // }
+      // free(i->elem_dest_ptr);
+    // }
     // if (i->elem1_ptr != NULL) {
       // free(i->elem1_ptr->symbol.sym_func->name);
       // sym_var_list_t * params = i->elem1_ptr->symbol.sym_func->params;
@@ -174,24 +174,24 @@ void instr_delete(instr_t *i)
       // }
     // }
   } else if (i->type == IC_WRITE_VAR) {
-    if (i->elem_dest_ptr != NULL) {
-      free(i->elem_dest_ptr);
-    }
+    // if (i->elem_dest_ptr != NULL) {
+    //   free(i->elem_dest_ptr);
+    // }
   }
   else if (i->type == IC_DEF_FUN) {
     // free parameters of func
-    sym_var_list_t ** params = &(i->elem_dest_ptr->symbol.sym_func->params);
-    if (*params != NULL) {
-      list_item_t * tmp = (*params)->first;
-      list_item_t * next;
-      while (tmp != NULL) {
-        next = tmp->next;
-        free(tmp);
-        tmp = next;
-      }
-      free(*params);
-      *params = NULL;
-    }
+    // sym_var_list_t ** params = &(i->elem_dest_ptr->symbol.sym_func->params);
+    // if (*params != NULL) {
+    //   list_item_t * tmp = (*params)->first;
+    //   list_item_t * next;
+    //   while (tmp != NULL) {
+    //     next = tmp->next;
+    //     free(tmp);
+    //     tmp = next;
+    //   }
+      // free(*params);
+      // *params = NULL;
+    // }
     // free returns of func
     sym_var_list_t ** rets = &(i->elem_dest_ptr->symbol.sym_func->returns);
     if (*rets != NULL) {

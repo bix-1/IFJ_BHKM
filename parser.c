@@ -12,6 +12,11 @@
 
 /*
 TODO:
+  finalize try_var_or_func
+  --& all its occurences
+
+
+
   mem leaks with undefined vars for func_call
   func call as return
 
@@ -196,6 +201,7 @@ void parse() {
           tmp = tmp->next
         ) {
           printf("%s, ", tmp->item->name);
+          // printf("%d\n\n", instr_get_elem1(tmp)->symbol.sym_var_list->first->item->default_data.int_t);
         }
         printf("  ===  ");
         break;
@@ -230,7 +236,8 @@ void parse() {
         printf("\n\t____________END_FOR\n");
         break;
       case IC_CALL_FUN:
-        printf("\tFUNC CALL\t%s\n", instr_get_elem1(tmp)->symbol.sym_func->name);
+        printf("\tFUNC CALL\t%s\n", instr_get_dest(tmp)->symbol.sym_func->name);
+        // printf("%s\n", instr_get_dest(tmp)->symbol.sym_func->returns->first->item->name);
         break;
       case IC_RET_FUN: {
         printf("\tRET %s    ", instr_get_dest(tmp)->symbol.sym_func->name);
@@ -600,6 +607,13 @@ char * scope_get() {
 }
 
 char * id_add_scope(scope_elem_t * tmp_scope, char * old_id) {
+  if (tmp_scope == NULL) {
+    char * new_id = malloc(sizeof(char) * (strlen(old_id) + 1));
+    if (new_id == NULL) error(99, "parser", NULL, "Memory allocation failed");
+    strcpy(new_id, old_id);
+    return new_id;
+  }
+
   char * scope_name = tmp_scope->name;
   char * new_id = malloc(
     sizeof(char) *  // prefix + : + name + \0
@@ -644,6 +658,22 @@ char * get_unique() {
   return u_id;
 }
 
+char * make_unique(elem_t * elem) {
+  char type[5] = "";  // TODO const
+  switch(elem->sym_type) {
+    case SYM_VAR_LIST:
+      strcpy(type, "list");
+      break;
+    default:
+      return NULL;
+  }
+  char * index = get_unique();
+  char i_name[strlen(index) + strlen(type) + 1];
+  strcpy(i_name, index);
+  strcat(i_name, type);
+  return id_add_scope(scope_get_head(), i_name);
+}
+
 
 void skip_empty() {
   eps = true;
@@ -668,7 +698,7 @@ void instr_add_func_end() {
 }
 
 void instr_add_func_call(instr_type_t type) {
-  // create func elem
+  // create function element
   sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
   symbol_t func = {.sym_func = func_sym};
   elem_t * func_elem = elem_init(SYM_FUNC, func);
@@ -682,7 +712,7 @@ void instr_add_func_call(instr_type_t type) {
   // create instruction
   instr_t * func_call = instr_create();
   instr_set_type(func_call, type);
-  if (type == IC_CALL_FUN) instr_add_elem1(func_call, func_elem);
+  instr_add_dest(func_call, func_elem);
   list_add(list, func_call);
   last_elem = func_elem;
 
@@ -824,7 +854,7 @@ void check_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
     if (dest->type != src->type)
       error(
         7, "parser", "check_var_def_types",
-        "Variable \"%s\" and Expression [n.%d] are of different data types",
+        "Variable [%s] and Expression [n.%d] are of different data types",
         dest->name, n_dest
       );
 
@@ -1145,6 +1175,14 @@ void check_func_call_rets(elem_t * def_e, elem_t * call_e) {
   }
 }
 
+sym_var_list_t * new_sym_var_list() {
+  sym_var_list_t * var_list = sym_var_list_init();
+  symbol_t var_list_sym = {.sym_var_list = var_list};
+  elem_t * dest = elem_init(SYM_VAR_LIST, var_list_sym);
+  symtable_insert(symtable, make_unique(dest), dest);
+  return var_list;
+}
+
 // func functions
 void func_add_param(elem_t *func, sym_var_item_t *param) {
   if (func == NULL || param == NULL)
@@ -1153,8 +1191,9 @@ void func_add_param(elem_t *func, sym_var_item_t *param) {
   sym_var_list_t ** params = &(func->symbol.sym_func->params);
   if (params == NULL)
     error(99, "parser", "func_add_param", "Failed to access function's parameters");
-  if (*params == NULL)  // param list empty
-    *params = sym_var_list_init();
+  if (*params == NULL) { // param list empty
+    *params = new_sym_var_list();
+  }
 
   // add to param list
   list_item_t * list_item = list_item_init(param);
@@ -1169,7 +1208,7 @@ void func_add_ret(elem_t *func, sym_var_item_t *ret) {
   if (rets == NULL)
     error(99, "parser", "func_add_ret", "Failed to access function's returns");
   if (*rets == NULL)  // param list empty
-    *rets = sym_var_list_init();
+    *rets = new_sym_var_list();
 
   // add to ret list
   list_item_t * list_item = list_item_init(ret);
@@ -1288,6 +1327,7 @@ void add_built_in() {
   char * name;
 
   for (int i = 0; i < N; i++) {
+    // create name
     name = malloc(sizeof(char) * (strlen(built_ins[i]) + 1));
     strcpy(name, built_ins[i]);
 
@@ -1297,6 +1337,7 @@ void add_built_in() {
     elem_t * func = elem_init(SYM_FUNC, func_s);
     symtable_insert(symtable, name, func);
 
+    // assigning of parameters & returns
     var_type_t type;
     switch (i) {
       case INPUTS:
@@ -1348,14 +1389,9 @@ void add_built_in() {
         func_def_add_param(func, VAR_STRING);
         func_def_add_ret(func, VAR_INT);
         break;
-
-
-
       default:
         break;
     }
-
-    continue;
   }
 }
 
@@ -1373,8 +1409,48 @@ instr_type_t get_func_instr_type(char * func) {
   // if (!strcmp(func, "SUBSTR"))    return ;
   // if (!strcmp(func, "ORD"))       return ;
   // if (!strcmp(func, "CHR"))       return ;
+  // TODO add instructions
 
   return IC_CALL_FUN;
+}
+
+elem_t * try_var_or_func(tToken * token) {
+  // control flag: DEF
+  /* RETURNS
+    sym_func: func_call
+    var:      found var
+    NULL:     undefined var || other
+  */
+  if (token->token_type != T_IDENTIFIER) return NULL;
+  char * id = to_string(token);
+  if (def) {
+    symtable_iterator_t it = symtable_find(symtable, id_add_scope(scope_get_head, id));
+    if (symtable_iterator_valid(it)) { // variable found
+      return symtable_iterator_get_value(it);
+    } else return NULL;
+  } else {
+    eps = true;
+    elem_t * var = id_find(scope_get_head(), id);
+    if (var != NULL) return var;  // variable found
+  }
+  // check for function call
+  get_next_token(token);
+  if (token->token_type == T_L_BRACKET) {
+    token->token_type = T_IDENTIFIER;
+    token->attr.str_lit.str = id;
+    return func_call(id);
+  }
+  else {
+    if (token->token_type != T_DEF_IDENT) {
+      // for token_cleanup
+      token->token_type = T_IDENTIFIER;
+      token->attr.str_lit.str = id;
+      error(3, "parser", "match", "Variable \"%s\" undefined", to_string(token));
+    }
+    token->token_type = T_IDENTIFIER;
+    token->attr.str_lit.str = id;
+    return NULL;
+  }
 }
 
 
@@ -1628,45 +1704,17 @@ void body() {
 
 void command() {
   switch (next.token_type) {
-    case T_IDENTIFIER: {  // var_ OR func_call
-      // identifier (current token) must be stashed
-      char * id_stash = to_string(&next);
-
-      get_next_token(&next);
-      int type = next.token_type;
-      next.token_type = T_IDENTIFIER;
-      next.attr.str_lit.str = id_stash;
-
-      switch (type) {
-        case T_L_BRACKET:
-          ungetc('(', source);
-          func_call();
-          break;
-
-        case T_DEF_IDENT:
-          ungetc('=', source);
-          ungetc(':', source);
-          var_def();
-          break;
-
-        case T_ASSIGNMENT:
-          ungetc('=', source);
-          var_move();
-          break;
-
-        case T_COMMA:
-          ungetc(',', source);
-          var_move();
-          break;
-
-        default:
-          error(
-            2, "parser", "match",
-            "Expected: Function call or variable definition/assignment -- Got: '%s'",
-            next.token_type
-          );
-          break;
+    case T_IDENTIFIER: {
+      elem_t * tmp = try_var_or_func(&next);
+      if (tmp == NULL) {
+        var_def(); // not defined var nor func call
       }
+      else if (tmp->sym_type == SYM_VAR_ITEM)
+        var_move(); // found defined var
+      else if (tmp->sym_type == SYM_FUNC)
+        break;  // func_call handled in try_var_or_func
+      else error(99, "parser", NULL, "INVALID STATE");
+
       break;
     }
 
@@ -1691,20 +1739,73 @@ void command() {
   }
 }
 
+void var_() {
+
+}
+
+// expects ID in [next] & ':=' to be matched
 void var_def() {
   def = true; eps = false;
   match(T_VAR_ID);
-  match(T_DEF_IDENT);
-  elem_t * expr = parse_expression();
-  // set type of declared variable
-  last_elem->symbol.sym_var_item->type = expr->symbol.sym_var_item->type;
-  instr_add_elem1(list->last, expr);
+  // match(T_DEF_IDENT);  // matched in try_var_or_func
+  // TODO all should be handled withing expr_parser
+  elem_t * tmp = try_var_or_func(&next);
+  if (tmp == NULL || tmp->sym_type == SYM_VAR_ITEM) {
+    elem_t * expr = parse_expression();
+    // set type
+    last_elem->symbol.sym_var_item->type = expr->symbol.sym_var_item->type;
+    instr_add_elem1(list->last, expr);
+  } else if (tmp->sym_type == SYM_FUNC) {
+    func_add_ret(tmp, last_elem->symbol.sym_var_item);
+  }
+  else error(99, "parser", NULL, "INVALID STATE");
 }
 
 void var_move() {
+  // create dest sym_var_list
+  sym_var_list_t * var_list = sym_var_list_init();
+  symbol_t var_list_sym = {.sym_var_list = var_list};
+  elem_t * dest = elem_init(SYM_VAR_LIST, var_list_sym);
+  symtable_insert(symtable, make_unique(dest), dest);
+  last_elem = dest;
+
+  // get dest variables
+  def = false; eps = false;
+  match(T_VAR_ID);
+  next_id();
+  if (next.token_type == T_DEF_IDENT)
+    error(
+      3, "parser", "var_move", "Redefinition of variable \"%s\"",
+      last_elem->symbol.sym_var_list->first->item->name
+    );
+  // '='
+  match(T_ASSIGNMENT);
+
+  // get src
+  if (next.token_type != T_IDENTIFIER) {
+    expr_list();
+    return;
+  }
+  elem_t * tmp = try_var_or_func(&next);
+  if (tmp == NULL) {
+    // if (last_elem->sym_type == SYM_VAR_ITEM)
+    error(3, "parser", "match", "Variable \"%s\" undefined", last_elem->symbol.sym_var_item->name);
+    // expr_list();
+  } else if (tmp->sym_type == SYM_VAR_ITEM) {
+    expr_list();
+  } else if (tmp->sym_type == SYM_FUNC) {
+    tmp->symbol.sym_func->returns = var_list;
+  }
+  else error(99, "parser", NULL, "INVALID STATE");
+
+
+
+  // last_elem = expr_list_elem;  // (src) now in last_elem
+  // expr_list();
+
+  /*
   // create instruction
   instr_t * new_def = instr_create();
-  instr_set_type(new_def, IC_DEF_VAR);
 
   // create dest sym_var_list
   sym_var_list_t * var_list = sym_var_list_init();
@@ -1742,6 +1843,7 @@ void var_move() {
   // types checked in other places
   if (new_def->type == IC_DEF_VAR)
     check_var_def_types(instr_get_dest(new_def), instr_get_elem1(new_def));
+  */
 }
 
 void next_id() {
@@ -1841,6 +1943,8 @@ void cycle() {
 
 void for_def() {
   if (next.token_type == T_SEMICOLON) return;
+  elem_t * tmp = try_var_or_func(&next);
+  if (tmp != NULL) error(2, "parser", NULL, "Invalid definition");
   var_def();
 }
 
@@ -1887,36 +1991,44 @@ void next_ret() {
   next_ret();
 }
 
-void func_call() {
+elem_t * func_call(char * name) {
+  next.token_type = T_IDENTIFIER;
+  next.attr.str_lit.str = name;
   def = false; eps = false;
   match(T_FUNC_ID);
+  elem_t * func = last_elem;
 
-
-  if (next.token_type != T_L_BRACKET)
-    error(3, "parser", "match", "Variable \"%s\" undefined", last_elem->symbol.sym_func->name);
-  match(T_L_BRACKET);
+  // '(' already checked for in try_var_or_func
   func_args();
   match(T_R_BRACKET);
 
-  // func_call instructions' element assigning
-  switch(get_func_instr_type(last_elem->symbol.sym_func->name)) {
-    case IC_CALL_FUN: {
-      break; }
-    case IC_WRITE_VAR: {
-      symbol_t dest_list_sym = {.sym_var_list = last_elem->symbol.sym_func->params};
-      elem_t * dest = elem_init(SYM_VAR_LIST, dest_list_sym);
-      instr_add_dest(list->last, dest);
-      break; }
-    case IC_INT2FLOAT_VAR: {
-      symbol_t src_list_sym = {.sym_var_list = last_elem->symbol.sym_func->params};
-      elem_t * src = elem_init(SYM_VAR_LIST, src_list_sym);
-      instr_add_elem1(list->last, src);
-      break; }
-    case FLOAT2INT:
-      break;
-    default:
-      break;
-  }
+  // sym_var_list_t * ret_list = sym_var_list_init();
+  // func->symbol.sym_func->returns = ret_list;
+  // symbol_t ret_list_sym = {.sym_var_list = ret_list};
+  // elem_t * rets = elem_init(SYM_VAR_LIST, ret_list_sym);
+  // symtable_insert(symtable, make_unique(rets), rets);
+
+  return func;
+
+  // // func_call instructions' element assigning
+  // switch(get_func_instr_type(last_elem->symbol.sym_func->name)) {
+  //   case IC_CALL_FUN: {
+  //     break; }
+  //   case IC_WRITE_VAR: {
+  //     symbol_t dest_list_sym = {.sym_var_list = last_elem->symbol.sym_func->params};
+  //     elem_t * dest = elem_init(SYM_VAR_LIST, dest_list_sym);
+  //     instr_add_dest(list->last, dest);
+  //     break; }
+  //   case IC_INT2FLOAT_VAR: {
+  //     symbol_t src_list_sym = {.sym_var_list = last_elem->symbol.sym_func->params};
+  //     elem_t * src = elem_init(SYM_VAR_LIST, src_list_sym);
+  //     instr_add_elem1(list->last, src);
+  //     break; }
+  //   case FLOAT2INT:
+  //     break;
+  //   default:
+  //     break;
+  // }
 }
 
 void func_args() {
@@ -1942,6 +2054,26 @@ void next_arg() {
 }
 
 void expr_list() {
+  // create instruction
+  instr_t * new_def = instr_create();
+  instr_set_type(new_def, IC_DEF_VAR);
+  instr_add_dest(new_def, last_elem);
+  list_add(list, new_def);
+  // create src sym_var_list
+  sym_var_list_t * var_list = sym_var_list_init();
+  symbol_t var_list_sym = {.sym_var_list = var_list};
+  elem_t * src = elem_init(SYM_VAR_LIST, var_list_sym);
+  symtable_insert(symtable, make_unique(src), src);
+  instr_add_elem1(new_def, src);
+  last_elem = src;
+
+  add_next_expr();
+  next_expr();
+
+
+  check_var_def_types(instr_get_dest(new_def), instr_get_elem1(new_def));
+
+/*
   if (next.token_type == T_IDENTIFIER) { // check if func call
     eps = true;
     elem_t * var = id_find(scope_get_head(), to_string(&next));
@@ -1995,6 +2127,7 @@ void expr_list() {
   add_next_expr();
 
   next_expr();
+  */
 }
 
 void next_expr() {
