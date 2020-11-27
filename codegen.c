@@ -803,15 +803,110 @@ void lt_var(instr_t instr) {
 		error(99, "codegen.c", "lt_var", "Incompatible data type");
 	}
 
-	if ((sym_elem1->type == VAR_BOOL && sym_elem2->type == VAR_BOOL) ||
-	    (sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) ||
-	    (sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
-	    (sym_elem1->type == VAR_STRING && sym_elem2->type == VAR_STRING)) {
-		fprintf(OUTPUT, "LT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        frame_elem2, sym_elem2->name);
+	var_type_t type = -1;
+
+	if (sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) {
+		type = VAR_INT;
+	}
+	else if (sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) {
+		type = VAR_FLOAT64;
+	}
+	else if (sym_elem1->type == VAR_BOOL && sym_elem2->type == VAR_BOOL) {
+		type = VAR_BOOL;
+	}
+	else if (sym_elem1->type == VAR_STRING && sym_elem2->type == VAR_STRING) {
+		type = VAR_STRING;
 	}
 	else {
 		error(99, "codegen.c", "lt_var", "Incompatible data types");
+	}
+
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		switch (type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "LT %s@%s int@%d int@%d\n", frame_dest, sym_dest->name,
+			sym_elem1->data.int_t, sym_elem2->data.int_t);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "LT %s@%s float@%a float@%a\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.float64_t, sym_elem2->data.float64_t);
+				break;
+			case VAR_STRING:
+				fprintf(OUTPUT, "LT %s@%s string@%s string@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.string_t, sym_elem2->data.string_t);
+				break;
+			case VAR_BOOL:
+				if (sym_elem1->data.bool_t && sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "LT %s@%s bool@true bool@true\n", frame_dest, sym_dest->name);
+				}
+				else if (sym_elem1->data.bool_t && !sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "LT %s@%s bool@true bool@false\n", frame_dest, sym_dest->name);
+				}
+				else if (!sym_elem1->data.bool_t && sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "LT %s@%s bool@false bool@true\n", frame_dest, sym_dest->name);
+				}
+				else {
+					// both false
+					fprintf(OUTPUT, "LT %s@%s bool@false bool@false\n", frame_dest, sym_dest->name);
+				}
+				break;
+		}
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		switch (type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "LT %s@%s int@%d %s@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.int_t, frame_elem2, sym_elem2->name);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "LT %s@%s float@%a %s@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.float64_t, frame_elem2, sym_elem2->name);
+				break;
+			case VAR_STRING:
+				fprintf(OUTPUT, "LT %s@%s string@%s %s@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.string_t, frame_elem2, sym_elem2->name);
+				break;
+			case VAR_BOOL:
+				if (sym_elem1->data.bool_t) {
+					fprintf(OUTPUT, "LT %s@%s bool@true %s@%s\n", frame_dest, sym_dest->name,
+					        frame_elem2, sym_elem2->name);
+				}
+				else {
+					fprintf(OUTPUT, "LT %s@%s bool@false %s@%s\n", frame_dest, sym_dest->name,
+					        frame_elem2, sym_elem2->name);
+				}
+				break;
+		}
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		switch (type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "LT %s@%s %s@%s int@%d\n", frame_dest, sym_dest->name,
+					frame_elem1, sym_elem1->name, sym_elem2->data.int_t);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "LT %s@%s %s@%s float@%a\n", frame_dest, sym_dest->name,
+				        frame_elem1, sym_elem1->name, sym_elem2->data.float64_t);
+				break;
+			case VAR_STRING:
+				fprintf(OUTPUT, "LT %s@%s %s@%s string@%s\n", frame_dest, sym_dest->name,
+				        frame_elem1, sym_elem1->name, sym_elem2->data.string_t);
+				break;
+			case VAR_BOOL:
+				if (sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "LT %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
+					        frame_elem1, sym_elem1->name);
+				}
+				else {
+					fprintf(OUTPUT, "LT %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
+					        frame_elem1, sym_elem1->name);
+				}
+				break;
+		}
+	}
+	else {
+		fprintf(OUTPUT, "LT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
 	}
 
 	try_create_jump(instr);
@@ -858,15 +953,110 @@ void gt_var(instr_t instr) {
 		error(99, "codegen.c", "gt_var", "Incompatible data type");
 	}
 
-	if ((sym_elem1->type == VAR_BOOL && sym_elem2->type == VAR_BOOL) ||
-	    (sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) ||
-	    (sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
-	    (sym_elem1->type == VAR_STRING && sym_elem2->type == VAR_STRING)) {
-		fprintf(OUTPUT, "GT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        frame_elem2, sym_elem2->name);
+	var_type_t type = -1;
+
+	if (sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) {
+		type = VAR_INT;
+	}
+	else if (sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) {
+		type = VAR_FLOAT64;
+	}
+	else if (sym_elem1->type == VAR_BOOL && sym_elem2->type == VAR_BOOL) {
+		type = VAR_BOOL;
+	}
+	else if (sym_elem1->type == VAR_STRING && sym_elem2->type == VAR_STRING) {
+		type = VAR_STRING;
 	}
 	else {
 		error(99, "codegen.c", "gt_var", "Incompatible data types");
+	}
+
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		switch (type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "GT %s@%s int@%d int@%d\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.int_t, sym_elem2->data.int_t);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "GT %s@%s float@%a float@%a\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.float64_t, sym_elem2->data.float64_t);
+				break;
+			case VAR_STRING:
+				fprintf(OUTPUT, "GT %s@%s string@%s string@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.string_t, sym_elem2->data.string_t);
+				break;
+			case VAR_BOOL:
+				if (sym_elem1->data.bool_t && sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "GT %s@%s bool@true bool@true\n", frame_dest, sym_dest->name);
+				}
+				else if (sym_elem1->data.bool_t && !sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "GT %s@%s bool@true bool@false\n", frame_dest, sym_dest->name);
+				}
+				else if (!sym_elem1->data.bool_t && sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "GT %s@%s bool@false bool@true\n", frame_dest, sym_dest->name);
+				}
+				else {
+					// both false
+					fprintf(OUTPUT, "GT %s@%s bool@false bool@false\n", frame_dest, sym_dest->name);
+				}
+				break;
+		}
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		switch (type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "GT %s@%s int@%d %s@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.int_t, frame_elem2, sym_elem2->name);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "GT %s@%s float@%a %s@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.float64_t, frame_elem2, sym_elem2->name);
+				break;
+			case VAR_STRING:
+				fprintf(OUTPUT, "GT %s@%s string@%s %s@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.string_t, frame_elem2, sym_elem2->name);
+				break;
+			case VAR_BOOL:
+				if (sym_elem1->data.bool_t) {
+					fprintf(OUTPUT, "GT %s@%s bool@true %s@%s\n", frame_dest, sym_dest->name,
+					        frame_elem2, sym_elem2->name);
+				}
+				else {
+					fprintf(OUTPUT, "GT %s@%s bool@false %s@%s\n", frame_dest, sym_dest->name,
+					        frame_elem2, sym_elem2->name);
+				}
+				break;
+		}
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		switch (type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "GT %s@%s %s@%s int@%d\n", frame_dest, sym_dest->name,
+				        frame_elem1, sym_elem1->name, sym_elem2->data.int_t);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "GT %s@%s %s@%s float@%a\n", frame_dest, sym_dest->name,
+				        frame_elem1, sym_elem1->name, sym_elem2->data.float64_t);
+				break;
+			case VAR_STRING:
+				fprintf(OUTPUT, "GT %s@%s %s@%s string@%s\n", frame_dest, sym_dest->name,
+				        frame_elem1, sym_elem1->name, sym_elem2->data.string_t);
+				break;
+			case VAR_BOOL:
+				if (sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "GT %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
+					        frame_elem1, sym_elem1->name);
+				}
+				else {
+					fprintf(OUTPUT, "GT %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
+					        frame_elem1, sym_elem1->name);
+				}
+				break;
+		}
+	}
+	else {
+		fprintf(OUTPUT, "GT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
 	}
 
 	try_create_jump(instr);
@@ -913,15 +1103,110 @@ void eq_var(instr_t instr) {
 		error(99, "codegen.c", "eq_var", "Incompatible data type");
 	}
 
-	if ((sym_elem1->type == VAR_BOOL && sym_elem2->type == VAR_BOOL) ||
-	    (sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) ||
-	    (sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) ||
-	    (sym_elem1->type == VAR_STRING && sym_elem2->type == VAR_STRING)) {
-		fprintf(OUTPUT, "EQ %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        frame_elem2, sym_elem2->name);
+	var_type_t type = -1;
+
+	if (sym_elem1->type == VAR_INT && sym_elem2->type == VAR_INT) {
+		type = VAR_INT;
+	}
+	else if (sym_elem1->type == VAR_FLOAT64 && sym_elem2->type == VAR_FLOAT64) {
+		type = VAR_FLOAT64;
+	}
+	else if (sym_elem1->type == VAR_BOOL && sym_elem2->type == VAR_BOOL) {
+		type = VAR_BOOL;
+	}
+	else if (sym_elem1->type == VAR_STRING && sym_elem2->type == VAR_STRING) {
+		type = VAR_STRING;
 	}
 	else {
 		error(99, "codegen.c", "eq_var", "Incompatible data types");
+	}
+
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		switch (type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "EQ %s@%s int@%d int@%d\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.int_t, sym_elem2->data.int_t);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "EQ %s@%s float@%a float@%a\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.float64_t, sym_elem2->data.float64_t);
+				break;
+			case VAR_STRING:
+				fprintf(OUTPUT, "EQ %s@%s string@%s string@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.string_t, sym_elem2->data.string_t);
+				break;
+			case VAR_BOOL:
+				if (sym_elem1->data.bool_t && sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "EQ %s@%s bool@true bool@true\n", frame_dest, sym_dest->name);
+				}
+				else if (sym_elem1->data.bool_t && !sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "EQ %s@%s bool@true bool@false\n", frame_dest, sym_dest->name);
+				}
+				else if (!sym_elem1->data.bool_t && sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "EQ %s@%s bool@false bool@true\n", frame_dest, sym_dest->name);
+				}
+				else {
+					// both false
+					fprintf(OUTPUT, "EQ %s@%s bool@false bool@false\n", frame_dest, sym_dest->name);
+				}
+				break;
+		}
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		switch (type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "EQ %s@%s int@%d %s@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.int_t, frame_elem2, sym_elem2->name);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "EQ %s@%s float@%a %s@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.float64_t, frame_elem2, sym_elem2->name);
+				break;
+			case VAR_STRING:
+				fprintf(OUTPUT, "EQ %s@%s string@%s %s@%s\n", frame_dest, sym_dest->name,
+				        sym_elem1->data.string_t, frame_elem2, sym_elem2->name);
+				break;
+			case VAR_BOOL:
+				if (sym_elem1->data.bool_t) {
+					fprintf(OUTPUT, "EQ %s@%s bool@true %s@%s\n", frame_dest, sym_dest->name,
+					        frame_elem2, sym_elem2->name);
+				}
+				else {
+					fprintf(OUTPUT, "EQ %s@%s bool@false %s@%s\n", frame_dest, sym_dest->name,
+					        frame_elem2, sym_elem2->name);
+				}
+				break;
+		}
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		switch (type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "EQ %s@%s %s@%s int@%d\n", frame_dest, sym_dest->name,
+				        frame_elem1, sym_elem1->name, sym_elem2->data.int_t);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "EQ %s@%s %s@%s float@%a\n", frame_dest, sym_dest->name,
+				        frame_elem1, sym_elem1->name, sym_elem2->data.float64_t);
+				break;
+			case VAR_STRING:
+				fprintf(OUTPUT, "EQ %s@%s %s@%s string@%s\n", frame_dest, sym_dest->name,
+				        frame_elem1, sym_elem1->name, sym_elem2->data.string_t);
+				break;
+			case VAR_BOOL:
+				if (sym_elem2->data.bool_t) {
+					fprintf(OUTPUT, "EQ %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
+					        frame_elem1, sym_elem1->name);
+				}
+				else {
+					fprintf(OUTPUT, "EQ %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
+					        frame_elem1, sym_elem1->name);
+				}
+				break;
+		}
+	}
+	else {
+		fprintf(OUTPUT, "EQ %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
 	}
 
 	try_create_jump(instr);
@@ -968,8 +1253,44 @@ void and_var(instr_t instr) {
 		error(99, "codegen.c", "and_var", "Incompatible data type");
 	}
 
-	fprintf(OUTPUT, "AND %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-	        frame_elem2, sym_elem2->name);
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		if (sym_elem1->data.bool_t && sym_elem2->data.bool_t) {
+			fprintf(OUTPUT, "AND %s@%s bool@true bool@true\n", frame_dest, sym_dest->name);
+		}
+		else if (sym_elem1->data.bool_t && !sym_elem2->data.bool_t) {
+			fprintf(OUTPUT, "AND %s@%s bool@true bool@false\n", frame_dest, sym_dest->name);
+		}
+		else if (!sym_elem1->data.bool_t && sym_elem2->data.bool_t) {
+			fprintf(OUTPUT, "AND %s@%s bool@false bool@true\n", frame_dest, sym_dest->name);
+		}
+		else {
+			fprintf(OUTPUT, "AND %s@%s bool@false bool@false\n", frame_dest, sym_dest->name);
+		}
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		if (sym_elem1->data.bool_t) {
+			fprintf(OUTPUT, "AND %s@%s bool@true %s@%s\n", frame_dest, sym_dest->name,
+			        frame_elem2, sym_elem2->name);
+		}
+		else {
+			fprintf(OUTPUT, "AND %s@%s bool@false %s@%s\n", frame_dest, sym_dest->name,
+			        frame_elem2, sym_elem2->name);
+		}
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		if (sym_elem2->data.bool_t) {
+			fprintf(OUTPUT, "AND %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
+		   frame_elem1, sym_elem1->name);
+		}
+		else {
+			fprintf(OUTPUT, "AND %s@%s %s@%s bool@false\n", frame_dest, sym_dest->name,
+			        frame_elem1, sym_elem1->name);
+		}
+	}
+	else {
+		fprintf(OUTPUT, "AND %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
 
 	try_create_jump(instr);
 }
@@ -1015,8 +1336,44 @@ void or_var(instr_t instr) {
 		error(99, "codegen.c", "or_var", "Incompatible data type");
 	}
 
-	fprintf(OUTPUT, "OR %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-	        frame_elem2, sym_elem2->name);
+	if (sym_elem1->is_const && sym_elem2->is_const) {
+		if (sym_elem1->data.bool_t && sym_elem2->data.bool_t) {
+			fprintf(OUTPUT, "OR %s@%s bool@true bool@true\n", frame_dest, sym_dest->name);
+		}
+		else if (sym_elem1->data.bool_t && !sym_elem2->data.bool_t) {
+			fprintf(OUTPUT, "OR %s@%s bool@true bool@false\n", frame_dest, sym_dest->name);
+		}
+		else if (!sym_elem1->data.bool_t && sym_elem2->data.bool_t) {
+			fprintf(OUTPUT, "OR %s@%s bool@false bool@true\n", frame_dest, sym_dest->name);
+		}
+		else {
+			fprintf(OUTPUT, "OR %s@%s bool@false bool@false\n", frame_dest, sym_dest->name);
+		}
+	}
+	else if (sym_elem1->is_const && !sym_elem2->is_const) {
+		if (sym_elem1->data.bool_t) {
+			fprintf(OUTPUT, "OR %s@%s bool@true %s@%s\n", frame_dest, sym_dest->name,
+			        frame_elem2, sym_elem2->name);
+		}
+		else {
+			fprintf(OUTPUT, "OR %s@%s bool@false %s@%s\n", frame_dest, sym_dest->name,
+			        frame_elem2, sym_elem2->name);
+		}
+	}
+	else if (!sym_elem1->is_const && sym_elem2->is_const) {
+		if (sym_elem2->data.bool_t) {
+			fprintf(OUTPUT, "OR %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
+			        frame_elem1, sym_elem1->name);
+		}
+		else {
+			fprintf(OUTPUT, "OR %s@%s %s@%s bool@false\n", frame_dest, sym_dest->name,
+			        frame_elem1, sym_elem1->name);
+		}
+	}
+	else {
+		fprintf(OUTPUT, "OR %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
+		        frame_elem2, sym_elem2->name);
+	}
 
 	try_create_jump(instr);
 }
@@ -1051,7 +1408,17 @@ void not_var(instr_t instr) {
 		error(99, "codegen.c", "not_var", "Incompatible data type");
 	}
 
-	fprintf(OUTPUT, "NOT %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+	if (sym_elem1->is_const) {
+		if (sym_elem1->data.bool_t) {
+			fprintf(OUTPUT, "NOT %s@%s bool@true\n", frame_dest, sym_dest->name);
+		}
+		else {
+			fprintf(OUTPUT, "NOT %s@%s bool@false\n", frame_dest, sym_dest->name);
+		}
+	}
+	else {
+		fprintf(OUTPUT, "NOT %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+	}
 
 	try_create_jump(instr);
 }
