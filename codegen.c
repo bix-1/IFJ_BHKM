@@ -1640,7 +1640,7 @@ void write_var(instr_t instr) {
 		error(99, "codegen.c", "write_var", "Invalid symbol");
 	}
 
-	sym_var_list_t *sym_var_list = instr.elem_dest_ptr->symbol.sym_var_list;
+	sym_var_list_t *sym_var_list = instr.elem_dest_ptr->symbol.sym_func->params;
 
 	if (sym_var_list == NULL) {
 		error(99, "codegen.c", "write_var", "Invalid symbol");
@@ -1652,11 +1652,39 @@ void write_var(instr_t instr) {
 	while (active != NULL) {
 		frame = get_frame(active);
 
-		if (active->type == VAR_UNDEFINED) {
-			error(99, "codegen.c", "write_var", "Invalid data type");
+		if (active->is_const) {
+			switch (active->type) {
+				case VAR_INT:
+					fprintf(OUTPUT, "WRITE int@%d\n", active->data.int_t);
+					break;
+				case VAR_FLOAT64:
+					fprintf(OUTPUT, "WRITE float@%a\n", active->data.float64_t);
+					break;
+				case VAR_STRING:
+					fprintf(OUTPUT, "WRITE string@%s\n", active->data.string_t);
+					break;
+				case VAR_BOOL:
+					if (active->data.bool_t) {
+						fprintf(OUTPUT, "WRITE bool@true\n");
+					}
+					else {
+						fprintf(OUTPUT, "WRITE bool@false\n");
+					}
+					break;
+				case VAR_NIL:
+					fprintf(OUTPUT, "WRITE nil@nil\n");
+					break;
+				case VAR_UNDEFINED:
+					error(99, "codegen.c", "write_var", "Invalid data type");
+					break;
+				default:
+					error(99, "codegen.c", "write_var", "Wrong data type");
+					break;
+			}
 		}
-
-		fprintf(OUTPUT, "WRITE %s@%s\n", frame, active->name);
+		else {
+			fprintf(OUTPUT, "WRITE %s@%s\n", frame, active->name);
+		}
 
 		active = sym_var_list_next(sym_var_list);
 	}
