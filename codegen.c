@@ -24,11 +24,19 @@
 
 #define IF_SKIP "if-skip-"
 #define IF_END "if-end-"
+#define FOR_COND "for-cond-"
+#define FOR_STEP "for-step-"
+#define FOR_BODY "for-body-"
+#define FOR_END "for-end-"
 
 int main_fun_deep = 1;      // main function is called once on start
 instr_t *last_instr = NULL;
 int skip_index = 0;
 int end_index = 0;
+int for_cond_index = 0;
+int for_step_index = 0;
+int for_body_index = 0;
+int for_end_index = 0;
 
 void codegen_init() {
 	jmp_label_stack_init();
@@ -66,6 +74,14 @@ void try_create_jump(instr_t instr) {
 		jmp_label_stack_push(skip_labels_top, skip_index);
 		fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", IF_SKIP, skip_index, frame_dest, sym_dest->name);
 		skip_index++;
+	}
+	else if (instr.next->type == IC_FOR_STEP) {
+		jmp_label_stack_push(for_body_top, for_body_index);
+		jmp_label_stack_push(for_end_top, for_end_index);
+		fprintf(OUTPUT, "JUMPIFEQ %s%d %s@%s bool@true", FOR_BODY, for_body_index, frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "JUMPINFEQ %s%d %s@%s bool@true", FOR_END, for_end_index, frame_dest, sym_dest->name);
+		for_body_index++;
+		for_end_index++;
 	}
 }
 
@@ -1877,7 +1893,7 @@ void setchar_str(instr_t instr) {
 }
 
 void substr_str(instr_t instr) {
-
+	//
 }
 
 void if_def(instr_t instr) {
@@ -1932,6 +1948,37 @@ void else_end(instr_t instr) {
 
 	// if block end
 	fprintf(OUTPUT, "LABEL %s%d\n", IF_END, jmp_label_stack_pop(end_labels_bottom, end_labels_top));
+}
+
+void for_def(instr_t instr) {
+	//
+}
+
+void for_cond(instr_t instr) {
+	jmp_label_stack_push(for_cond_top, for_cond_index);
+	fprintf(OUTPUT, "LABEL %s%d\n", FOR_COND, for_cond_index);
+	for_cond_index++;
+}
+
+void for_step(instr_t instr) {
+	jmp_label_stack_push(for_step_top, for_step_index);
+	fprintf(OUTPUT, "LABEL %s%d\n", FOR_STEP, for_step_index);
+	for_step_index++;
+}
+
+void for_body_start(instr_t instr) {
+	fprintf(OUTPUT, "JUMP %s%d\n", FOR_COND, jmp_label_stack_top(for_cond_top));
+	fprintf(OUTPUT, "LABEL %s%d\n", FOR_BODY, jmp_label_stack_top(for_body_top));
+}
+
+void for_body_end(instr_t instr) {
+	fprintf(OUTPUT, "JUMP %s%d\n", FOR_STEP, jmp_label_stack_top(for_step_top));
+	fprintf(OUTPUT, "LABEL %s%d\n", FOR_END, jmp_label_stack_top(for_end_top));
+
+	jmp_label_stack_pop(for_cond_bottom, for_cond_top);
+	jmp_label_stack_pop(for_step_bottom, for_step_top);
+	jmp_label_stack_pop(for_body_bottom, for_body_top);
+	jmp_label_stack_pop(for_end_bottom, for_end_top);
 }
 
 void codegen_generate_instr() {
@@ -2049,14 +2096,19 @@ void codegen_generate_instr() {
 				else_end(*instr);
 				break;
 			case IC_FOR_DEF:
+				for_def(*instr);
 				break;
 			case IC_FOR_COND:
+				for_cond(*instr);
 				break;
 			case IC_FOR_STEP:
+				for_step(*instr);
 				break;
 			case IC_FOR_BODY_START:
+				for_body_start(*instr);
 				break;
 			case IC_FOR_BODY_END:
+				for_body_end(*instr);
 				break;
 			default:
 				error(99, "codegen.c", "codegen_generate_instr", "Invalid instruction");
