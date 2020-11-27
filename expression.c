@@ -351,8 +351,8 @@ void reduce()
     stackElemPtr tokenTop = tokStack.topToken;               // Top member on VALUE stack
     stackElemPtr tokenAfterTop = tokStack.topToken->nextTok; // Second from the top member on VALUE stack
     tToken symbolTop = symbolStack.topToken->token;          // Top member on SYMBOL stack
-    printf("\nERR\t%p\t%p\n", tokenTop->data, tokenAfterTop->data);
-    printf("\nHHERE\n");
+   // printf("\nERR\t%p\t%p\n", tokenTop->data, tokenAfterTop->data);
+   // printf("\nHHERE\n");
 
     if (tokenTop->data == NULL || tokenAfterTop->data == NULL)
     {
@@ -412,7 +412,7 @@ void reduce()
             } //IF 5 + E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
-                // printf("\n\t\tRULE +\tE -> id\n");
+                //// printf("\n\t\tRULE +\tE -> id\n");
                 // IF $+E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
@@ -422,7 +422,7 @@ void reduce()
             else if (tokenTop->expr == false)
             {
                 // IF E+ IS ON STACK
-                // printf("\n\t\tRULE +\tE -> id\n");
+                //// printf("\n\t\tRULE +\tE -> id\n");
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
@@ -439,7 +439,7 @@ void reduce()
             //IF E - E IS ON STACK
             if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
-                // printf("\n\t\tRULE T_MINUS\tE = E - E\n");
+                //// printf("\n\t\tRULE T_MINUS\tE = E - E\n");
 
                 symtable_value_t dest = create_dest(tokenTop);
 
@@ -462,7 +462,7 @@ void reduce()
                 // IF $-E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                // printf("\n\t\tRULE -\tE -> id\n");
+                //// printf("\n\t\tRULE -\tE -> id\n");
                 tokenAfterTop->expr = true;
 
             } //IF E - 5 IS ON STACK
@@ -472,7 +472,7 @@ void reduce()
                 check_expr(&(tokenTop->token));
 
                 // TO DO INSERT INSTRUCTIONS
-                // printf("\n\t\tRULE -\tE -> id\n");
+                //// printf("\n\t\tRULE -\tE -> id\n");
                 tokenTop->expr = true;
             }
             else
@@ -486,7 +486,7 @@ void reduce()
             //IF E * E IS ON STACK
             if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
-                // printf("\n\t\tRULE T_MUL\tE = E * E\n");
+                //// printf("\n\t\tRULE T_MUL\tE = E * E\n");
 
                 symtable_value_t dest = create_dest(tokenTop);
 
@@ -507,7 +507,7 @@ void reduce()
             else if (tokenAfterTop->expr == false)
             {
                 // IF $*E IS ON STACK
-                // printf("\n\t\tRULE *\tE -> id\n");
+                //// printf("\n\t\tRULE *\tE -> id\n");
                 check_expr(&(tokenAfterTop->token));
 
                 tokenAfterTop->expr = true;
@@ -515,7 +515,7 @@ void reduce()
             else if (tokenTop->expr == false)
             {
                 // IF E* IS ON STACK
-                // printf("\n\t\tRULE *\tE -> id\n");
+                //// printf("\n\t\tRULE *\tE -> id\n");
                 check_expr(&(tokenTop->token));
 
                 tokenTop->expr = true;
@@ -935,7 +935,7 @@ void equal()
         release_resources();
         error(2, "expression parser", "reduce", "Missing left parenthesis");
     }
-    //// printf("\n\t\tRULE\t E -> ( E ) \n");
+    ////// printf("\n\t\tRULE\t E -> ( E ) \n");
 
     get_next_token(parsData.token);
     return;
@@ -958,7 +958,7 @@ void print()
     tmpT = tokStack.topToken;
     while (tmpT->token.token_type != T_EMPTY)
     {
-        printf("\nTOKEN SHIFT VALUES\t%d", tmpT->token.token_type);
+       // printf("\nTOKEN SHIFT VALUES\t%d", tmpT->token.token_type);
         tmpT = tmpT->nextTok;
     }
 
@@ -967,7 +967,7 @@ void print()
     tmp = symbolStack.topToken;
     while (tmp->token.token_type != T_EMPTY)
     {
-        printf("\nSYMBOL SHIFT VALUES\t%d", tmp->token.token_type);
+       // printf("\nSYMBOL SHIFT VALUES\t%d", tmp->token.token_type);
         tmp = tmp->nextTok;
     }
 }
@@ -1001,7 +1001,7 @@ symtable_value_t parse_expression()
 
         indexInput = get_index(*parsData.token);
         indexStack = get_index(symbolStack.topToken->token);
-        // printf("\n\nToken\t%d\n", parsData.token->token_type);
+        //// printf("\n\nToken\t%d\n", parsData.token->token_type);
         //printf("\nSTACK x INPUT:\t%d\t%d", indexStack, indexInput);
 
         switch (precTable[indexStack][indexInput])
