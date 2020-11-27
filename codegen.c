@@ -405,7 +405,37 @@ void ret_fun(instr_t instr) {
 
 		while (return_active != NULL) {
 			char *frame = get_frame(return_active);
-			fprintf(OUTPUT, "PUSHS %s@%s\n", frame, return_active->name);
+
+			if (return_active->is_const) {
+				switch (return_active->type) {
+					case VAR_INT:
+						fprintf(OUTPUT, "PUSHS int@%d\n", return_active->data.int_t);
+						break;
+					case VAR_FLOAT64:
+						fprintf(OUTPUT, "PUSHS float@%a\n", return_active->data.float64_t);
+						break;
+					case VAR_STRING:
+						fprintf(OUTPUT, "PUSHS string@%s\n", return_active->data.string_t);
+						break;
+					case VAR_BOOL:
+						if (return_active->data.bool_t) {
+							fprintf(OUTPUT, "PUSHS bool@true\n");
+						}
+						else {
+							fprintf(OUTPUT, "PUSHS bool@false\n");
+						}
+						break;
+					case VAR_NIL:
+						error(99, "codegen.c", "ret_fun", "NIL variable");
+						break;
+					case VAR_UNDEFINED:
+						error(99, "codegen.c", "ret_fun", "Undefined variable");
+						break;
+				}
+			}
+			else {
+				fprintf(OUTPUT, "PUSHS %s@%s\n", frame, return_active->name);
+			}
 			return_active = sym_var_list_next(returns);
 		}
 	}
