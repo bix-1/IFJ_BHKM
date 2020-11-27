@@ -12,9 +12,7 @@
 
 /*
 TODO:
-  finalize try_var_or_func
-  --& all its occurences
-
+  fix a := .. a ..
 
 
   mem leaks with undefined vars for func_call
@@ -75,6 +73,8 @@ bool eps = false;
 // inside of match():
 //    for checking whether ID is being defined or called
 bool def = false;
+
+bool get_next = true;
 
 // for checking whether function with defined return types
 // contains at least a single return call
@@ -543,7 +543,7 @@ void match(int term) {
   // eps == FALSE --> non-eps terminal matched
   eps = false;
 
-  get_next_token(&next);
+  if (get_next) get_next_token(&next);
 }
 
 
@@ -851,12 +851,16 @@ void check_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
     dest = dest_item->item;
     src = src_item->item;
 
-    if (dest->type != src->type)
-      error(
-        7, "parser", "check_var_def_types",
-        "Variable [%s] and Expression [n.%d] are of different data types",
-        dest->name, n_dest
-      );
+    // TODO funexp
+    // variable type can be undefined in case of assignment from function
+    if (dest->type >= VAR_INT && dest->type <= VAR_BOOL ) {
+      if (dest->type != src->type)
+        error(
+          7, "parser", "check_var_def_types",
+          "Variable [%s] and Expression [n.%d] are of different data types",
+          dest->name, n_dest
+        );
+    }
 
     // next step
     dest_item = dest_item->next;
@@ -1414,43 +1418,19 @@ instr_type_t get_func_instr_type(char * func) {
   return IC_CALL_FUN;
 }
 
-elem_t * try_var_or_func(tToken * token) {
-  // control flag: DEF
-  /* RETURNS
-    sym_func: func_call
-    var:      found var
-    NULL:     undefined var || other
-  */
-  if (token->token_type != T_IDENTIFIER) return NULL;
+
+// either parses func_call & returns func OR returns NULL
+// in case of NULL:
+// keep the ID before calling this func
+// following token will be in given token (parameter)
+elem_t * try_func(tToken * token) {
   char * id = to_string(token);
-  if (def) {
-    symtable_iterator_t it = symtable_find(symtable, id_add_scope(scope_get_head, id));
-    if (symtable_iterator_valid(it)) { // variable found
-      return symtable_iterator_get_value(it);
-    } else return NULL;
-  } else {
-    eps = true;
-    elem_t * var = id_find(scope_get_head(), id);
-    if (var != NULL) return var;  // variable found
-  }
-  // check for function call
   get_next_token(token);
   if (token->token_type == T_L_BRACKET) {
     token->token_type = T_IDENTIFIER;
     token->attr.str_lit.str = id;
     return func_call(id);
-  }
-  else {
-    if (token->token_type != T_DEF_IDENT) {
-      // for token_cleanup
-      token->token_type = T_IDENTIFIER;
-      token->attr.str_lit.str = id;
-      error(3, "parser", "match", "Variable \"%s\" undefined", to_string(token));
-    }
-    token->token_type = T_IDENTIFIER;
-    token->attr.str_lit.str = id;
-    return NULL;
-  }
+  } else return NULL;
 }
 
 
@@ -1705,14 +1685,11 @@ void body() {
 void command() {
   switch (next.token_type) {
     case T_IDENTIFIER: {
-      elem_t * tmp = try_var_or_func(&next);
-      if (tmp == NULL) {
-        var_def(); // not defined var nor func call
-      }
-      else if (tmp->sym_type == SYM_VAR_ITEM)
-        var_move(); // found defined var
-      else if (tmp->sym_type == SYM_FUNC)
-        break;  // func_call handled in try_var_or_func
+      char * id = to_string(&next);
+      elem_t * tmp = try_func(&next);
+      if (tmp == NULL) var_(id);
+      // func_call handled in try_func
+      else if (tmp->sym_type == SYM_FUNC) break;
       else error(99, "parser", NULL, "INVALID STATE");
 
       break;
@@ -1739,29 +1716,40 @@ void command() {
   }
 }
 
-void var_() {
-
+void var_(char * id) { // collect dest
+  // TODO redo for multival
+  if (next.token_type == T_DEF_IDENT) {
+    var_def(id);
+  } else {
+    var_move(id);
+  }
 }
 
-// expects ID in [next] & ':=' to be matched
-void var_def() {
+// expects ID of variable & following token in [next]
+void var_def(char * id) {
+  if (next.token_type != T_DEF_IDENT)
+    error(2, "parser", NULL, "Invalid definition");
+
+  next.token_type = T_IDENTIFIER;
+  next.attr.str_lit.str = id;
   def = true; eps = false;
   match(T_VAR_ID);
-  // match(T_DEF_IDENT);  // matched in try_var_or_func
-  // TODO all should be handled withing expr_parser
-  elem_t * tmp = try_var_or_func(&next);
-  if (tmp == NULL || tmp->sym_type == SYM_VAR_ITEM) {
+  // := matched in try_func -- next (token) now at expression
+  if (next.token_type != T_IDENTIFIER) { // parse expr
     elem_t * expr = parse_expression();
-    // set type
     last_elem->symbol.sym_var_item->type = expr->symbol.sym_var_item->type;
     instr_add_elem1(list->last, expr);
-  } else if (tmp->sym_type == SYM_FUNC) {
-    func_add_ret(tmp, last_elem->symbol.sym_var_item);
   }
-  else error(99, "parser", NULL, "INVALID STATE");
+  else {
+    // TODO redo for funexp & multival
+    elem_t * expr = parse_expression();
+    last_elem->symbol.sym_var_item->type = expr->symbol.sym_var_item->type;
+    instr_add_elem1(list->last, expr);
+  }
 }
 
-void var_move() {
+// expects ID of variable & following token in [next]
+void var_move(char * id) {
   // create dest sym_var_list
   sym_var_list_t * var_list = sym_var_list_init();
   symbol_t var_list_sym = {.sym_var_list = var_list};
@@ -1771,7 +1759,13 @@ void var_move() {
 
   // get dest variables
   def = false; eps = false;
+  int type = next.token_type;
+  next.token_type = T_IDENTIFIER;
+  next.attr.str_lit.str = id;
+  get_next = false;
   match(T_VAR_ID);
+  get_next = true;
+  next.token_type = type;
   next_id();
   if (next.token_type == T_DEF_IDENT)
     error(
@@ -1782,68 +1776,25 @@ void var_move() {
   match(T_ASSIGNMENT);
 
   // get src
+  // TODO funexp
   if (next.token_type != T_IDENTIFIER) {
     expr_list();
-    return;
+  } else {
+    // TODO delegate to expr parser
+    // elem_t * tmp = try_func();
+
+    eps = true;
+    elem_t * tmp = id_find(scope_get_head(), to_string(&next));
+    if (tmp != NULL && tmp->sym_type != SYM_FUNC)
+      expr_list();
+    else {
+      elem_t * tmp = try_func(&next);
+      if (tmp == NULL) error(3, "parser", NULL, "Variable \"%s\" undefined", to_string(&next));
+      else {
+        tmp->symbol.sym_func->returns = var_list;
+      }
+    }
   }
-  elem_t * tmp = try_var_or_func(&next);
-  if (tmp == NULL) {
-    // if (last_elem->sym_type == SYM_VAR_ITEM)
-    error(3, "parser", "match", "Variable \"%s\" undefined", last_elem->symbol.sym_var_item->name);
-    // expr_list();
-  } else if (tmp->sym_type == SYM_VAR_ITEM) {
-    expr_list();
-  } else if (tmp->sym_type == SYM_FUNC) {
-    tmp->symbol.sym_func->returns = var_list;
-  }
-  else error(99, "parser", NULL, "INVALID STATE");
-
-
-
-  // last_elem = expr_list_elem;  // (src) now in last_elem
-  // expr_list();
-
-  /*
-  // create instruction
-  instr_t * new_def = instr_create();
-
-  // create dest sym_var_list
-  sym_var_list_t * var_list = sym_var_list_init();
-  symbol_t var_list_sym = {.sym_var_list = var_list};
-  elem_t * var_list_elem = elem_init(SYM_VAR_LIST, var_list_sym);
-  // append dest list
-  instr_add_dest(new_def, var_list_elem);
-
-  // create src sym_var_list
-  sym_var_list_t * exprs_list = sym_var_list_init();
-  symbol_t expr_list_sym = {.sym_var_list = exprs_list};
-  elem_t * expr_list_elem = elem_init(SYM_VAR_LIST, expr_list_sym);
-  // append src list
-  instr_add_elem1(new_def, expr_list_elem);
-
-  //======================
-  list_add(list, new_def);
-  last_elem = var_list_elem;  // (dest) now in last_elem
-
-  // get variables (dest)
-  def = false; eps = false;
-  match(T_VAR_ID);
-  next_id();
-  if (next.token_type == T_DEF_IDENT)
-    error(
-      3, "parser", "var_move", "Redefinition of variable \"%s\"",
-      last_elem->symbol.sym_var_item->name
-    );
-  // '='
-  match(T_ASSIGNMENT);
-  // get expressions (src)
-  last_elem = expr_list_elem;  // (src) now in last_elem
-  expr_list();
-
-  // types checked in other places
-  if (new_def->type == IC_DEF_VAR)
-    check_var_def_types(instr_get_dest(new_def), instr_get_elem1(new_def));
-  */
 }
 
 void next_id() {
@@ -1942,20 +1893,20 @@ void cycle() {
 }
 
 void for_def() {
-  if (next.token_type == T_SEMICOLON) return;
-  elem_t * tmp = try_var_or_func(&next);
-  if (tmp != NULL) error(2, "parser", NULL, "Invalid definition");
-  var_def();
+  if (next.token_type != T_IDENTIFIER) return;
+  // setup for var_def
+  char * id = to_string(&next);
+  get_next_token(&next);
+  var_def(id);
 }
 
 void for_move() {
-  if (next.token_type == T_LEFT_BRACE) return;
-  // create instruction
-  instr_t * for_step = instr_create();
-  instr_set_type(for_step, IC_FOR_STEP);
-  list_add(list, for_step);
+  if (next.token_type != T_IDENTIFIER) return;
+  // setup for var_move
+  char * id = to_string(&next);
+  get_next_token(&next);
+  var_move(id);
 
-  var_move();
 }
 
 void return_() {
@@ -1998,37 +1949,11 @@ elem_t * func_call(char * name) {
   match(T_FUNC_ID);
   elem_t * func = last_elem;
 
-  // '(' already checked for in try_var_or_func
+  // '(' already matched in try_func
   func_args();
   match(T_R_BRACKET);
 
-  // sym_var_list_t * ret_list = sym_var_list_init();
-  // func->symbol.sym_func->returns = ret_list;
-  // symbol_t ret_list_sym = {.sym_var_list = ret_list};
-  // elem_t * rets = elem_init(SYM_VAR_LIST, ret_list_sym);
-  // symtable_insert(symtable, make_unique(rets), rets);
-
   return func;
-
-  // // func_call instructions' element assigning
-  // switch(get_func_instr_type(last_elem->symbol.sym_func->name)) {
-  //   case IC_CALL_FUN: {
-  //     break; }
-  //   case IC_WRITE_VAR: {
-  //     symbol_t dest_list_sym = {.sym_var_list = last_elem->symbol.sym_func->params};
-  //     elem_t * dest = elem_init(SYM_VAR_LIST, dest_list_sym);
-  //     instr_add_dest(list->last, dest);
-  //     break; }
-  //   case IC_INT2FLOAT_VAR: {
-  //     symbol_t src_list_sym = {.sym_var_list = last_elem->symbol.sym_func->params};
-  //     elem_t * src = elem_init(SYM_VAR_LIST, src_list_sym);
-  //     instr_add_elem1(list->last, src);
-  //     break; }
-  //   case FLOAT2INT:
-  //     break;
-  //   default:
-  //     break;
-  // }
 }
 
 void func_args() {
@@ -2072,62 +1997,6 @@ void expr_list() {
 
 
   check_var_def_types(instr_get_dest(new_def), instr_get_elem1(new_def));
-
-/*
-  if (next.token_type == T_IDENTIFIER) { // check if func call
-    eps = true;
-    elem_t * var = id_find(scope_get_head(), to_string(&next));
-    if (eps || var->sym_type == SYM_FUNC) {
-      eps = false;
-
-      instr_t * def_instr = list->last;
-
-      func_call();
-
-      instr_t * func_instr = def_instr->next;
-
-      // TODO FUNCEXP: func as expr -- check && handle
-      // NOTE move the whole func checking to expr_parser ??
-      if (next.token_type != T_EOL) {
-        error(
-          2, "parser", "FUNCEXP: NOT IMPLEMENTED YET",
-          "Expected: '%s' -- Got: '%s'", T_EOL, next.token_type
-        );
-      }
-      // =============================================
-
-      // handling assignment of functions returns
-
-      elem_t * func = last_elem;
-      sym_var_list_t * dest = instr_get_dest(def_instr)->symbol.sym_var_list;
-
-        // type
-      instr_set_type(def_instr, instr_get_type(func_instr));
-      // elem1 -- func
-      free(instr_get_elem1(def_instr)->symbol.sym_var_list);
-      free(instr_get_elem1(def_instr));
-      instr_add_elem1(def_instr, func);
-      // linking
-      def_instr->next = func_instr->next;
-      if (list->last == func_instr) list->last = def_instr;
-      instr_add_dest(func_instr, NULL);
-      instr_add_elem1(func_instr, NULL);
-      instr_delete(func_instr);
-
-      list_item_t * ret = dest->first;
-      if (func == NULL) return;
-      while (ret != NULL) {
-        func_add_ret(func, ret->item);
-        ret = ret->next;
-      }
-      return;
-    }
-  } // handling expressions
-
-  add_next_expr();
-
-  next_expr();
-  */
 }
 
 void next_expr() {

@@ -203,7 +203,7 @@ void func_defs_check();
 instr_type_t get_func_instr_type(char *);      // check if func is built-in
 void add_built_in();  // add built-in functions to symtable
 
-elem_t * try_var_or_func(tToken * token);
+elem_t * try_func(tToken * token);
 
 /*
   ___________FUNCTIONS_REPRESENTING___________
@@ -225,9 +225,9 @@ void ret_list_def();
 void next_ret_def();
 void body();
 void command();
-void var_();
-void var_def();
-void var_move();
+void var_(char * id);
+void var_def(char * id);
+void var_move(char * id);
 void next_id();
 void if_();
 void if_cont();
