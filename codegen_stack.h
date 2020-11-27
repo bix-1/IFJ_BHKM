@@ -42,4 +42,16 @@ extern jmp_label_stack_top_t *skip_labels_top;
 extern jmp_label_stack_t *end_labels_bottom;
 extern jmp_label_stack_top_t *end_labels_top;
 
+extern jmp_label_stack_t *for_cond_bottom;
+extern jmp_label_stack_top_t *for_cond_top;
+
+extern jmp_label_stack_t *for_step_bottom;
+extern jmp_label_stack_top_t *for_step_top;
+
+extern jmp_label_stack_t *for_body_bottom;
+extern jmp_label_stack_top_t *for_body_top;
+
+extern jmp_label_stack_t *for_end_bottom;
+extern jmp_label_stack_top_t *for_end_top;
+
 #endif // CODEGEN_STACK_H

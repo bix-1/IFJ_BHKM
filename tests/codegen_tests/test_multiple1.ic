@@ -24,6 +24,7 @@ MOVE LF@y int@0
 DEFVAR LF@bar-24
 MOVE LF@bar-24 int@24
 ADD LF@y LF@a LF@bar-24
+PUSHS LF@y
 POPFRAME
 RETURN
 
@@ -38,7 +39,8 @@ DEFVAR LF@b
 MOVE LF@b int@0
 PUSHS LF@a
 CALL bar
-MOVE LF@b TF@y
+#MOVE LF@b TF@y
+POPS LF@b
 DEFVAR LF@new_line
 MOVE LF@new_line string@@?o
 WRITE LF@b

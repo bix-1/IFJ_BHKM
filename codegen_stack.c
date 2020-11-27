@@ -20,7 +20,22 @@ jmp_label_stack_top_t *skip_labels_top = NULL;
 jmp_label_stack_t *end_labels_bottom = NULL;
 jmp_label_stack_top_t *end_labels_top = NULL;
 
+jmp_label_stack_t *for_cond_bottom = NULL;
+jmp_label_stack_top_t *for_cond_top = NULL;
+
+jmp_label_stack_t *for_step_bottom = NULL;
+jmp_label_stack_top_t *for_step_top = NULL;
+
+jmp_label_stack_t *for_body_bottom = NULL;
+jmp_label_stack_top_t *for_body_top = NULL;
+
+jmp_label_stack_t *for_end_bottom = NULL;
+jmp_label_stack_top_t *for_end_top = NULL;
+
 void jmp_label_stack_init() {
+	// =================================
+	// If labels
+
 	// Skip labels
 	skip_labels_bottom = malloc(sizeof(jmp_label_stack_t));
 
@@ -62,6 +77,84 @@ void jmp_label_stack_init() {
 
 	// Top points to bottom of stack
 	end_labels_top->top = end_labels_bottom;
+
+	// =================================
+	// For labels
+
+	for_cond_bottom = malloc(sizeof(jmp_label_stack_t));
+
+	if (for_cond_bottom == NULL) {
+		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
+	}
+
+	for_cond_bottom->value = 0;
+	for_cond_bottom->next = NULL;
+	for_cond_bottom->prev = NULL;
+
+	for_cond_top = malloc(sizeof(jmp_label_stack_top_t));
+
+	if (for_cond_top == NULL) {
+		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
+	}
+
+	for_cond_top->top = for_cond_bottom;
+	//
+
+	for_step_bottom = malloc(sizeof(jmp_label_stack_t));
+
+	if (for_step_bottom == NULL) {
+		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
+	}
+
+	for_step_bottom->value = 0;
+	for_step_bottom->next = NULL;
+	for_step_bottom->prev = NULL;
+
+	for_step_top = malloc(sizeof(jmp_label_stack_top_t));
+
+	if (for_step_top == NULL) {
+		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
+	}
+
+	for_step_top->top = for_step_bottom;
+	//
+
+	for_body_bottom = malloc(sizeof(jmp_label_stack_t));
+
+	if (for_body_bottom == NULL) {
+		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
+	}
+
+	for_body_bottom->value = 0;
+	for_body_bottom->next = NULL;
+	for_body_bottom->prev = NULL;
+
+	for_body_top = malloc(sizeof(jmp_label_stack_top_t));
+
+	if (for_body_top == NULL) {
+		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
+	}
+
+	for_body_top->top = for_body_bottom;
+	//
+
+	for_end_bottom = malloc(sizeof(jmp_label_stack_t));
+
+	if (for_end_bottom == NULL) {
+		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
+	}
+
+	for_end_bottom->value = 0;
+	for_end_bottom->next = NULL;
+	for_end_bottom->prev = NULL;
+
+	for_end_top = malloc(sizeof(jmp_label_stack_top_t));
+
+	if (for_end_top == NULL) {
+		error(99, "codegen_stack.c", "jmp_label_stack_init", "NULL pointer");
+	}
+
+	for_end_top->top = for_end_bottom;
 }
 
 void jmp_label_stack_push(jmp_label_stack_top_t *top, int value) {
@@ -127,6 +220,11 @@ void jmp_label_stack_clear(jmp_label_stack_t *stack, jmp_label_stack_top_t *top)
 void jmp_label_stack_free_all() {
 	jmp_label_stack_free(skip_labels_bottom, skip_labels_top);
 	jmp_label_stack_free(end_labels_bottom, end_labels_top);
+
+	jmp_label_stack_free(for_cond_bottom, for_cond_top);
+	jmp_label_stack_free(for_step_bottom, for_step_top);
+	jmp_label_stack_free(for_body_bottom, for_body_top);
+	jmp_label_stack_free(for_end_bottom, for_end_top);
 }
 
 void jmp_label_stack_free(jmp_label_stack_t *stack, jmp_label_stack_top_t *top) {

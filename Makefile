@@ -74,6 +74,12 @@ tests: test_codegen test_ll test_error
 test_codegen: tests/codegen_tests/test_codegen_multiple1.c ll.h ll.c symtable.c symtable.h codegen.h codegen.c error.h error.c scanner.h scanner.c str.c str.h parser.h parser.c expression.h expression.c stack.h stack.c escape_format.h escape_format.c tests/codegen_tests/test_codegen_helper.c tests/codegen_tests/test_codegen_helper.h tests/codegen_tests/test_codegen_helper.c tests/codegen_tests/test_codegen_helper.h codegen_stack.c codegen_stack.h
 	${CC} ${CFLAGS} $^ -o $@
 
+test_codegen_empty_main: tests/codegen_tests/test_codegen_empty_main.c ll.h ll.c symtable.c symtable.h codegen.h codegen.c error.h error.c scanner.h scanner.c str.c str.h parser.h parser.c expression.h expression.c stack.h stack.c escape_format.h escape_format.c tests/codegen_tests/test_codegen_helper.c tests/codegen_tests/test_codegen_helper.h tests/codegen_tests/test_codegen_helper.c tests/codegen_tests/test_codegen_helper.h codegen_stack.c codegen_stack.h
+	${CC} ${CFLAGS} $^ -o $@
+
+test_codegen_add1: tests/codegen_tests/test_codegen_add1.c ll.h ll.c symtable.c symtable.h codegen.h codegen.c error.h error.c scanner.h scanner.c str.c str.h parser.h parser.c expression.h expression.c stack.h stack.c escape_format.h escape_format.c tests/codegen_tests/test_codegen_helper.c tests/codegen_tests/test_codegen_helper.h tests/codegen_tests/test_codegen_helper.c tests/codegen_tests/test_codegen_helper.h codegen_stack.c codegen_stack.h
+	${CC} ${CFLAGS} $^ -o $@
+
 test_ll: tests/test_ll.c ll.a
 	${CC} ${CFLANG} $^ -o $@
 
