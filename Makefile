@@ -13,7 +13,7 @@ TMPS = *.o *.a *.tgz ${wildcard test_*[^.][^c]} parser ifj20
 AR = ar -csr
 LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a
 
-.PHONY: run_parser pack
+.PHONY: run_parser pack tests
 
 all: ifj20
 
@@ -60,16 +60,9 @@ expr_parser.a: expression.o parser.o stack.o scanner.a
 	${CC} ${CFLAGS} -c $<
 
 ########## Testing ##########
-tests: test_codegen test_ll test_error
-	@echo
-	@echo
-	-./test_error
-	./test_codegen
-	@echo "*****************************"
-	@echo
-	./test_ll
-	@echo "*****************************"
-	@echo
+tests: ifj20
+	cd tests && ./test_whole.sh
+	@cat tests/failed_tests
 
 test_codegen: tests/codegen_tests/test_codegen_multiple1.c ll.h ll.c symtable.c symtable.h codegen.h codegen.c error.h error.c scanner.h scanner.c str.c str.h parser.h parser.c expression.h expression.c stack.h stack.c escape_format.h escape_format.c tests/codegen_tests/test_codegen_helper.c tests/codegen_tests/test_codegen_helper.h tests/codegen_tests/test_codegen_helper.c tests/codegen_tests/test_codegen_helper.h codegen_stack.c codegen_stack.h
 	${CC} ${CFLAGS} $^ -o $@
