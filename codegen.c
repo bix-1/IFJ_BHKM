@@ -400,7 +400,7 @@ void ret_fun(instr_t instr) {
 	}
 
 	sym_var_list_t *returns = elem_dest->symbol.sym_func->returns;
-	if (returns != NULL) {
+	if (returns != NULL && instr.type == IC_RET_FUN) {
 		sym_var_item_t *return_active = sym_var_list_next(returns);
 
 		while (return_active != NULL) {
@@ -1064,6 +1064,10 @@ void gt_var(instr_t instr) {
 					fprintf(OUTPUT, "GT %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
 					        frame_elem1, sym_elem1->name);
 				}
+				break;
+			case VAR_NIL:
+				break;
+			case VAR_UNDEFINED:
 				break;
 		}
 	}
