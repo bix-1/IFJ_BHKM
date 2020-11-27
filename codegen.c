@@ -112,12 +112,12 @@ void declr_var(instr_t instr) {
 			fprintf(OUTPUT, "MOVE %s@%s float64@%a\n", frame_dest, sym_dest->name, sym_dest->data.float64_t);
 			break;
 		case VAR_STRING: {
-			if (!sym_dest->is_formatted) {
+			/*if (!sym_dest->is_formatted) {
 				char *new_seq = escape_reformat(sym_dest->data.string_t);
 				variable_t new_data = {.string_t = new_seq};
 				sym_var_item_change_data(sym_dest, new_data);
 				sym_var_item_set_formatted(sym_dest, true);
-			}
+			}*/
 
 			fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, sym_dest->name, sym_dest->data.string_t);
 			break;
