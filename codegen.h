@@ -17,6 +17,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "codegen_stack.h"
+
 // Define intermediate code instructions
 typedef enum instr_type {
 	/*
@@ -132,13 +134,8 @@ typedef enum instr_type {
 	/*
 	 * Function call with or without single/multiple values return
 	 *
-
-	 name:	func->name
-	 dest:	func->returns
-	 src:		func->params
-
-	 * elem_dest: NULL
-	 * elem_1: symbol func
+	 * elem_dest: symbol func
+	 * elem_1: NULL
 	 * elem_2: NULL
 	 *
 	 * Example:
@@ -158,8 +155,9 @@ typedef enum instr_type {
 	 * each variable one by one.
 	 *
 	 *
-	 * ==========================
+	 * ========================
 	 * Note 2:
+	 *
 	 * in case that some variables are defined and some not
 	 *
 	 * x = defined, y = undefined
@@ -169,6 +167,12 @@ typedef enum instr_type {
 	 *
 	 * x, y := some_fun()
 	 * Result: valid but data type of x must be same as declared, value of x is reassigned.
+	 *
+	 *
+	 * ========================
+	 * Note 3:
+	 *
+	 * Destination variable names are stored in returns
 	 *
 	 */
 	IC_CALL_FUN,
@@ -424,13 +428,12 @@ typedef enum instr_type {
 	/*
 	 * Int to float type cast
 	 *
-	 name:	instr->type
-	 dest:	func->returns
-	 src:		func->params
-
-	 * elem_dest: NULL
-	 * elem_1: symbol var || symbol const (src1)
+	 * elem_dest: symbol func
+	 * elem_1: NULL
 	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 1: [symbol var || symbol const (src)]
+	 *                  returns -> 1: [symbol var (dest)]
 	 *
 	 * Example:
 	 * x = int2float(a)
@@ -448,9 +451,12 @@ typedef enum instr_type {
 	/*
 	 * Float to int type cast
 	 *
-	 * elem_dest: symbol var (dest)
-	 * elem_1: symbol var || symbol const (src1)
+	 * elem_dest: symbol func
+	 * elem_1: NULL
 	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 1: [symbol var || symbol const (src)]
+	 *                  returns -> 1: [symbol var (dest)]
 	 *
 	 * Example:
 	 * x = float2int(a)
@@ -468,9 +474,12 @@ typedef enum instr_type {
 	/*
 	 * Int to char (ascii 0-255) type cast
 	 *
-	 * elem_dest: symbol var (dest)
-	 * elem_1: symbol var || symbol const (src1)
+	 * elem_dest: symbol func
+	 * elem_1: NULL
 	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 1: [symbol var || symbol const (src)]
+	 *                  returns -> 1: [symbol var (dest)]
 	 *
 	 * Example:
 	 * x = int2char(a)
@@ -489,22 +498,32 @@ typedef enum instr_type {
 	/*
 	 * Get character (ascii 0-255) from string on selected index position
 	 *
-	 * elem_dest: symbol var (dest)
-	 * elem_1: symbol var || symbol const (src1)
-	 * elem_2: symbol var || symbol const (src1)
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 2: [symbol var || symbol const (src1),
+	 *                                 symbol var || symbol const (src2)]
+	 *                  returns -> 2: [symbol var (dest), symbol var (err)]
 	 *
 	 * Example:
 	 * x = str2int(a, b)
 	 * x = str2int(a, 2)
 	 *
 	 * ==========================
-	 * Note:
+	 * Note 1:
 	 *
 	 * If dest element is not int - Error
+	 * If err element is not int - Error
 	 * If src1 element is not string - Error
 	 * If src2 element is not int - Error
 	 * If src2 int value is out of index of src1 string - Error
 	 * If dest int value is out of interval <0,255> - Error
+	 *
+	 * ==========================
+	 * Note 2:
+	 *
+	 * If index out of bounds, err is set to 1 and returned
 	 *
 	 */
 	IC_STR2INT_VAR,
@@ -514,9 +533,12 @@ typedef enum instr_type {
 	/*
 	 * Read variable from build in functions
 	 *
-	 * elem_dest: symbol var (dest)
+	 * elem_dest: symbol func
 	 * elem_1: NULL
 	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 0: []
+	 *                  returns -> 1: [symbol var (dest)]
 	 *
 	 * Example:
 	 * x = read(22)
@@ -529,9 +551,12 @@ typedef enum instr_type {
 	/*
 	 * Write variables to output from build in functions
 	 *
-	 * elem_dest: symbol var_list
+	 * elem_dest: symbol func
 	 * elem_1: NULL
 	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> n: [symbol var list]
+	 *                  returns -> 0: []
 	 *
 	 * Example:
 	 * x = print("Hello world!")
@@ -546,9 +571,13 @@ typedef enum instr_type {
 	/*
 	 * Concatenate two strings to one
 	 *
-	 * elem_dest: symbol var (dest)
-	 * elem_1: symbol var || symbol const (src1)
-	 * elem_2: symbol var || symbol const (src1)
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 2: [symbol var || symbol const (src1),
+	 *                                 symbol var || symbol const (src2)]
+	 *                  returns -> 1: [symbol var (dest)]
 	 *
 	 * Example:
 	 * x = concat("Hello ", "world!")
@@ -567,9 +596,12 @@ typedef enum instr_type {
 	/*
 	 * Get length of string
 	 *
-	 * elem_dest: symbol var (dest)
-	 * elem_1: symbol var || symbol const (src1)
+	 * elem_dest: symbol func
+	 * elem_1: NULL
 	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 1: [symbol var || symbol const (src)]
+	 *                  returns -> 1: [symbol var (dest)]
 	 *
 	 * Example:
 	 * x = strlen("Hello")
@@ -587,21 +619,31 @@ typedef enum instr_type {
 	/*
 	 * Get char from string on specific index
 	 *
-	 * elem_dest: symbol var (dest)
-	 * elem_1: symbol var || symbol const (src1)
-	 * elem_2: symbol var || symbol const (src1)
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 2: [symbol var || symbol const (src1),
+	 *                                 symbol var || symbol const (src2)]
+	 *                  returns -> 2: [symbol var (dest), symbol var (err)]
 	 *
 	 * Example:
 	 * x = getc("Hello", 2)
 	 * x = getc(a, 2)
 	 *
 	 * ==========================
-	 * Note:
+	 * Note 1:
 	 *
-	 * If dest element is not string (1 char) - Error
+	 * If dest element is not string - Error
+	 * If err element is not int - Error
 	 * If src1 element is not string - Error
 	 * If src2 element is not int - Error
 	 * If src2 int value is out of index of src1 string - Error
+	 *
+	 * ==========================
+	 * Note 2:
+	 *
+	 * If index out of bounds, err is set to 1 and returned
 	 *
 	 */
 	IC_GETCHAR_STR,
@@ -609,9 +651,13 @@ typedef enum instr_type {
 	/*
 	 * Set char in string on specific index
 	 *
-	 * elem_dest: symbol var (dest)
-	 * elem_1: symbol var || symbol const (src1)
-	 * elem_2: symbol var || symbol const (src1)
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 2: [symbol var || symbol const (src1),
+	 *                                 symbol var || symbol const (src2)]
+	 *                  returns -> 1: [symbol var (dest)]
 	 *
 	 * Example:
 	 * x = setc(2, "c")
@@ -620,13 +666,52 @@ typedef enum instr_type {
 	 * ==========================
 	 * Note:
 	 *
-	 * If dest element is not string (1 char) - Error
+	 * If dest element is not string- Error
 	 * If src1 element is not int - Error
 	 * If src2 element is not string - Error
 	 * If src2 int value is out of index of dest string - Error
 	 *
 	 */
 	IC_SETCHAR_STR,
+
+	/*
+	 * Returns substring of some string based on params
+	 *
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 3: [symbol var || symbol const (src1),
+	 *                                 symbol var || symbol const (src2),
+	 *                                 symbol var || symbol const (src3)]
+	 *                  returns -> 2: [symbol var (dest), symbol var (err)]
+	 *
+	 * Example:
+	 * x = substr("HelloWorld", 2, 5)
+	 * x = substr(a, 0, y)
+	 *
+	 * ==========================
+	 * Note 1:
+	 *
+	 * If dest element is not string - Error
+	 * If err element is not int - Error
+	 * If src1 element is not string - Error
+	 * If src2 element is not int - Error
+	 * If src2 element is not int - Error
+	 * If src2 int value is out of index of dest string - Error
+	 *
+	 * ==========================
+	 * Note 2:
+	 *
+	 * If index out bounds, err is set to 1 and returned
+	 *
+	 * Note 3:
+	 *
+	 * If n > strlen(src1) - src2, only chars to end are returned
+	 *
+	 *
+	 */
+	IC_SUBSTR_STR,
 
 	// ===================== CONDITION INSTRUCTIONS =====================
 

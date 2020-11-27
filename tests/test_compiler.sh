@@ -615,7 +615,7 @@ fi
 echo "--For expression 3--"
 ./ifj20 < compiler_tests/08_se_for_3.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 3 ]; then
+if [ $OUT -eq 2 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -683,7 +683,7 @@ else
         echo "TEST FAILED"
 fi
 
-echo "--If 2--"
+echo "--If 2 FUNXP --"
 ./ifj20 < compiler_tests/09_se_if_2.go > /dev/null 2>&1
 OUT=$?
 if [ $OUT -eq 0 ]; then
@@ -765,10 +765,10 @@ else
         echo "TEST FAILED"
 fi
 
-echo "--Adding float and int--"
+echo "--Adding float and int-- 11_sy_syntax_5.go"
 ./ifj20 < compiler_tests/11_sy_syntax_5.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 0 ]; then
+if [ $OUT -eq 5 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -795,10 +795,10 @@ else
         echo "TEST FAILED"
 fi
 
-echo "--Adding wrong operands--"
+echo "--Adding int and float-- 11_sy_syntax_8.go "
 ./ifj20 < compiler_tests/11_sy_syntax_8.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 0 ]; then
+if [ $OUT -eq 5 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -818,17 +818,17 @@ fi
 echo "--Dividing strings--"
 ./ifj20 < compiler_tests/11_sy_syntax_10.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 2 ]; then
+if [ $OUT -eq 5 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
         echo "TEST FAILED"
 fi
 
-echo "--Float / int--"
+echo "--Float / int-- 11_sy_syntax_11.go "
 ./ifj20 < compiler_tests/11_sy_syntax_11.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 0 ]; then
+if [ $OUT -eq 5 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -848,7 +848,7 @@ fi
 echo "--String / string--"
 ./ifj20 < compiler_tests/11_sy_syntax_13.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 2 ]; then
+if [ $OUT -eq 5 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -869,6 +869,457 @@ echo "--Dividing by zero--"
 ./ifj20 < compiler_tests/11_sy_syntax_15.go > /dev/null 2>&1
 OUT=$?
 if [ $OUT -eq 9 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--Float / int-- 11_sy_syntax_16.go"
+./ifj20 < compiler_tests/11_sy_syntax_16.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--int / float-- 11_sy_syntax_17.go"
+./ifj20 < compiler_tests/11_sy_syntax_17.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "#------------------Bool operators------------------#"
+echo "--EQ--"
+./ifj20 < compiler_tests/12_sy_operations_1.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--EQ 2--"
+./ifj20 < compiler_tests/12_sy_operations_2.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--EQ 3-- 12_sy_operations_3.go"
+./ifj20 < compiler_tests/12_sy_operations_3.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--EQ 4--"
+./ifj20 < compiler_tests/12_sy_operations_4.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--EQ 5--"
+./ifj20 < compiler_tests/12_sy_operations_5.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--EQ 6-- 12_sy_operations_6.go"
+./ifj20 < compiler_tests/12_sy_operations_6.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--NEQ-- 12_sy_operations_7.go"
+./ifj20 < compiler_tests/12_sy_operations_7.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--NEQ 1--"
+./ifj20 < compiler_tests/12_sy_operations_8.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 1 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--NEQ 2--"
+./ifj20 < compiler_tests/12_sy_operations_9.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 3 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--NEQ 3--"
+./ifj20 < compiler_tests/12_sy_operations_10.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--NEQ 4--"
+./ifj20 < compiler_tests/12_sy_operations_11.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 3 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--NEQ 5-- 12_sy_operations_12.go"
+./ifj20 < compiler_tests/12_sy_operations_12.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--NEQ 6--"
+./ifj20 < compiler_tests/12_sy_operations_13.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER-- 12_sy_operations_14.go"
+./ifj20 < compiler_tests/12_sy_operations_14.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER 2--"
+./ifj20 < compiler_tests/12_sy_operations_15.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER 3-- 12_sy_operations_16.go"
+./ifj20 < compiler_tests/12_sy_operations_16.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER 4-- 12_sy_operations_17.go"
+./ifj20 < compiler_tests/12_sy_operations_17.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER 5-- 12_sy_operations_18.go "
+./ifj20 < compiler_tests/12_sy_operations_18.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 1 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER OR EQ --"
+./ifj20 < compiler_tests/12_sy_operations_19.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER OR EQ 2-- 12_sy_operations_20.go"
+./ifj20 < compiler_tests/12_sy_operations_20.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER OR EQ 3--"
+./ifj20 < compiler_tests/12_sy_operations_21.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER OR EQ 4--"
+./ifj20 < compiler_tests/12_sy_operations_22.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 1 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER OR EQ 5-- 12_sy_operations_23.go"
+./ifj20 < compiler_tests/12_sy_operations_23.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 1 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--GREATER OR EQ 6-- 12_sy_operations_24.go"
+./ifj20 < compiler_tests/12_sy_operations_24.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 1 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--LESS-- 12_sy_operations_25.go"
+./ifj20 < compiler_tests/12_sy_operations_25.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--LESS 2-- 12_sy_operations_26.go"
+./ifj20 < compiler_tests/12_sy_operations_26.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--LESS 3--"
+./ifj20 < compiler_tests/12_sy_operations_27.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--LESS 4-- 12_sy_operations_28.go"
+./ifj20 < compiler_tests/12_sy_operations_28.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--LESS OR EQ-- 12_sy_operations_29.go"
+./ifj20 < compiler_tests/12_sy_operations_29.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--LESS OR EQ-- 2 12_sy_operations_30"
+./ifj20 < compiler_tests/12_sy_operations_30.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--LESS OR EQ 3-- 12_sy_operations_31.go "
+./ifj20 < compiler_tests/12_sy_operations_31.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--LESS OR EQ 4-- 12_sy_operations_32.go"
+./ifj20 < compiler_tests/12_sy_operations_32.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MUL-- 12_sy_operations_33.go"
+./ifj20 < compiler_tests/12_sy_operations_33.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MUL 2-- 12_sy_operations_34.go"
+./ifj20 < compiler_tests/12_sy_operations_34.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MUL 3--"
+./ifj20 < compiler_tests/12_sy_operations_35.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MUL 4-- 12_sy_operations_36.go "
+./ifj20 < compiler_tests/12_sy_operations_36.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MUL 5--"
+./ifj20 < compiler_tests/12_sy_operations_37.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--SUB--"
+./ifj20 < compiler_tests/12_sy_operations_38.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--SUB 2-- 12_sy_operations_39.go"
+./ifj20 < compiler_tests/12_sy_operations_39.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--SUB 3--"
+./ifj20 < compiler_tests/12_sy_operations_40.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--SUB 4-- 12_sy_operations_41.go"
+./ifj20 < compiler_tests/12_sy_operations_41.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--SUB 5--"
+./ifj20 < compiler_tests/12_sy_operations_42.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--SUB 6--"
+./ifj20 < compiler_tests/12_sy_operations_43.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
