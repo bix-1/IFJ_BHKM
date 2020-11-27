@@ -62,6 +62,11 @@ void var_data_set(tToken *token, sym_var_item_t *var);
 void check_string(stackElemPtr top, stackElemPtr afterTop, tToken *symbol);
 
 /*
+*   Function checks whether both token types are same
+*/
+void check_num(stackElemPtr top, stackElemPtr afterTop);
+
+/*
 *   Function returns VAR_TYPE
 */
 int var_type_check(stackElemPtr elem);

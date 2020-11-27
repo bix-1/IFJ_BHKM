@@ -66,7 +66,7 @@ int precTable[8][8] = {
     {R, R, Err, R, R, Err, Err, R},       // )
     {S, S, S, R, Err, S, Err, R},         // RC
     {R, R, Err, R, R, Err, Err, R},       // i
-    {R, Err, Err, Err, Err, Err, Err, R}, // STRING
+    {R, Err, Err, Err, R, Err, Err, R}, // STRING
     {S, S, S, Err, S, S, S, A},           // $
 
 };
@@ -153,6 +153,7 @@ void check_symtable(stackElemPtr elem)
         //printf("\nSymtable\t%s\n", elem->data->symbol.sym_var_item->data.string_t);
     }
 
+    // If we just define... f.e. a:=5
     retExpr = elem->data;
 }
 
@@ -269,17 +270,27 @@ int var_type_check(stackElemPtr elem)
 void check_string(stackElemPtr top, stackElemPtr afterTop, tToken *symbol)
 {
     // ERROR if both expressions are not strings
-    if ((top->data->symbol.sym_var_item->type == T_STRING_VALUE && afterTop->data->symbol.sym_var_item->type != T_STRING_VALUE) || (top->data->symbol.sym_var_item->type != T_STRING_VALUE && afterTop->data->symbol.sym_var_item->type == T_STRING_VALUE))
+    if ((top->data->symbol.sym_var_item->type == VAR_STRING && afterTop->data->symbol.sym_var_item->type != VAR_STRING) || (top->data->symbol.sym_var_item->type != VAR_STRING && afterTop->data->symbol.sym_var_item->type == VAR_STRING))
     {
         release_resources();
         error(5, "expression parser", "check_string", "Variable types do not match");
     }
 
-    // ERROR if strings are not operated with + (string concatenation)
-    if (top->data->symbol.sym_var_item->type == T_STRING_VALUE && afterTop->data->symbol.sym_var_item->type == T_STRING_VALUE && symbol->token_type != T_PLUS)
+    // ERROR if strings are operated with -,*,/ (string concatenation)
+    if (top->data->symbol.sym_var_item->type == VAR_STRING && afterTop->data->symbol.sym_var_item->type == VAR_STRING && ( symbol->token_type == T_MINUS || symbol->token_type == T_MUL || symbol->token_type == T_DIV))
     {
         release_resources();
         error(2, "expression parser", "check_string", "FAULTY INPUT EXPRESSION");
+    }
+}
+
+void check_num(stackElemPtr top, stackElemPtr afterTop)
+{
+
+    if ((top->data->symbol.sym_var_item->type == VAR_INT && afterTop->data->symbol.sym_var_item->type == VAR_FLOAT64) || (top->data->symbol.sym_var_item->type == VAR_FLOAT64 && afterTop->data->symbol.sym_var_item->type == VAR_INT))
+    {
+        release_resources();
+        error(5, "expression parser", "check_string", "Variable types do not match");
     }
 }
 
@@ -344,9 +355,11 @@ void reduce()
     // If value stack is !empty
     if (tokStack.topToken->token.token_type != T_DOLLAR)
     {
-        //printf("\nERR\t%d\t%d\t%d\n", tokenTop->originalType, tokenAfterTop->originalType, symbolTop.token_type);
 
         check_string(tokenTop, tokenAfterTop, &symbolTop);
+
+        printf("\nERR\t%d\t%d\n", tokenTop->data->symbol.sym_var_item->type, tokenAfterTop->data->symbol.sym_var_item->type);
+        check_num(tokenTop, tokenAfterTop);
 
         switch (symbolTop.token_type)
         {
@@ -397,11 +410,6 @@ void reduce()
                 // IF $+E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                if (tokenAfterTop->data->symbol.sym_var_item->type == VAR_INT && tokenTop->data->symbol.sym_var_item->type == VAR_FLOAT64)
-                {
-                    int_to_float(tokenAfterTop);
-                }
-
                 tokenAfterTop->expr = true;
 
             } //IF E + 5 IS ON STACK
@@ -410,11 +418,6 @@ void reduce()
                 // IF E+ IS ON STACK
                 // printf("\n\t\tRULE +\tE -> id\n");
                 check_expr(&(tokenTop->token));
-
-                if (tokenAfterTop->data->symbol.sym_var_item->type == VAR_FLOAT64 && tokenTop->data->symbol.sym_var_item->type == VAR_INT)
-                {
-                    int_to_float(tokenTop);
-                }
 
                 // TO DO INSERT INSTRUCTIONS
                 tokenTop->expr = true;
@@ -453,11 +456,6 @@ void reduce()
                 // IF $-E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                if (tokenAfterTop->data->symbol.sym_var_item->type == VAR_INT && tokenTop->data->symbol.sym_var_item->type == VAR_FLOAT64)
-                {
-                    int_to_float(tokenAfterTop);
-                }
-
                 // printf("\n\t\tRULE -\tE -> id\n");
                 tokenAfterTop->expr = true;
 
@@ -466,11 +464,6 @@ void reduce()
             {
                 // IF E- IS ON STACK
                 check_expr(&(tokenTop->token));
-
-                if (tokenAfterTop->data->symbol.sym_var_item->type == VAR_FLOAT64 && tokenTop->data->symbol.sym_var_item->type == VAR_INT)
-                {
-                    int_to_float(tokenTop);
-                }
 
                 // TO DO INSERT INSTRUCTIONS
                 // printf("\n\t\tRULE -\tE -> id\n");
@@ -511,11 +504,6 @@ void reduce()
                 // printf("\n\t\tRULE *\tE -> id\n");
                 check_expr(&(tokenAfterTop->token));
 
-                if (tokenAfterTop->data->symbol.sym_var_item->type == VAR_INT && tokenTop->data->symbol.sym_var_item->type == VAR_FLOAT64)
-                {
-                    int_to_float(tokenAfterTop);
-                }
-
                 tokenAfterTop->expr = true;
             } //IF E * 5 IS ON STACK
             else if (tokenTop->expr == false)
@@ -524,12 +512,6 @@ void reduce()
                 // printf("\n\t\tRULE *\tE -> id\n");
                 check_expr(&(tokenTop->token));
 
-                if (tokenAfterTop->data->symbol.sym_var_item->type == VAR_FLOAT64 && tokenTop->data->symbol.sym_var_item->type == VAR_INT)
-                {
-                    int_to_float(tokenTop);
-                }
-
-                // TO DO INSERT INSTRUCTIONS
                 tokenTop->expr = true;
             }
             else
@@ -572,11 +554,6 @@ void reduce()
                 // IF $/E IS ON STACK
                 check_expr(&(tokenAfterTop->token));
 
-                if (tokenAfterTop->data->symbol.sym_var_item->type == VAR_INT && tokenTop->data->symbol.sym_var_item->type == VAR_FLOAT64)
-                {
-                    int_to_float(tokenAfterTop);
-                }
-
                 //printf("\n\t\tRULE\tE -> id\n");
                 tokenAfterTop->expr = true;
             } //IF E / 5 IS ON STACK
@@ -584,11 +561,6 @@ void reduce()
             {
                 // IF E/ IS ON STACK
                 check_expr(&(tokenTop->token));
-
-                if (tokenAfterTop->data->symbol.sym_var_item->type == VAR_FLOAT64 && tokenTop->data->symbol.sym_var_item->type == VAR_INT)
-                {
-                    int_to_float(tokenTop);
-                }
 
                 // TO DO INSERT INSTRUCTIONS
                 //printf("\n\t\tRULE\tE -> id\n");
@@ -1023,7 +995,7 @@ symtable_value_t parse_expression()
 
         indexInput = get_index(*parsData.token);
         indexStack = get_index(symbolStack.topToken->token);
-       // printf("\n\nToken\t%d\n", parsData.token->token_type);
+        // printf("\n\nToken\t%d\n", parsData.token->token_type);
         //printf("\nSTACK x INPUT:\t%d\t%d", indexStack, indexInput);
 
         switch (precTable[indexStack][indexInput])
@@ -1042,14 +1014,14 @@ symtable_value_t parse_expression()
             break;
         case Err: /* empty*/
             //printf("\nERROR\n");
-            print();
+            //print();
 
             if (symbolStack.topToken->token.token_type == T_DOLLAR)
             {
                 next.token_type = parsData.token->token_type;
                 next.attr = parsData.token->attr;
             }
-            else if (tokStack.topToken->originalType == T_STRING_VALUE)
+            /* else if (tokStack.topToken->originalType == T_STRING_VALUE)
             {
                 // ERROR a = string * string || a = string / string or anything starting with string followed by operation
                 free(parsData.token->attr.str_lit.str);
@@ -1057,7 +1029,7 @@ symtable_value_t parse_expression()
                 release_resources();
                 error(5, "expression parser", "parse_expression", "Invalid operation with strings");
                 // alebo Faulty input or sth like that
-            }
+            } */
             else
             {
                 // f.e a := foo(3)... ')' is left on symbolStack so I pass it to parser
