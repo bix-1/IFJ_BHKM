@@ -463,9 +463,6 @@ void match(int term) {
         symtable_insert(symtable, func_name, func_elem);
         last_elem = func_elem;
 
-        // instr_type_t type = get_func_instr_type(to_string(&next));
-        // instr_add_func_call(type);
-
         func_defs_add(last_elem);
       }
       break;
@@ -1317,15 +1314,15 @@ void func_defs_check() {
     name = func_call->func->symbol.sym_func->name;
     symtable_iterator_t it = symtable_find(symtable, name);
     if (symtable_iterator_valid(it)) {
-    fprintf(stderr, "FUNC\t%s\n\n", name);
+      fprintf(stderr, "FUNC\t%s\n\n", name);
       elem_t * elem = symtable_iterator_get_value(it);
       if (!strcmp(name, "print")) {
         // no need to check arguments -- print can take any ammount of anything
         check_func_call_rets(elem, func_call->func);
-        break;
+      } else {
+        check_func_call_args(elem, func_call->func);
+        check_func_call_rets(elem, func_call->func);
       }
-      check_func_call_args(elem, func_call->func);
-      check_func_call_rets(elem, func_call->func);
     } else {
       error(3, "parser", "func_check", "Function '%s' called but not defined", name);
     }
