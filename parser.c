@@ -341,7 +341,7 @@ void parse() {
   scope_destroy();
   func_defs_destroy();
 
-  // codegen();
+  codegen();
 
   list_destroy(&list);
   symtable_free(symtable);
