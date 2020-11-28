@@ -20,8 +20,12 @@ all: ifj20
 pack:
 	tar -czvf xhladk15.tgz *.c *.h Makefile
 
-ifj20: ifj20.c ll.h ll.c symtable.c symtable.h codegen.h codegen.c error.h error.c scanner.h scanner.c str.c str.h parser.h parser.c expression.h expression.c stack.h stack.c escape_format.h escape_format.c codegen_stack.c codegen_stack.h
-	${CC} ${CFLAGS} $^ -o $@
+ifj20: ifj20.o parser.a expr_parser.a codegen_stack.o codegen.o
+		${CC} ${CFLAGS} $^ -o $@
+
+
+# ifj20: ifj20.c ll.h ll.c symtable.c symtable.h codegen.h codegen.c error.h error.c scanner.h scanner.c str.c str.h parser.h parser.c expression.h expression.c stack.h stack.c escape_format.h escape_format.c codegen_stack.c codegen_stack.h
+# 	${CC} ${CFLAGS} $^ -o $@
 
 
 test_ifj: ifj20.c ll.h ll.c symtable.c symtable.h codegen.h codegen.c error.h error.c scanner.h scanner.c str.c str.h parser.h parser.c expression.h expression.c stack.h stack.c escape_format.h escape_format.c codegen_stack.c codegen_stack.h
@@ -29,8 +33,8 @@ test_ifj: ifj20.c ll.h ll.c symtable.c symtable.h codegen.h codegen.c error.h er
 
 ########## Static libraries ##########
 scanner.a: scanner.o error.o str.o escape_format.o
-	rm -f $@
-	${AR} $@ $^
+	# rm -f $@
+	${AR} -T $@ $^
 
 parser.a: parser.o scanner.a error.a ll.a symtable.a
 	# rm -f $@
