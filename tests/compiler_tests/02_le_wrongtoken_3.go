@@ -1,5 +1,5 @@
 package main 
 
 func main () {
-	_ := 54e
+	_s := 54e
 }

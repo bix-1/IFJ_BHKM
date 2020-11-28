@@ -4,7 +4,8 @@ func foo1_() {
 }
 
 func main () {
-	/* asde333*/ a:= 0 /* sadsad*/
+	/* asde333*/
+	a:= 0 /* sadsad*/
 
 
 

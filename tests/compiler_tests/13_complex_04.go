@@ -1,9 +1,9 @@
 package main
 
 func main () {
+	a:= 0.15
+	b:= 1e-2
 
-	s:= 5=5 - 7
-
+	b = a - b
 
 }
-

@@ -1,6 +1,6 @@
 package main
 
 func main () {
-	_ := 0.000001
+ses_s := 0.000001
 
 }         

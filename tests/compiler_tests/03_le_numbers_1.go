@@ -2,6 +2,6 @@ package main
 
 func main () {
 
-	_ := 00
+s_ := 00
 }
 
