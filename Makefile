@@ -23,41 +23,29 @@ pack:
 ifj20: ifj20.o parser.a expr_parser.a codegen_stack.o codegen.o
 		${CC} ${CFLAGS} $^ -o $@
 
-
-# ifj20: ifj20.c ll.h ll.c symtable.c symtable.h codegen.h codegen.c error.h error.c scanner.h scanner.c str.c str.h parser.h parser.c expression.h expression.c stack.h stack.c escape_format.h escape_format.c codegen_stack.c codegen_stack.h
-# 	${CC} ${CFLAGS} $^ -o $@
-
-
 test_ifj: ifj20.c ll.h ll.c symtable.c symtable.h codegen.h codegen.c error.h error.c scanner.h scanner.c str.c str.h parser.h parser.c expression.h expression.c stack.h stack.c escape_format.h escape_format.c codegen_stack.c codegen_stack.h
 	${CC} ${CFLAGS} $^ -o $@
 
 ########## Static libraries ##########
 scanner.a: scanner.o error.o str.o escape_format.o
-	# rm -f $@
 	${AR} -T $@ $^
 
 parser.a: parser.o scanner.a error.a ll.a symtable.a
-	# rm -f $@
 	${AR} -T $@ $^
 
 error.a: error.o ll.o symtable.o scanner.o parser.o expression.o str.o stack.o
-	# rm -f $@
 	${AR} -T $@ $^
 
 ll.a: ll.o error.a symtable.a
-	# rm -f $@
 	${AR} -T $@ $^
 
 symtable.a: symtable.o
-	# rm -f $@
 	${AR} -T $@ $^
 
 str.a: str.o error.a
-	# rm -f $@
 	${AR} -T $@ $^
 
 expr_parser.a: expression.o parser.o stack.o scanner.a
-	# rm -f $@
 	${AR} -T $@ $^
 
 #------ end of Static libraries -----#
