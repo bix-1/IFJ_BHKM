@@ -87,23 +87,19 @@ void parse() {
   source_file_setup(stdin);
   get_next_token(&next);
   list = list_create();
-  symtable = symtable_init(100);
+  symtable = symtable_init(1061);
   scope_init();
   func_defs_init();
 
   add_built_in();
 
-
- // printf("\n\n___________SYMTABLE:____________\n");
- // printf("________________________________\n");
+ printf("\n\n___________SYMTABLE:____________\n"); printf("________________________________\n");
 
 
   // start of parsing
   program();
 
-
- // printf("\n\n_________INSTRUCTIONS:__________\n");
- // printf("________________________________\n");
+ printf("\n\n_________INSTRUCTIONS:__________\n"); printf("________________________________\n");
   for (
     instr_t * tmp = list->first;
     tmp != NULL;
@@ -111,22 +107,22 @@ void parse() {
   ) {
     switch (instr_get_type(tmp)) {
       case IC_DEF_FUN: {
-       // printf("DEF_FUN\t  %s\n", *(instr_get_dest(tmp)->key));
+      printf("DEF_FUN\t  %s\n", *(instr_get_dest(tmp)->key));
         sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
         if (params != NULL) {
-         // printf("\t\t__PARAMS:\n");
+        printf("\t\t__PARAMS:\n");
           for (
             list_item_t * tmp = params->first;
             tmp != NULL;
             tmp = tmp->next
           ) {
-           // printf("\t\t  %s\n", tmp->item->name);
+          printf("\t\t  %s\n", tmp->item->name);
           }
         }
 
         sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
         if (rets != NULL) {
-         // printf("\t\t__RETURNS:\n");
+        printf("\t\t__RETURNS:\n");
           sym_var_item_t * tmp;
           for (
             list_item_t * it = rets->first;
@@ -134,36 +130,38 @@ void parse() {
             it = it->next
           ) {
           tmp = it->item;
-         // printf("\t\t");
+        printf("\t\t");
           switch (tmp->type) {
             case VAR_INT:
-           // printf("INT");
+          printf("INT");
             break;
             case VAR_FLOAT64:
-           // printf("FLOAT64");
+          printf("FLOAT64");
             break;
             case VAR_STRING:
-           // printf("STRING");
+          printf("STRING");
             break;
             case VAR_BOOL:
-           // printf("BOOL");
+          printf("BOOL");
             break;
             default:
-           // printf("Invalid return type");
+          printf("Invalid return type");
             exit(1);
             break;
           }
-         // printf("\n");
+        printf("\n");
         }
         }
         break; }
       case IC_END_FUN:
-       // printf("_________________________END_FUN: ");
-       // printf("%s\n", *(instr_get_dest(tmp)->key));
+      printf("_________________________END_FUN: ");
+      printf("%s\n", *(instr_get_dest(tmp)->key));
         break;
       case IC_DECL_VAR:
-       // printf("\tDECL_VAR");
-       // printf("\t  %s    ===    ", *(instr_get_dest(tmp)->key));
+      printf("\tDECL_VAR");
+      printf("\t  %s    ===    ", *(instr_get_dest(tmp)->key));
+
+
         // NOTE doesn't work for indirect assignment
         /*
         if (
@@ -175,17 +173,17 @@ void parse() {
         sym_var_item_t * item = instr_get_elem1(tmp)->symbol.sym_var_item;
         switch(item->type) {
           case VAR_INT:
-           // printf("%d", item->default_data.int_t);
+          printf("%d", item->default_data.int_t);
           break;
           case VAR_FLOAT64:
-           // printf("%f", item->default_data.float64_t);
+          printf("%f", item->default_data.float64_t);
           break;
           case VAR_STRING:
-           // printf("%s", item->default_data.string_t);
+          printf("%s", item->default_data.string_t);
           break;
           case VAR_BOOL:
-            if (item->default_data.bool_t == true)// printf("true");
-            else// printf("false");
+            if (item->default_data.bool_t == true printf("true");
+            els printf("false");
           break;
           default:
           break;
@@ -193,57 +191,58 @@ void parse() {
         */
         break;
       case IC_DEF_VAR: {
-       // printf("\tDEF_VAR\t\t");
+      printf("\tDEF_VAR\t\t");
         sym_var_list_t * L = instr_get_dest(tmp)->symbol.sym_var_list;
         for (
           list_item_t * tmp = L->first;
           tmp != NULL;
           tmp = tmp->next
         ) {
-         // printf("%s, ", tmp->item->name);
-          //// printf("%d\n\n", instr_get_elem1(tmp)->symbol.sym_var_list->first->item->default_data.int_t);
+        printf("%s, ", tmp->item->name);
+          printf("%d\n\n", instr_get_elem1(tmp)->symbol.sym_var_list->first->item->default_data.int_t);
         }
-       // printf("  ===  ");
+      printf("  ===  ");
+      printf("\t\t\t%s\n\n", instr_get_dest(tmp)->symbol.sym_var_list->first->item->name);
         break; }
       case IC_IF_DEF:
-       // printf("\n\tIF");
+      printf("\n\tIF");
         break;
       case IC_IF_START:
-       // printf("\t__ifstart\n");
+      printf("\t__ifstart\n");
         break;
       case IC_IF_END:
-       // printf("\n\t____________ENDIF\n");
+      printf("\n\t____________ENDIF\n");
         break;
       case IC_ELSE_START:
-       // printf("\n\tELSE\n");
+      printf("\n\tELSE\n");
         break;
       case IC_ELSE_END:
-       // printf("\n\t____________END_ELSE\n");
+      printf("\n\t____________END_ELSE\n");
         break;
       case IC_FOR_DEF:
-       // printf("\n\tFOR\n");
+      printf("\n\tFOR\n");
         break;
       case IC_FOR_COND:
-       // printf("\n\t__for_cond\n");
+      printf("\n\t__for_cond\n");
         break;
       case IC_FOR_STEP:
-       // printf("\n\t__for_step\n");
+      printf("\n\t__for_step\n");
         break;
       case IC_FOR_BODY_START:
-       // printf("\n\t__for_body_start\n");
+      printf("\n\t__for_body_start\n");
         break;
       case IC_FOR_BODY_END:
-       // printf("\n\t____________END_FOR\n");
+      printf("\n\t____________END_FOR\n");
         break;
       case IC_CALL_FUN:
-       // printf("\tFUNC CALL\t%s\n", instr_get_dest(tmp)->symbol.sym_func->name);
-        //// printf("%s\n", instr_get_dest(tmp)->symbol.sym_func->returns->first->item->name);
+      printf("\tFUNC CALL\t%s\n", instr_get_dest(tmp)->symbol.sym_func->name);
+        printf("%s\n", instr_get_dest(tmp)->symbol.sym_func->returns->first->item->name);
         break;
       case IC_RET_FUN: {
-       // printf("\tRET %s    ", instr_get_dest(tmp)->symbol.sym_func->name);
+      printf("\tRET %s    ", instr_get_dest(tmp)->symbol.sym_func->name);
         sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
         if (rets == NULL) {
-         // printf("void");
+        printf("void");
           break;
         }
         for (
@@ -253,97 +252,96 @@ void parse() {
         ) {
           switch (tmp->item->type) {
             case VAR_INT:
-             // printf("INT");
+            printf("INT");
             break;
             case VAR_FLOAT64:
-             // printf("FLOAT64");
+            printf("FLOAT64");
             break;
             case VAR_STRING:
-             // printf("STRING");
+            printf("STRING");
             break;
             case VAR_BOOL:
-             // printf("BOOL");
+            printf("BOOL");
             break;
             default:
-             // printf("Invalid return type");
+            printf("Invalid return type");
               exit(1);
             break;
           }
-         // printf(", ");
+        printf(", ");
         }
         break; }
       case IC_ADD_VAR:
-       // printf("\t++ADD");
+      printf("\t++ADD");
         break;
       case IC_SUB_VAR:
-       // printf("\t--SUB");
+      printf("\t--SUB");
         break;
       case IC_MUL_VAR:
-       // printf("\t**MUL");
+      printf("\t**MUL");
         break;
       case IC_DIV_VAR:
-       // printf("\t//DIV");
+      printf("\t//DIV");
         break;
       case IC_LT_VAR:
-       // printf("\t<< LT");
+      printf("\t<< LT");
         break;
       case IC_GT_VAR:
-       // printf("\t>> GT");
+      printf("\t>> GT");
         break;
       case IC_EQ_VAR:
-       // printf("\t== EQ");
+      printf("\t== EQ");
         break;
       case IC_AND_VAR:
-       // printf("\t&& AND");
+      printf("\t&& AND");
         break;
       case IC_OR_VAR:
-       // printf("\t|| OR");
+      printf("\t|| OR");
         break;
       case IC_NOT_VAR:
-       // printf("\t!! NOT");
+      printf("\t!! NOT");
         break;
       case IC_READ_VAR:
-       // printf("\tREAD_VAR");
+      printf("\tREAD_VAR");
         break;
       case IC_WRITE_VAR:
-       // printf("\tWRITE_VAR");
+      printf("\tWRITE_VAR");
         break;
       case IC_INT2FLOAT_VAR:
-       // printf("\tINT2FLOAT");
+      printf("\tINT2FLOAT");
         break;
       case IC_FLOAT2INT_VAR:
-       // printf("\tFLOAT2INT");
+      printf("\tFLOAT2INT");
         break;
       case IC_STRLEN_STR:
-       // printf("\tLEN");
+      printf("\tLEN");
         break;
       case IC_SUBSTR_STR:
-       // printf("\tSUBSTR");
+      printf("\tSUBSTR");
         break;
       case IC_STR2INT_VAR:
-       // printf("\tSTR2INT");
+      printf("\tSTR2INT");
         break;
       case IC_GETCHAR_STR:
-       // printf("\tGETCHAR");
+      printf("\tGETCHAR");
         break;
 
 
       default:
-       // printf("_instr type [%d] not implemented_", instr_get_type(tmp));
+      printf("_instr type [%d] not implemented_", instr_get_type(tmp));
       break;
     }
-   // printf("\n");
+  printf("\n");
   }
 
   func_defs_check();
-
- // printf("\n\n");
+ printf("\n\n");
 
   // termination
   scope_destroy();
   func_defs_destroy();
 
-  codegen();
+  // codegen();
 
   list_destroy(&list);
   symtable_free(symtable);
@@ -483,7 +481,7 @@ void match(int term) {
           scope_push(new_scope);
           last_elem = last_func;
 
-         // printf("Added ---%s\n", to_string(&next));
+        printf("Added ---%s\n", to_string(&next));
         }
       }
       else { // func call expected
@@ -537,7 +535,7 @@ void match(int term) {
           // add to symtable
           symtable_insert(symtable, id, var);
 
-         // printf("\t---%s\n", id);
+        printf("\t---%s\n", id);
 
           // check if var is parameter of func
           if (last_elem != NULL && last_elem->sym_type == SYM_FUNC) {
@@ -545,7 +543,6 @@ void match(int term) {
             last_elem = var;
           } else {
             last_elem = var;
-            instr_add_var_decl();
           }
         }
       }
@@ -736,27 +733,10 @@ void instr_add_func_end() {
 }
 
 void instr_add_func_call(instr_type_t type) {
-  // // create function element
-  // sym_func_t * func_sym = sym_func_init(to_string(&next), NULL, NULL);
-  // symbol_t func = {.sym_func = func_sym};
-  // elem_t * func_elem = elem_init(SYM_FUNC, func);
-  // // add to symtable
-  // char * index = get_unique();
-  // char i_name[strlen(index) + strlen(to_string(&next)) + 1];
-  // strcpy(i_name, index);
-  // strcat(i_name, to_string(&next));
-  // char * func_name = id_add_scope(scope_get_head(), i_name);
-  // symtable_insert(symtable, func_name, func_elem);
-  // create instruction
-
-
   instr_t * func_call = instr_create();
   instr_set_type(func_call, type);
   instr_add_dest(func_call, last_elem);
   list_add(list, func_call);
-  // last_elem = func_elem;
-
- // printf("\t---func call:\t%s\t\t\n", func_name);
 }
 
 void instr_add_var_decl() {
@@ -1282,16 +1262,14 @@ void func_defs_add(elem_t * func) {
   func_defs.first = new;
 }
 
-void func_defs_check() {
- // printf("\n\n__________FUNC_CALLS:___________\n");
- // printf("________________________________\n");
+void func_defs_check() { printf("\n\n__________FUNC_CALLS:___________\n"); printf("________________________________\n");
   func_def_t * func_call = func_defs.first;
   char * name;
   while (func_call != NULL) {
     name = func_call->func->symbol.sym_func->name;
     symtable_iterator_t it = symtable_find(symtable, name);
     if (symtable_iterator_valid(it)) {
-     // printf("FUNC\t%s\n\n", name);
+    printf("FUNC\t%s\n\n", name);
       elem_t * elem = symtable_iterator_get_value(it);
       if (!strcmp(name, "print")) {
         // no need to check arguments -- print can take any ammount of anything
@@ -1512,8 +1490,7 @@ void program() {
   eps = false;
   // end of func def
   match(T_LEFT_BRACE);
-  match(T_EOL);
- // printf("Added ---MAIN\n");
+  match(T_EOL); printf("Added ---MAIN\n");
   // main func body
   body();
   match(T_RIGHT_BRACE);
@@ -1672,9 +1649,7 @@ void ret_list_def() {
   next_ret_def();
 
   sym_var_list_t * rets = last_func->symbol.sym_func->returns;
-  if (rets == NULL) return;
- // printf("\t\tRETURNS:\n");
- // printf("\t\t---");
+  if (rets == NULL) return; printf("\t\tRETURNS:\n"); printf("\t\t---");
   for (
     list_item_t * tmp = rets->first;
     tmp != NULL;
@@ -1682,24 +1657,23 @@ void ret_list_def() {
   ) {
     switch (tmp->item->type) {
       case VAR_INT:
-       // printf("INT, ");
+      printf("INT, ");
         break;
       case VAR_FLOAT64:
-       // printf("FLOAT64, ");
+      printf("FLOAT64, ");
         break;
       case VAR_STRING:
-       // printf("STRING, ");
+      printf("STRING, ");
         break;
       case VAR_BOOL:
-       // printf("BOOL, ");
+      printf("BOOL, ");
         break;
       default:
-       // printf("Invalid return type");
+      printf("Invalid return type");
         exit(1);
         break;
     }
-  }
- // printf("\n");
+  } printf("\n");
 }
 
 void next_ret_def() {
@@ -1781,6 +1755,7 @@ void var_def(char * id) {
   if (next.token_type != T_IDENTIFIER) { // parse expr
     elem_t * expr = parse_expression();
     last_elem->symbol.sym_var_item->type = expr->symbol.sym_var_item->type;
+    instr_add_var_decl();
     instr_add_elem1(list->last, expr);
   }
   else {
@@ -1996,7 +1971,7 @@ elem_t * func_call(char * name) {
   func_args();
   match(T_R_BRACKET);
 
-  // printf("%s\n\n", *(last_elem->key));
+ printf("%s\n\n", *(last_elem->key));
   // exit(0);
 
   instr_type_t type = get_func_instr_type(last_elem->symbol.sym_func->name);
