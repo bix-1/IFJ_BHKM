@@ -167,9 +167,10 @@ symtable_value_t create_dest(stackElemPtr elem)
     sym_var_item_set_type(var_item, elem->data->symbol.sym_var_item->type);
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
-    symtable_iterator_t it = symtable_insert(symtable, id_scope, var);
+    symtable_insert(symtable, id_scope, var);
+    instr_add_var_decl(var);
 
-    return symtable_iterator_get_value(it);
+    return var;
 }
 
 symtable_value_t create_variable(stackElemPtr elem)
@@ -209,6 +210,7 @@ symtable_value_t create_variable(stackElemPtr elem)
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
     symtable_insert(symtable, id_scope, var);
+    instr_add_var_decl(var);
 
     return var;
 }

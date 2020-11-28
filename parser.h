@@ -166,7 +166,7 @@ void skip_empty();
 void instr_add_func_def();
 void instr_add_func_end();
 void instr_add_func_call(instr_type_t type);
-void instr_add_var_decl();
+void instr_add_var_decl(elem_t * var);
 void instr_add_var_def();
 void instr_add_if_end();
 void instr_add_else_start();
@@ -177,7 +177,8 @@ void instr_add_ret();
 void add_next_expr();
 
 // checks
-void check_var_def_types(elem_t *dest_elem, elem_t *src_elem);
+void assign_var_def_types(elem_t *dest_elem, elem_t *src_elem);
+void check_var_move_types(elem_t *dest_elem, elem_t *src_elem);
 void check_ret(elem_t *func_ret);
 void check_func_call_args(elem_t * func, elem_t * call);
 void check_func_call_rets(elem_t * func, elem_t * dest);
@@ -205,6 +206,11 @@ void add_built_in();  // add built-in functions to symtable
 
 elem_t * try_func(tToken * token);
 
+elem_t * get_next_var();
+
+// list in last_elem
+void list_add_var(elem_t * list, elem_t * var);
+
 /*
   ___________FUNCTIONS_REPRESENTING___________
   ___________LL_GRAMMAR_NONTERMINALS__________
@@ -226,9 +232,9 @@ void next_ret_def();
 void body();
 void command();
 void var_(char * id);
-void var_def(char * id);
-void var_move(char * id);
-void next_id();
+// void var_def();
+void var_move();
+void next_id(elem_t * dest);
 void if_();
 void if_cont();
 void else_();
@@ -241,7 +247,7 @@ void next_ret();
 elem_t * func_call(char * name);
 void func_args();
 void next_arg();
-void expr_list();
+elem_t * get_expr_list();
 void next_expr();
 void type();
 
