@@ -87,58 +87,67 @@ void try_create_jump(instr_t instr) {
 
 void declr_var(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
 
 	if (elem_dest->sym_type != SYM_VAR_ITEM) {
 		error(99, "codegen.c", "declr_var", "Invalid symbol type");
 	}
 
+	if (elem1->sym_type != SYM_VAR_ITEM) {
+		error(99, "codegen.c", "declr_var", "Invalid symbol type");
+	}
+
 	sym_var_item_t *sym_dest = instr.elem_dest_ptr->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = instr.elem1_ptr->symbol.sym_var_item;
 
 	if (sym_dest == NULL) {
 		error(99, "codegen.c", "declr_var", "NULL symbol");
 	}
 
 	char *frame_dest = get_frame(sym_dest);
+	char *frame_elem1 = get_frame(sym_elem1);
+
+	if (sym_dest->type != sym_elem1->type) {
+		error(99, "codegen.c", "declr_var", "Incompatible symbol");
+	}
 
 	// Declare variable
 	fprintf(OUTPUT, "DEFVAR %s@%s\n", frame_dest, sym_dest->name);
 
 	// Set variable init value
-	switch (elem_dest->symbol.sym_var_item->type) {
-		case VAR_INT:
-			fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, sym_dest->data.int_t);
-			break;
-		case VAR_FLOAT64:
-			fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, sym_dest->name, sym_dest->data.float64_t);
-			break;
-		case VAR_STRING: {
-			/*if (!sym_dest->is_formatted) {
-				char *new_seq = escape_reformat(sym_dest->data.string_t);
-				variable_t new_data = {.string_t = new_seq};
-				sym_var_item_change_data(sym_dest, new_data);
-				sym_var_item_set_formatted(sym_dest, true);
-			}*/
-
-			fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, sym_dest->name, sym_dest->data.string_t);
-			break;
+	if (sym_elem1->is_const) {
+		switch (elem_dest->symbol.sym_var_item->type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t);
+				break;
+			case VAR_STRING: {
+				fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, sym_dest->name, sym_elem1->data.string_t);
+				break;
+			}
+			case VAR_BOOL:
+				if (sym_dest->data.bool_t) {
+					fprintf(OUTPUT, "MOVE %s@%s bool@true\n", frame_dest, sym_dest->name);
+				}
+				else {
+					fprintf(OUTPUT, "MOVE %s@%s bool@false\n", frame_dest, sym_dest->name);
+				}
+				break;
+			case VAR_NIL:
+				fprintf(OUTPUT, "MOVE %s@%s nil@nil\n", frame_dest, sym_dest->name);
+				break;
+			case VAR_UNDEFINED:
+				error(99, "codegen.c", "declr_var", "Undefined data type");
+				break;
+			default:
+				error(99, "codegen.c", "declr_var", "Wrong data type");
+				break;
 		}
-		case VAR_BOOL:
-			if (sym_dest->data.bool_t) {
-				fprintf(OUTPUT, "MOVE %s@%s bool@true\n", frame_dest, sym_dest->name);
-			}
-			else {
-				fprintf(OUTPUT, "MOVE %s@%s bool@false\n", frame_dest, sym_dest->name);
-			}
-			break;
-		case VAR_NIL:
-			fprintf(OUTPUT, "MOVE %s@%s nil@nil\n", frame_dest, sym_dest->name);
-			break;
-		case VAR_UNDEFINED:
-			error(99, "codegen.c", "declr_var", "Undefined data type");
-			break;
-		default:
-			error(99, "codegen.c", "declr_var", "Wrong data type");
-			break;
+	}
+	else {
+		fprintf(OUTPUT, "MOVE %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
 	}
 
 }
@@ -893,6 +902,15 @@ void lt_var(instr_t instr) {
 					fprintf(OUTPUT, "LT %s@%s bool@false bool@false\n", frame_dest, sym_dest->name);
 				}
 				break;
+			case VAR_NIL:
+				error(99, "codegen.c", "lt_var", "Undefined data type");
+				break;
+			case VAR_UNDEFINED:
+				error(99, "codegen.c", "lt_var", "Wrong data type");
+				break;
+			default:
+				error(99, "codegen.c", "lt_var", "Undefined data type");
+				break;
 		}
 	}
 	else if (sym_elem1->is_const && !sym_elem2->is_const) {
@@ -919,6 +937,15 @@ void lt_var(instr_t instr) {
 					        frame_elem2, sym_elem2->name);
 				}
 				break;
+			case VAR_NIL:
+				error(99, "codegen.c", "lt_var", "Undefined data type");
+				break;
+			case VAR_UNDEFINED:
+				error(99, "codegen.c", "lt_var", "Wrong data type");
+				break;
+			default:
+				error(99, "codegen.c", "lt_var", "Undefined data type");
+				break;
 		}
 	}
 	else if (!sym_elem1->is_const && sym_elem2->is_const) {
@@ -944,6 +971,15 @@ void lt_var(instr_t instr) {
 					fprintf(OUTPUT, "LT %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
 					        frame_elem1, sym_elem1->name);
 				}
+				break;
+			case VAR_NIL:
+				error(99, "codegen.c", "lt_var", "Undefined data type");
+				break;
+			case VAR_UNDEFINED:
+				error(99, "codegen.c", "lt_var", "Wrong data type");
+				break;
+			default:
+				error(99, "codegen.c", "lt_var", "Undefined data type");
 				break;
 		}
 	}
@@ -1043,6 +1079,15 @@ void gt_var(instr_t instr) {
 					fprintf(OUTPUT, "GT %s@%s bool@false bool@false\n", frame_dest, sym_dest->name);
 				}
 				break;
+			case VAR_NIL:
+				error(99, "codegen.c", "gt_var", "Undefined data type");
+				break;
+			case VAR_UNDEFINED:
+				error(99, "codegen.c", "gt_var", "Wrong data type");
+				break;
+			default:
+				error(99, "codegen.c", "gt_var", "Undefined data type");
+				break;
 		}
 	}
 	else if (sym_elem1->is_const && !sym_elem2->is_const) {
@@ -1068,6 +1113,15 @@ void gt_var(instr_t instr) {
 					fprintf(OUTPUT, "GT %s@%s bool@false %s@%s\n", frame_dest, sym_dest->name,
 					        frame_elem2, sym_elem2->name);
 				}
+				break;
+			case VAR_NIL:
+				error(99, "codegen.c", "gt_var", "Undefined data type");
+				break;
+			case VAR_UNDEFINED:
+				error(99, "codegen.c", "gt_var", "Wrong data type");
+				break;
+			default:
+				error(99, "codegen.c", "gt_var", "Undefined data type");
 				break;
 		}
 	}
@@ -1096,8 +1150,13 @@ void gt_var(instr_t instr) {
 				}
 				break;
 			case VAR_NIL:
+				error(99, "codegen.c", "gt_var", "Undefined data type");
 				break;
 			case VAR_UNDEFINED:
+				error(99, "codegen.c", "gt_var", "Wrong data type");
+				break;
+			default:
+				error(99, "codegen.c", "gt_var", "Undefined data type");
 				break;
 		}
 	}
@@ -1197,6 +1256,15 @@ void eq_var(instr_t instr) {
 					fprintf(OUTPUT, "EQ %s@%s bool@false bool@false\n", frame_dest, sym_dest->name);
 				}
 				break;
+			case VAR_NIL:
+				error(99, "codegen.c", "eq_var", "Undefined data type");
+				break;
+			case VAR_UNDEFINED:
+				error(99, "codegen.c", "eq_var", "Wrong data type");
+				break;
+			default:
+				error(99, "codegen.c", "eq_var", "Undefined data type");
+				break;
 		}
 	}
 	else if (sym_elem1->is_const && !sym_elem2->is_const) {
@@ -1223,6 +1291,15 @@ void eq_var(instr_t instr) {
 					        frame_elem2, sym_elem2->name);
 				}
 				break;
+			case VAR_NIL:
+				error(99, "codegen.c", "eq_var", "Undefined data type");
+				break;
+			case VAR_UNDEFINED:
+				error(99, "codegen.c", "eq_var", "Wrong data type");
+				break;
+			default:
+				error(99, "codegen.c", "eq_var", "Undefined data type");
+				break;
 		}
 	}
 	else if (!sym_elem1->is_const && sym_elem2->is_const) {
@@ -1245,9 +1322,18 @@ void eq_var(instr_t instr) {
 					        frame_elem1, sym_elem1->name);
 				}
 				else {
-					fprintf(OUTPUT, "EQ %s@%s %s@%s bool@true\n", frame_dest, sym_dest->name,
+					fprintf(OUTPUT, "EQ %s@%s %s@%s bool@false\n", frame_dest, sym_dest->name,
 					        frame_elem1, sym_elem1->name);
 				}
+				break;
+			case VAR_NIL:
+				error(99, "codegen.c", "eq_var", "Undefined data type");
+				break;
+			case VAR_UNDEFINED:
+				error(99, "codegen.c", "eq_var", "Wrong data type");
+				break;
+			default:
+				error(99, "codegen.c", "eq_var", "Undefined data type");
 				break;
 		}
 	}
@@ -1926,16 +2012,16 @@ void setchar_str(instr_t instr) {
 	        frame_elem2, sym_elem2->name);
 }
 
-void substr_str(instr_t instr) {
+void substr_str() {
 	//
 }
 
-void if_def(instr_t instr) {
+void if_def() {
 	jmp_label_stack_push(end_labels_top, end_index);
 	end_index++;
 }
 
-void if_start(instr_t instr) {
+void if_start() {
 	fprintf(OUTPUT, "CREATEFRAME\n");
 	fprintf(OUTPUT, "PUSHFRAME\n");
 }
@@ -1951,11 +2037,11 @@ void if_end(instr_t instr) {
 	}
 }
 
-void elseif_def(instr_t instr) {
+void elseif_def() {
 	//
 }
 
-void elseif_start(instr_t instr) {
+void elseif_start() {
 	fprintf(OUTPUT, "CREATEFRAME\n");
 	fprintf(OUTPUT, "PUSHFRAME\n");
 }
@@ -1971,12 +2057,12 @@ void elseif_end(instr_t instr) {
 	}
 }
 
-void else_start(instr_t instr) {
+void else_start() {
 	fprintf(OUTPUT, "CREATEFRAME\n");
 	fprintf(OUTPUT, "PUSHFRAME\n");
 }
 
-void else_end(instr_t instr) {
+void else_end() {
 	fprintf(OUTPUT, "POPFRAME\n");
 	fprintf(OUTPUT, "JUMP %s%d\n", IF_END, jmp_label_stack_top(end_labels_top));
 
@@ -1984,28 +2070,28 @@ void else_end(instr_t instr) {
 	fprintf(OUTPUT, "LABEL %s%d\n", IF_END, jmp_label_stack_pop(end_labels_bottom, end_labels_top));
 }
 
-void for_def_codegen(instr_t instr) {
+void for_def_codegen() {
 	//
 }
 
-void for_cond(instr_t instr) {
+void for_cond() {
 	jmp_label_stack_push(for_cond_top, for_cond_index);
 	fprintf(OUTPUT, "LABEL %s%d\n", FOR_COND, for_cond_index);
 	for_cond_index++;
 }
 
-void for_step(instr_t instr) {
+void for_step() {
 	jmp_label_stack_push(for_step_top, for_step_index);
 	fprintf(OUTPUT, "LABEL %s%d\n", FOR_STEP, for_step_index);
 	for_step_index++;
 }
 
-void for_body_start(instr_t instr) {
+void for_body_start() {
 	fprintf(OUTPUT, "JUMP %s%d\n", FOR_COND, jmp_label_stack_top(for_cond_top));
 	fprintf(OUTPUT, "LABEL %s%d\n", FOR_BODY, jmp_label_stack_top(for_body_top));
 }
 
-void for_body_end(instr_t instr) {
+void for_body_end() {
 	fprintf(OUTPUT, "JUMP %s%d\n", FOR_STEP, jmp_label_stack_top(for_step_top));
 	fprintf(OUTPUT, "LABEL %s%d\n", FOR_END, jmp_label_stack_top(for_end_top));
 
@@ -2103,46 +2189,46 @@ void codegen_generate_instr() {
 				setchar_str(*instr);
 				break;
 			case IC_SUBSTR_STR:
-				substr_str(*instr);
+				substr_str();
 				break;
 			case IC_IF_DEF:
-				if_def(*instr);
+				if_def();
 				break;
 			case IC_IF_START:
-				if_start(*instr);
+				if_start();
 				break;
 			case IC_IF_END:
 				if_end(*instr);
 				break;
 			case IC_ELSEIF_DEF:
-				elseif_def(*instr);
+				elseif_def();
 				break;
 			case IC_ELSEIF_START:
-				elseif_start(*instr);
+				elseif_start();
 				break;
 			case IC_ELSEIF_END:
 				elseif_end(*instr);
 				break;
 			case IC_ELSE_START:
-				else_start(*instr);
+				else_start();
 				break;
 			case IC_ELSE_END:
-				else_end(*instr);
+				else_end();
 				break;
 			case IC_FOR_DEF:
-				for_def_codegen(*instr);
+				for_def_codegen();
 				break;
 			case IC_FOR_COND:
-				for_cond(*instr);
+				for_cond();
 				break;
 			case IC_FOR_STEP:
-				for_step(*instr);
+				for_step();
 				break;
 			case IC_FOR_BODY_START:
-				for_body_start(*instr);
+				for_body_start();
 				break;
 			case IC_FOR_BODY_END:
-				for_body_end(*instr);
+				for_body_end();
 				break;
 			default:
 				error(99, "codegen.c", "codegen_generate_instr", "Invalid instruction");
