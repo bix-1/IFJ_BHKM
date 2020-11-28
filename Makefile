@@ -10,8 +10,8 @@
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -pedantic -g
 TMPS = *.o *.a *.tgz ${wildcard test_*[^.][^c]} parser ifj20
-AR = ar -csr
-LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a escape_format.a
+AR = ar -rc
+LIBS = scanner.a parser.a error.a ll.a symtable.a str.a expression.a
 
 .PHONY: run_parser pack tests
 
@@ -33,27 +33,27 @@ scanner.a: scanner.o error.o str.o escape_format.o
 	${AR} $@ $^
 
 parser.a: parser.o scanner.a error.a ll.a symtable.a
-	rm -f $@
+	# rm -f $@
 	${AR} -T $@ $^
 
 error.a: error.o ll.o symtable.o scanner.o parser.o expression.o str.o stack.o
-	rm -f $@
+	# rm -f $@
 	${AR} -T $@ $^
 
 ll.a: ll.o error.a symtable.a
-	rm -f $@
+	# rm -f $@
 	${AR} -T $@ $^
 
 symtable.a: symtable.o
-	rm -f $@
+	# rm -f $@
 	${AR} -T $@ $^
 
 str.a: str.o error.a
-	rm -f $@
+	# rm -f $@
 	${AR} -T $@ $^
 
 expr_parser.a: expression.o parser.o stack.o scanner.a
-	rm -f $@
+	# rm -f $@
 	${AR} -T $@ $^
 
 #------ end of Static libraries -----#
