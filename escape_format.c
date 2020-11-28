@@ -15,14 +15,14 @@
 /*
  * Merge end of input string from start_i by move positions
  */
-void merge_str(char *str, int start_i, int move) {
+void merge_str(char *str, size_t start_i, int move) {
 	if (str == NULL) {
 		error(99, "codegen.c", "reformat", "NULL pointer");
 	}
 
 	size_t size = strlen(str);
 
-	for (int i = size; i >= start_i ; i--) {
+	for (size_t i = size; i >= start_i ; i--) {
 		str[i + move] = str[i];
 	}
 }
@@ -45,7 +45,7 @@ char *escape_reformat(char *string) {
 		error(99, "codegen.c", "reformat", "NULL pointer");
 	}
 
-	for (int i = 0; i < size; ++i) {
+	for (size_t i = 0; i < size; ++i) {
 		if ((copy[i] >= 0 && copy[i] <= 32) || copy[i] == 35 || copy[i] == 92) {
 			// +3 extra chars \n => \010
 			// +1 null char on end

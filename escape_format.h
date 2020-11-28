@@ -18,7 +18,7 @@
 
 #include "error.h"
 
-void merge_str(char *str, int start_i, int move);
+void merge_str(char *str, size_t start_i, int move);
 char *escape_reformat(char *str);
 
 #endif //ESCAPE_FORMAT_H
