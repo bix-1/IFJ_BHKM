@@ -397,6 +397,7 @@ sym_var_item_t *sym_var_item_init(char *name) {
 	sym_var_item->type = VAR_UNDEFINED;
 	sym_var_item->is_const = false;
 	sym_var_item->is_global = false;
+	sym_var_item->is_defined = false;
 	sym_var_item->is_formatted = false;
 
 	return sym_var_item;

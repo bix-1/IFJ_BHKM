@@ -643,11 +643,12 @@ elem_t * id_find(scope_elem_t *scope, char *old_id) {
     it = symtable_find(symtable, id);
     free(id);
     if (symtable_iterator_valid(it)) {  // found in symtable
-      eps = false;
-      return symtable_iterator_get_value(it);
-    } else {  // move to the next
-      tmp_scope = tmp_scope->next;
+      if (symtable_iterator_get_value(it)->symbol.sym_var_item->is_defined) {
+        eps = false;
+        return symtable_iterator_get_value(it);
+      }
     }
+    tmp_scope = tmp_scope->next;
   }
 }
 
@@ -875,6 +876,15 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
       "Failed to assign [%d] expressions to [%d] variables",
       n_src, n_dest
     );
+  }
+
+  // set variables to defined
+  for (
+    list_item_t * tmp = dest_list->first;
+    tmp != NULL;
+    tmp = tmp->next
+  ) {
+    if (tmp->item != NULL) tmp->item->is_defined = true;
   }
 }
 
