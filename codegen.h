@@ -56,7 +56,7 @@ typedef enum instr_type {
 	 * Variable/variables declaration
 	 *
 	 * elem_dest: symbol var
-	 * elem_1: NULL
+	 * elem_1: symbol var || symbol const
 	 * elem_2: NULL
 	 *
 	 * Example:
