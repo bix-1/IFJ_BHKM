@@ -852,7 +852,7 @@ void lt_var(instr_t instr) {
 	char *frame_elem2 = get_frame(sym_elem2);
 
 	if (sym_dest->type != VAR_BOOL) {
-		error(99, "codegen.c", "lt_var", "Incompatible data type");
+		error(99, "codegen.c", "lt_var", "Non bool destination type");
 	}
 
 	var_type_t type = -1;
