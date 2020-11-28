@@ -87,58 +87,67 @@ void try_create_jump(instr_t instr) {
 
 void declr_var(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem1 = instr.elem1_ptr;
 
 	if (elem_dest->sym_type != SYM_VAR_ITEM) {
 		error(99, "codegen.c", "declr_var", "Invalid symbol type");
 	}
 
+	if (elem1->sym_type != SYM_VAR_ITEM) {
+		error(99, "codegen.c", "declr_var", "Invalid symbol type");
+	}
+
 	sym_var_item_t *sym_dest = instr.elem_dest_ptr->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = instr.elem1_ptr->symbol.sym_var_item;
 
 	if (sym_dest == NULL) {
 		error(99, "codegen.c", "declr_var", "NULL symbol");
 	}
 
 	char *frame_dest = get_frame(sym_dest);
+	char *frame_elem1 = get_frame(sym_elem1);
+
+	if (sym_dest->type != sym_elem1->type) {
+		error(99, "codegen.c", "declr_var", "Incompatible symbol");
+	}
 
 	// Declare variable
 	fprintf(OUTPUT, "DEFVAR %s@%s\n", frame_dest, sym_dest->name);
 
 	// Set variable init value
-	switch (elem_dest->symbol.sym_var_item->type) {
-		case VAR_INT:
-			fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, sym_dest->data.int_t);
-			break;
-		case VAR_FLOAT64:
-			fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, sym_dest->name, sym_dest->data.float64_t);
-			break;
-		case VAR_STRING: {
-			/*if (!sym_dest->is_formatted) {
-				char *new_seq = escape_reformat(sym_dest->data.string_t);
-				variable_t new_data = {.string_t = new_seq};
-				sym_var_item_change_data(sym_dest, new_data);
-				sym_var_item_set_formatted(sym_dest, true);
-			}*/
-
-			fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, sym_dest->name, sym_dest->data.string_t);
-			break;
+	if (sym_elem1->is_const) {
+		switch (elem_dest->symbol.sym_var_item->type) {
+			case VAR_INT:
+				fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t);
+				break;
+			case VAR_FLOAT64:
+				fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t);
+				break;
+			case VAR_STRING: {
+				fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, sym_dest->name, sym_elem1->data.string_t);
+				break;
+			}
+			case VAR_BOOL:
+				if (sym_dest->data.bool_t) {
+					fprintf(OUTPUT, "MOVE %s@%s bool@true\n", frame_dest, sym_dest->name);
+				}
+				else {
+					fprintf(OUTPUT, "MOVE %s@%s bool@false\n", frame_dest, sym_dest->name);
+				}
+				break;
+			case VAR_NIL:
+				fprintf(OUTPUT, "MOVE %s@%s nil@nil\n", frame_dest, sym_dest->name);
+				break;
+			case VAR_UNDEFINED:
+				error(99, "codegen.c", "declr_var", "Undefined data type");
+				break;
+			default:
+				error(99, "codegen.c", "declr_var", "Wrong data type");
+				break;
 		}
-		case VAR_BOOL:
-			if (sym_dest->data.bool_t) {
-				fprintf(OUTPUT, "MOVE %s@%s bool@true\n", frame_dest, sym_dest->name);
-			}
-			else {
-				fprintf(OUTPUT, "MOVE %s@%s bool@false\n", frame_dest, sym_dest->name);
-			}
-			break;
-		case VAR_NIL:
-			fprintf(OUTPUT, "MOVE %s@%s nil@nil\n", frame_dest, sym_dest->name);
-			break;
-		case VAR_UNDEFINED:
-			error(99, "codegen.c", "declr_var", "Undefined data type");
-			break;
-		default:
-			error(99, "codegen.c", "declr_var", "Wrong data type");
-			break;
+	}
+	else {
+		fprintf(OUTPUT, "MOVE %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
 	}
 
 }
