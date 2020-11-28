@@ -422,10 +422,6 @@ list_item_t *list_item_init(sym_var_item_t *sym_var_item) {
 		error(99, "symtable.c", "list_item_init", "Failed to create list item");
 	}
 
-	if (sym_var_item == NULL) {
-		error(99, "symtable.c", "list_item_init", "Failed to create list item");
-	}
-
 	list_item->item = sym_var_item;
 	list_item->next = NULL;
 	list_item->prev = NULL;
