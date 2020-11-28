@@ -225,6 +225,9 @@ void def_var(instr_t instr) {
 		else {
 			fprintf(OUTPUT, "MOVE %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
 		}
+
+		sym_dest = sym_var_list_next(elem_dest->symbol.sym_var_list);
+		sym_elem1 = sym_var_list_next(elem_1->symbol.sym_var_list);
 	}
 
 }
