@@ -1943,6 +1943,10 @@ void var_(char * id) { // collect list of dest variables
 
   // get list of source expressions
   elem_t * src = get_expr_list();
+  if (src->sym_type == SYM_FUNC) {
+    src->symbol.sym_func->returns = dest_list;
+    return;
+  }
 
   // check correction of operation
   if (operation == T_DEF_IDENT)
@@ -2168,6 +2172,9 @@ void next_arg() {
 }
 
 elem_t * get_expr_list() {
+  elem_t * expr = parse_expression();
+  if (expr->sym_type == SYM_FUNC) return expr;
+
   // create var list
   sym_var_list_t * var_list = sym_var_list_init();
   symbol_t var_list_sym = {.sym_var_list = var_list};
@@ -2175,7 +2182,11 @@ elem_t * get_expr_list() {
   symtable_insert(symtable, make_unique(var_list_elem), var_list_elem);
   last_elem = var_list_elem; // setup for add_next_expr
 
-  add_next_expr();
+  // add first expression
+  list_item_t * list_item = list_item_init(expr->symbol.sym_var_item);
+  sym_var_list_add(var_list, list_item);
+
+  // add_next_expr();
   next_expr();
 
   return var_list_elem;
