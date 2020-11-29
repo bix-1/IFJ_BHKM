@@ -306,7 +306,7 @@ void parse() {
   scope_destroy();
   func_defs_destroy();
 
-  // codegen();
+  codegen();
 
   list_destroy(&list);
   symtable_free(symtable);
@@ -1989,10 +1989,10 @@ void cycle() {
 
 void for_def() {
   if (next.token_type != T_IDENTIFIER) return;
-  // setup for var_def
-  // char * id = to_string(&next);
-  // get_next_token(&next);
-  // // var_def(id); // TODO
+  // setup for var_()
+  char * id = to_string(&next);
+  get_next_token(&next);
+  var_(id);
 }
 
 void for_move() {
@@ -2000,8 +2000,7 @@ void for_move() {
   // setup for var_move
   char * id = to_string(&next);
   get_next_token(&next);
-  var_move(id);
-
+  var_(id);
 }
 
 void return_() {
