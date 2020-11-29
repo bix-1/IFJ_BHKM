@@ -310,7 +310,7 @@ void parse() {
   func_defs_destroy();
   undef_types_destroy();
 
-  codegen();
+  // codegen();
 
   list_destroy(&list);
   symtable_free(symtable);
@@ -841,9 +841,18 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
     dest = dest_item->item;
     src = src_item->item;
 
-    // TODO funexp -- types??
-
     if (dest != NULL) {
+      if (dest->type == VAR_UNDEFINED) has_def = true;
+
+      if (!check_types(dest, src)) {
+        error(
+          7, "parser", "assign_var_def_types",
+          "Variable [%s] and Expression [n.%d] are of different data types",
+          dest->name, n_dest
+        );
+      }
+
+      /*
       if (dest->type == VAR_UNDEFINED) {  // newly defined variable
         dest->type = src->type;
         has_def = true;
@@ -857,6 +866,7 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
           );
         }
       }
+      */
     }
 
     // next step
@@ -1192,7 +1202,7 @@ void check_func_call_rets(elem_t * def_e, elem_t * call_e) {
       );
     }
 
-    if (def->item->type != call->item->type) {
+    if (!check_types(def->item, call->item)) {
       char def_type[NAME_MAX_L] = "";
       char call_type[NAME_MAX_L] = "";
       switch (def->item->type) {
@@ -1506,9 +1516,10 @@ elem_t * try_func(tToken * token) {
   char * id = to_string(token);
   get_next_token(token);
   if (token->token_type == T_L_BRACKET) {
-    token->token_type = T_IDENTIFIER;
-    token->attr.str_lit.str = id;
-    return func_call(id);
+    elem_t * func = func_call(id);
+    token->token_type = next.token_type;
+    token->attr = next.attr;
+    return func;
   } else return NULL;
 }
 
@@ -1599,7 +1610,9 @@ void undef_types_check() {
     it != NULL;
     it = it->next
   ) {
-    check_types(it->var1, it->var2);
+    if (!check_types(it->var1, it->var2)) {
+      error(99, "parser", "undef_types_check", "INVALID STATE");
+    }
   }
 }
 
