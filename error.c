@@ -173,7 +173,7 @@ void error(
 
   stack_free(&symbolStack);
   stack_free(&tokStack);
-  free(parsData.token);
+  if (parsData.token != NULL) free(parsData.token);
 
   exit( errCode );
 }

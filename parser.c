@@ -104,11 +104,11 @@ void parse() {
         if (params != NULL) {
           fprintf(stderr, "\t\t__PARAMS:\n");
           for (
-            list_item_t * tmp = params->first;
-            tmp != NULL;
-            tmp = tmp->next
+            list_item_t * it = params->first;
+            it != NULL;
+            it = it->next
           ) {
-           fprintf(stderr, "\t\t  %s\n", tmp->item->name);
+           fprintf(stderr, "\t\t  %s\n", it->item->name);
           }
         }
 
@@ -500,12 +500,14 @@ void match(int term) {
           fprintf(stderr, "\t---%s\n", id);
 
           // check if var is parameter of func
-          if (last_elem != NULL && last_elem->sym_type == SYM_FUNC) {
-            func_add_param(last_elem, var->symbol.sym_var_item);
-            last_elem = var;
-          } else {
-            last_elem = var;
-          }
+          // if (last_elem != NULL && last_elem->sym_type == SYM_FUNC) {
+          //   func_add_param(last_elem, var->symbol.sym_var_item);
+          //   last_elem = var;
+          // } else {
+          //   last_elem = var;
+          // }
+
+          last_elem = var;
         }
       }
       else {  // var_call expected
@@ -1660,6 +1662,8 @@ void param_list() {
     eps = false;
     return;
   }
+  func_add_param(last_func, last_elem->symbol.sym_var_item);
+  last_elem->symbol.sym_var_item->is_defined = true;
   type();
   next_param();
 }
@@ -1669,6 +1673,7 @@ void next_param() {
   match(T_COMMA);
   if (eps) return;
   match(T_VAR_ID);
+  last_elem->symbol.sym_var_item->is_defined = true;
   type();
   next_param();
 }

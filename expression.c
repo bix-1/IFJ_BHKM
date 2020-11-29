@@ -950,6 +950,7 @@ void release_resources()
     stack_free(&symbolStack);
     stack_free(&tokStack);
     free(parsData.token);
+    parsData.token = NULL;
 }
 
 void print()
