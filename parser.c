@@ -80,6 +80,7 @@ void parse() {
   symtable = symtable_init(1061);
   scope_init();
   func_defs_init();
+  undef_types_init();
 
   add_built_in();
 
@@ -104,11 +105,11 @@ void parse() {
         if (params != NULL) {
           fprintf(stderr, "\t\t__PARAMS:\n");
           for (
-            list_item_t * tmp = params->first;
-            tmp != NULL;
-            tmp = tmp->next
+            list_item_t * it = params->first;
+            it != NULL;
+            it = it->next
           ) {
-           fprintf(stderr, "\t\t  %s\n", tmp->item->name);
+           fprintf(stderr, "\t\t  %s\n", it->item->name);
           }
         }
 
@@ -302,9 +303,12 @@ void parse() {
   func_defs_check();
   fprintf(stderr, "\n\n");
 
+  undef_types_check();
+
   // termination
   scope_destroy();
   func_defs_destroy();
+  undef_types_destroy();
 
   // codegen();
 
@@ -500,12 +504,14 @@ void match(int term) {
           fprintf(stderr, "\t---%s\n", id);
 
           // check if var is parameter of func
-          if (last_elem != NULL && last_elem->sym_type == SYM_FUNC) {
-            func_add_param(last_elem, var->symbol.sym_var_item);
-            last_elem = var;
-          } else {
-            last_elem = var;
-          }
+          // if (last_elem != NULL && last_elem->sym_type == SYM_FUNC) {
+          //   func_add_param(last_elem, var->symbol.sym_var_item);
+          //   last_elem = var;
+          // } else {
+          //   last_elem = var;
+          // }
+
+          last_elem = var;
         }
       }
       else {  // var_call expected
@@ -835,9 +841,18 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
     dest = dest_item->item;
     src = src_item->item;
 
-    // TODO funexp -- types??
-
     if (dest != NULL) {
+      if (dest->type == VAR_UNDEFINED) has_def = true;
+
+      if (!check_types(dest, src)) {
+        error(
+          7, "parser", "assign_var_def_types",
+          "Variable [%s] and Expression [n.%d] are of different data types",
+          dest->name, n_dest
+        );
+      }
+
+      /*
       if (dest->type == VAR_UNDEFINED) {  // newly defined variable
         dest->type = src->type;
         has_def = true;
@@ -851,6 +866,7 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
           );
         }
       }
+      */
     }
 
     // next step
@@ -1186,7 +1202,7 @@ void check_func_call_rets(elem_t * def_e, elem_t * call_e) {
       );
     }
 
-    if (def->item->type != call->item->type) {
+    if (!check_types(def->item, call->item)) {
       char def_type[NAME_MAX_L] = "";
       char call_type[NAME_MAX_L] = "";
       switch (def->item->type) {
@@ -1500,9 +1516,10 @@ elem_t * try_func(tToken * token) {
   char * id = to_string(token);
   get_next_token(token);
   if (token->token_type == T_L_BRACKET) {
-    token->token_type = T_IDENTIFIER;
-    token->attr.str_lit.str = id;
-    return func_call(id);
+    elem_t * func = func_call(id);
+    token->token_type = next.token_type;
+    token->attr = next.attr;
+    return func;
   } else return NULL;
 }
 
@@ -1527,6 +1544,76 @@ elem_t * get_next_var() {
 void list_add_var(elem_t * list, elem_t * var) {
   list_item_t * item = list_item_init(var->symbol.sym_var_item);
   sym_var_list_add(list->symbol.sym_var_list, item);
+}
+
+
+bool check_types(sym_var_item_t * var1, sym_var_item_t * var2) {
+  var_type_t type1 = var1->type;
+  var_type_t type2 = var2->type;
+
+  if (type1 != VAR_UNDEFINED) {
+    if (type2 != VAR_UNDEFINED) { // compare
+      if (type1 == type2) return true;
+      else return false;
+    }
+    else {  // [assign] type2 <-- type1
+      var2->type = type1;
+    }
+  }
+  else {
+    if (type2 != VAR_UNDEFINED) { // [assign] type1 <-- type2
+      var1->type = type2;
+    }
+    else {
+      undef_types_add(var1, var2);
+    }
+  }
+  return true;
+}
+
+void undef_types_init() {
+  undef_types.first = NULL;
+  undef_types.last = NULL;
+}
+
+void undef_types_destroy() {
+  undef_type_t * next;
+  for (
+    undef_type_t * it = undef_types.first;
+    it != NULL;
+    it = next
+  ) {
+    next = it->next;
+    free(it);
+  }
+}
+
+void undef_types_add(sym_var_item_t * var1, sym_var_item_t * var2) {
+  undef_type_t * new = malloc(sizeof(undef_type_t));
+  if (new == NULL) error(99, "parser", NULL, "Memory allocation failed");
+
+  new->var1 = var1;
+  new->var2 = var2;
+  new->next = NULL;
+
+  if (undef_types.first == NULL) {
+    undef_types.first = new;
+  } else {
+    undef_types.last->next = new;
+  }
+  undef_types.last = new;
+}
+
+void undef_types_check() {
+  for (
+    undef_type_t * it = undef_types.first;
+    it != NULL;
+    it = it->next
+  ) {
+    if (!check_types(it->var1, it->var2)) {
+      error(99, "parser", "undef_types_check", "INVALID STATE");
+    }
+  }
 }
 
 
@@ -1660,6 +1747,8 @@ void param_list() {
     eps = false;
     return;
   }
+  func_add_param(last_func, last_elem->symbol.sym_var_item);
+  last_elem->symbol.sym_var_item->is_defined = true;
   type();
   next_param();
 }
@@ -1669,6 +1758,7 @@ void next_param() {
   match(T_COMMA);
   if (eps) return;
   match(T_VAR_ID);
+  last_elem->symbol.sym_var_item->is_defined = true;
   type();
   next_param();
 }
@@ -1989,10 +2079,10 @@ void cycle() {
 
 void for_def() {
   if (next.token_type != T_IDENTIFIER) return;
-  // setup for var_def
-  // char * id = to_string(&next);
-  // get_next_token(&next);
-  // // var_def(id); // TODO
+  // setup for var_()
+  char * id = to_string(&next);
+  get_next_token(&next);
+  var_(id);
 }
 
 void for_move() {
@@ -2000,8 +2090,7 @@ void for_move() {
   // setup for var_move
   char * id = to_string(&next);
   get_next_token(&next);
-  var_move(id);
-
+  var_(id);
 }
 
 void return_() {
