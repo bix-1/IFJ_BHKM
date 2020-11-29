@@ -171,5 +171,9 @@ void error(
   func_defs_destroy();
   jmp_label_stack_free_all();
 
+  stack_free(&symbolStack);
+  stack_free(&tokStack);
+  free(parsData.token);
+
   exit( errCode );
 }
