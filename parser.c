@@ -80,6 +80,7 @@ void parse() {
   symtable = symtable_init(1061);
   scope_init();
   func_defs_init();
+  undef_types_init();
 
   add_built_in();
 
@@ -302,9 +303,12 @@ void parse() {
   func_defs_check();
   fprintf(stderr, "\n\n");
 
+  undef_types_check();
+
   // termination
   scope_destroy();
   func_defs_destroy();
+  undef_types_destroy();
 
   codegen();
 
@@ -1529,6 +1533,74 @@ elem_t * get_next_var() {
 void list_add_var(elem_t * list, elem_t * var) {
   list_item_t * item = list_item_init(var->symbol.sym_var_item);
   sym_var_list_add(list->symbol.sym_var_list, item);
+}
+
+
+bool check_types(sym_var_item_t * var1, sym_var_item_t * var2) {
+  var_type_t type1 = var1->type;
+  var_type_t type2 = var2->type;
+
+  if (type1 != VAR_UNDEFINED) {
+    if (type2 != VAR_UNDEFINED) { // compare
+      if (type1 == type2) return true;
+      else return false;
+    }
+    else {  // [assign] type2 <-- type1
+      var2->type = type1;
+    }
+  }
+  else {
+    if (type2 != VAR_UNDEFINED) { // [assign] type1 <-- type2
+      var1->type = type2;
+    }
+    else {
+      undef_types_add(var1, var2);
+    }
+  }
+  return true;
+}
+
+void undef_types_init() {
+  undef_types.first = NULL;
+  undef_types.last = NULL;
+}
+
+void undef_types_destroy() {
+  undef_type_t * next;
+  for (
+    undef_type_t * it = undef_types.first;
+    it != NULL;
+    it = next
+  ) {
+    next = it->next;
+    free(it);
+  }
+}
+
+void undef_types_add(sym_var_item_t * var1, sym_var_item_t * var2) {
+  undef_type_t * new = malloc(sizeof(undef_type_t));
+  if (new == NULL) error(99, "parser", NULL, "Memory allocation failed");
+
+  new->var1 = var1;
+  new->var2 = var2;
+  new->next = NULL;
+
+  if (undef_types.first == NULL) {
+    undef_types.first = new;
+  } else {
+    undef_types.last->next = new;
+  }
+  undef_types.last = new;
+}
+
+void undef_types_check() {
+  for (
+    undef_type_t * it = undef_types.first;
+    it != NULL;
+    it = it->next
+  ) {
+    check_types(it->var1, it->var2);
+  }
 }
 
 

@@ -186,6 +186,8 @@ void check_func_call_rets(elem_t * func, elem_t * dest);
 void func_add_param(elem_t *func, sym_var_item_t * ret);
 void func_add_ret(elem_t * func, sym_var_item_t * ret);
 
+
+// func call checking
 typedef struct func_def func_def_t;
 struct func_def {
   elem_t * func;
@@ -211,11 +213,32 @@ elem_t * get_next_var();
 // list in last_elem
 void list_add_var(elem_t * list, elem_t * var);
 
+// type checking
+bool check_types(sym_var_item_t * var1, sym_var_item_t * var2);
+
+typedef struct undef_type undef_type_t;
+struct undef_type {
+  sym_var_item_t * var1;
+  sym_var_item_t * var2;
+  undef_type_t * next;
+};
+
+struct undef_types_t {
+  undef_type_t * first;
+  undef_type_t * last;
+} undef_types;
+
+void undef_types_init();
+void undef_types_destroy();
+void undef_types_add(sym_var_item_t * var1, sym_var_item_t * var2);
+void undef_types_check();
+
+
 /*
   ___________FUNCTIONS_REPRESENTING___________
   ___________LL_GRAMMAR_NONTERMINALS__________
 
-  For more info check implementation in parser.c
+  For more info see implementation in parser.c
   or documentation in doc/LL.pdf
 */
 void program();
