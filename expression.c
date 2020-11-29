@@ -80,6 +80,7 @@ tokenStack tokStack;    // Token stack
 int exprNumber = 0;
 symtable_value_t retExpr;
 bool eps;
+bool ret;
 
 int get_index(tToken token)
 {
@@ -136,11 +137,92 @@ int get_index(tToken token)
     return 0;
 }
 
+void check_func_start()
+{
+    if (parsData.token->token_type != T_IDENTIFIER)
+    {
+        return;
+    }
+
+    char *id = to_string(parsData.token);
+    symtable_value_t func = try_func(parsData.token);
+    if (func != NULL)
+    {
+        printf("\nfunc\t%d\n",parsData.token->token_type);
+        if (parsData.token->token_type == T_EOL)
+        {
+        printf("\nHERE\n");
+
+            retExpr = func; // a = foo()
+            ret = true;
+            return;
+        }
+        else
+        {
+            // a = foo() + ...
+            stack_push(&tokStack, *parsData.token);
+            tokStack.topToken->expr = true;
+
+            char *idExpr = create_id();
+            char *id_scope = id_add_scope(scope_get_head(), idExpr);
+
+            // create variable and add to symtable
+            sym_var_item_t *var_item = sym_var_item_init(idExpr);
+            sym_var_item_set_type(var_item, VAR_UNDEFINED);
+            symbol_t var_sym = {.sym_var_item = var_item};
+            elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
+            symtable_insert(symtable, id_scope, var);
+            instr_add_var_decl(var);
+
+            func_add_ret(func, var_item);
+        }
+    }
+    else
+    {
+
+        eps = false;
+        symtable_value_t var = id_find(scope_get_head(), id);
+        switch (var->symbol.sym_var_item->type)
+        {
+        case VAR_INT:
+            tokStack.topToken->originalType = T_INT_VALUE;
+            tokStack.topToken->token.token_type = T_INT_VALUE;
+            tokStack.topToken->token.attr.int_lit = var->symbol.sym_var_item->data.int_t; /// ???
+            break;
+        case VAR_FLOAT64:
+            tokStack.topToken->originalType = T_DEC_VALUE;
+            tokStack.topToken->token.token_type = T_DEC_VALUE;
+            tokStack.topToken->token.attr.dec_lit = var->symbol.sym_var_item->data.float64_t; /// ???
+            break;
+        case VAR_STRING:
+            tokStack.topToken->originalType = T_DEC_VALUE;
+            tokStack.topToken->token.token_type = T_DEC_VALUE;
+            tokStack.topToken->token.attr.str_lit.str = var->symbol.sym_var_item->data.string_t; /// ???
+            break;
+        case VAR_BOOL: // FINISH
+            // IF T_TRUE || T_FALSE
+            tokStack.topToken->originalType = T_DEC_VALUE;
+            tokStack.topToken->token.token_type = T_DEC_VALUE;
+            tokStack.topToken->token.attr.int_lit = var->symbol.sym_var_item->data.int_t; /// ???
+            break;
+
+        default:
+            // ERROR
+            break;
+        }
+
+        tokStack.topToken->data = var;
+        tokStack.topToken->expr = true;
+        stack_push(&symbolStack, *parsData.token);
+    }
+}
+
 void check_symtable(stackElemPtr elem)
 {
     //printf("\nCHECK_SYMTABLE ORIGINAL TYPE\t%d\n", elem->originalType);
     if (elem->originalType == T_IDENTIFIER)
     {
+
         // Variable already existing
         eps = false;
         elem->data = id_find(scope_get_head(), to_string(&(elem->token)));
@@ -328,6 +410,11 @@ void shift()
         error(2, "expression parser", "reduce", "Missing an expression");
     }
 
+    if (ret == true)
+    {
+        return;
+    }
+
     get_next_token(parsData.token);
 
     // ERROR if '(' is followed by ')' without expression ... f.e.  a= 5+5*()5
@@ -350,11 +437,13 @@ void int_to_float(stackElemPtr elem)
 
 void reduce()
 {
+    print();
+
     stackElemPtr tokenTop = tokStack.topToken;               // Top member on VALUE stack
     stackElemPtr tokenAfterTop = tokStack.topToken->nextTok; // Second from the top member on VALUE stack
     tToken symbolTop = symbolStack.topToken->token;          // Top member on SYMBOL stack
-   // printf("\nERR\t%p\t%p\n", tokenTop->data, tokenAfterTop->data);
-   // printf("\nHHERE\n");
+                                                             // printf("\nERR\t%p\t%p\n", tokenTop->data, tokenAfterTop->data);
+                                                             // printf("\nHHERE\n");
 
     if (tokenTop->data == NULL || tokenAfterTop->data == NULL)
     {
@@ -377,8 +466,9 @@ void reduce()
             if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
 
-
+                // bool check_types(tokenTop,tokenAfterTop);
                 symtable_value_t dest = create_dest(tokenTop);
+                // bool check_types(dest,tokenTop);
 
                 if (tokenTop->originalType == T_STRING_VALUE && tokenAfterTop->originalType == T_STRING_VALUE)
                 {
@@ -950,6 +1040,7 @@ void release_resources()
     stack_free(&symbolStack);
     stack_free(&tokStack);
     free(parsData.token);
+    parsData.token = NULL;
 }
 
 void print()
@@ -960,7 +1051,7 @@ void print()
     tmpT = tokStack.topToken;
     while (tmpT->token.token_type != T_EMPTY)
     {
-       // printf("\nTOKEN SHIFT VALUES\t%d", tmpT->token.token_type);
+        // printf("\nTOKEN SHIFT VALUES\t%d", tmpT->token.token_type);
         tmpT = tmpT->nextTok;
     }
 
@@ -969,13 +1060,14 @@ void print()
     tmp = symbolStack.topToken;
     while (tmp->token.token_type != T_EMPTY)
     {
-       // printf("\nSYMBOL SHIFT VALUES\t%d", tmp->token.token_type);
+        // printf("\nSYMBOL SHIFT VALUES\t%d", tmp->token.token_type);
         tmp = tmp->nextTok;
     }
 }
 
 symtable_value_t parse_expression()
 {
+    ret = false;
     //printf("\n\n-----START-----\n");
     if (get_index(next) == OP_dollar)
     {
@@ -996,8 +1088,16 @@ symtable_value_t parse_expression()
     token.token_type = T_DOLLAR;
     stack_push(&tokStack, token);
     stack_push(&symbolStack, token);
+
+    check_func_start();
+
     while (1)
     {
+        if (ret == true)
+        {
+            release_resources();
+            return retExpr;
+        }
 
         int indexStack, indexInput = 0;
 

@@ -33,6 +33,7 @@ tPData parsData;
 int get_index(tToken token);
 
 void print();
+void check_func_start();
 
 /*
 *   Function creates variable in symtable
