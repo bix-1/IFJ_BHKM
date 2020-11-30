@@ -75,12 +75,14 @@ int precTable[8][8] = {
 #define T_EXPR 501   // EXPRESSION
 
 tToken exprToken;       // Expression token
-tokenStack symbolStack; // Symbol stack
-tokenStack tokStack;    // Token stack
+tokenStack * symbolStack = NULL; // Symbol stack
+tokenStack * tokStack = NULL;    // Token stack
 int exprNumber = 0;
 symtable_value_t retExpr;
+tPData * parsData = NULL;
 bool eps;
 bool ret;
+bool was_func = false;
 
 int get_index(tToken token)
 {
@@ -139,32 +141,35 @@ int get_index(tToken token)
 
 void check_func_start()
 {
-    if (parsData.token->token_type != T_IDENTIFIER)
+    if (parsData->token->token_type != T_IDENTIFIER)
     {
         return;
     }
 
-    char *id = to_string(parsData.token);
-    symtable_value_t func = try_func(parsData.token);
+    char *id = to_string(parsData->token);
+    symtable_value_t func = try_func(parsData->token);
     if (func != NULL)
     {
-        printf("\nfunc\t%d\n",parsData.token->token_type);
-        if (parsData.token->token_type == T_EOL)
+        if (parsData->token->token_type == T_EOL)
         {
-        printf("\nHERE\n");
-
+          instr_type_t type = get_func_instr_type(func->symbol.sym_func->name);
+          instr_add_func_call(type);
             retExpr = func; // a = foo()
-            ret = true;
+            was_func = true;
             return;
         }
         else
         {
             // a = foo() + ...
-            stack_push(&tokStack, *parsData.token);
-            tokStack.topToken->expr = true;
+            // stack_push(symbolStack, *parsData->token);
+            // ret = false;
+            // shift();
+            var_type_t t_type = parsData->token->token_type;
 
             char *idExpr = create_id();
             char *id_scope = id_add_scope(scope_get_head(), idExpr);
+            char * expr_id = malloc(sizeof(char) * (strlen(idExpr) + 1));
+            strcpy(expr_id, idExpr);
 
             // create variable and add to symtable
             sym_var_item_t *var_item = sym_var_item_init(idExpr);
@@ -173,47 +178,40 @@ void check_func_start()
             elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
             symtable_insert(symtable, id_scope, var);
             instr_add_var_decl(var);
+            var_item->is_defined = true;
+
+            instr_type_t type = get_func_instr_type(func->symbol.sym_func->name);
+            instr_add_func_call(type);
 
             func_add_ret(func, var_item);
+
+            parsData->token->token_type = T_IDENTIFIER;
+            parsData->token->attr.str_lit.str = expr_id;
+
+            // ret = true;
+            // shift();
+
+            stack_push(tokStack, *parsData->token);
+
+
+            parsData->token->token_type = t_type;
+            stack_push(symbolStack, *parsData->token);
+            get_next_token(parsData->token);
+            // ret = true;
+            // shift();
         }
     }
     else
     {
-
+        // for id cleanup
+        next.attr.str_lit.str = id;
         eps = false;
-        symtable_value_t var = id_find(scope_get_head(), id);
-        switch (var->symbol.sym_var_item->type)
-        {
-        case VAR_INT:
-            tokStack.topToken->originalType = T_INT_VALUE;
-            tokStack.topToken->token.token_type = T_INT_VALUE;
-            tokStack.topToken->token.attr.int_lit = var->symbol.sym_var_item->data.int_t; /// ???
-            break;
-        case VAR_FLOAT64:
-            tokStack.topToken->originalType = T_DEC_VALUE;
-            tokStack.topToken->token.token_type = T_DEC_VALUE;
-            tokStack.topToken->token.attr.dec_lit = var->symbol.sym_var_item->data.float64_t; /// ???
-            break;
-        case VAR_STRING:
-            tokStack.topToken->originalType = T_DEC_VALUE;
-            tokStack.topToken->token.token_type = T_DEC_VALUE;
-            tokStack.topToken->token.attr.str_lit.str = var->symbol.sym_var_item->data.string_t; /// ???
-            break;
-        case VAR_BOOL: // FINISH
-            // IF T_TRUE || T_FALSE
-            tokStack.topToken->originalType = T_DEC_VALUE;
-            tokStack.topToken->token.token_type = T_DEC_VALUE;
-            tokStack.topToken->token.attr.int_lit = var->symbol.sym_var_item->data.int_t; /// ???
-            break;
+        // symtable_value_t var = id_find(scope_get_head(), id);
 
-        default:
-            // ERROR
-            break;
-        }
+        parsData->token->token_type = T_IDENTIFIER;
+        parsData->token->attr.str_lit.str = id;
 
-        tokStack.topToken->data = var;
-        tokStack.topToken->expr = true;
-        stack_push(&symbolStack, *parsData.token);
+        shift();
     }
 }
 
@@ -222,7 +220,6 @@ void check_symtable(stackElemPtr elem)
     //printf("\nCHECK_SYMTABLE ORIGINAL TYPE\t%d\n", elem->originalType);
     if (elem->originalType == T_IDENTIFIER)
     {
-
         // Variable already existing
         eps = false;
         elem->data = id_find(scope_get_head(), to_string(&(elem->token)));
@@ -251,6 +248,7 @@ symtable_value_t create_dest(stackElemPtr elem)
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
     symtable_insert(symtable, id_scope, var);
     instr_add_var_decl(var);
+    var_item->is_defined = true;
 
     return var;
 }
@@ -311,8 +309,7 @@ char *create_id()
         error(99, "expression parser", "create_variable", "Memory allocation failed");
     }
     sprintf(number, "%d", exprNumber); // INT TO STING
-    id[0] = '\0';
-    strcat(id, number);
+    strcpy(id, number);
     free(number);
     strcat(id, "expr");
     exprNumber++;
@@ -392,17 +389,17 @@ void shift()
 {
 
     // IF WE WANT TO PUSH NUMBERS
-    if (get_index(*parsData.token) == OP_value || get_index(*parsData.token) == OP_STRING)
+    if (get_index(*parsData->token) == OP_value || get_index(*parsData->token) == OP_STRING)
     {
-        stack_push(&tokStack, *parsData.token);
+        stack_push(tokStack, *parsData->token);
 
-        check_symtable(tokStack.topToken);
+        check_symtable(tokStack->topToken);
         //print();
 
     } // IF WE WANT TO PUSH SYMBOLS
-    else if (get_index(*parsData.token) == OP_plus_minus || get_index(*parsData.token) == OP_mult_div || get_index(*parsData.token) == OP_parenth_close || get_index(*parsData.token) == OP_parenth_open || get_index(*parsData.token) == OP_rel_comp || get_index(*parsData.token) == OP_dollar)
+    else if (get_index(*parsData->token) == OP_plus_minus || get_index(*parsData->token) == OP_mult_div || get_index(*parsData->token) == OP_parenth_close || get_index(*parsData->token) == OP_parenth_open || get_index(*parsData->token) == OP_rel_comp || get_index(*parsData->token) == OP_dollar)
     {
-        stack_push(&symbolStack, *parsData.token);
+        stack_push(symbolStack, *parsData->token);
     }
     else
     {
@@ -415,10 +412,10 @@ void shift()
         return;
     }
 
-    get_next_token(parsData.token);
+    get_next_token(parsData->token);
 
     // ERROR if '(' is followed by ')' without expression ... f.e.  a= 5+5*()5
-    if (symbolStack.topToken->token.token_type == T_L_BRACKET && parsData.token->token_type == T_R_BRACKET)
+    if (symbolStack->topToken->token.token_type == T_L_BRACKET && parsData->token->token_type == T_R_BRACKET)
     {
         release_resources();
         error(2, "expression parser", "reduce", "Missing an expression");
@@ -439,9 +436,9 @@ void reduce()
 {
     print();
 
-    stackElemPtr tokenTop = tokStack.topToken;               // Top member on VALUE stack
-    stackElemPtr tokenAfterTop = tokStack.topToken->nextTok; // Second from the top member on VALUE stack
-    tToken symbolTop = symbolStack.topToken->token;          // Top member on SYMBOL stack
+    stackElemPtr tokenTop = tokStack->topToken;               // Top member on VALUE stack
+    stackElemPtr tokenAfterTop = tokStack->topToken->nextTok; // Second from the top member on VALUE stack
+    tToken symbolTop = symbolStack->topToken->token;          // Top member on SYMBOL stack
                                                              // printf("\nERR\t%p\t%p\n", tokenTop->data, tokenAfterTop->data);
                                                              // printf("\nHHERE\n");
 
@@ -452,7 +449,7 @@ void reduce()
     }
 
     // If value stack is !empty
-    if (tokStack.topToken->token.token_type != T_DOLLAR)
+    if (tokStack->topToken->token.token_type != T_DOLLAR)
     {
 
         check_string(tokenTop, tokenAfterTop, &symbolTop);
@@ -499,8 +496,8 @@ void reduce()
 
                 retExpr = dest;
 
-                stack_pop(&symbolStack);
-                stack_pop(&tokStack);
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
             } //IF 5 + E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
@@ -546,8 +543,8 @@ void reduce()
                 tokenAfterTop->data = dest;
                 retExpr = dest;
 
-                stack_pop(&symbolStack);
-                stack_pop(&tokStack);
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
             } //IF 5 - E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
@@ -593,8 +590,8 @@ void reduce()
                 tokenAfterTop->data = dest;
                 retExpr = dest;
 
-                stack_pop(&symbolStack);
-                stack_pop(&tokStack);
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
             } //IF 5 * E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
@@ -644,8 +641,8 @@ void reduce()
                 tokenAfterTop->data = dest;
                 retExpr = dest;
 
-                stack_pop(&symbolStack);
-                stack_pop(&tokStack);
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
             } //IF 5 / E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
@@ -692,8 +689,8 @@ void reduce()
                 tokenAfterTop->data = dest;
                 retExpr = dest;
 
-                stack_pop(&symbolStack);
-                stack_pop(&tokStack);
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
             } //IF 5 < E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
@@ -757,8 +754,8 @@ void reduce()
 
                 retExpr = tmpDestRet;
 
-                stack_pop(&symbolStack);
-                stack_pop(&tokStack);
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
             } //IF 5 <= E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
@@ -804,8 +801,8 @@ void reduce()
 
                 retExpr = dest;
 
-                stack_pop(&symbolStack);
-                stack_pop(&tokStack);
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
             } //IF 5 > E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
@@ -869,8 +866,8 @@ void reduce()
 
                 retExpr = tmpDestRet;
 
-                stack_pop(&symbolStack);
-                stack_pop(&tokStack);
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
             } //IF 5 >= E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
@@ -917,8 +914,8 @@ void reduce()
                 retExpr = dest;
 
                 exprToken.token_type = T_EXPR;
-                stack_pop(&symbolStack);
-                stack_pop(&tokStack);
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
             } //IF 5 == E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
@@ -968,8 +965,8 @@ void reduce()
                 retExpr = tmpDestRet;
 
                 //printf("\n\t\tRULE T_NEQ\tE != E\n");
-                stack_pop(&symbolStack);
-                stack_pop(&tokStack);
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
             } //IF 5 != E IS ON STACK
             else if (tokenAfterTop->expr == false)
             {
@@ -1007,7 +1004,7 @@ void reduce()
     }
 
     /*     // KONTROLA STACKU
-    tmp2 = tokStack.topToken;
+    tmp2 = tokStack->topToken;
     while (tmp2->token.token_type != T_EMPTY)
     {
         //printf("\nREDUCE STACK VALUES BOTTOM\t%d", tmp2->token.token_type);
@@ -1018,9 +1015,9 @@ void reduce()
 
 void equal()
 {
-    if (symbolStack.topToken->token.token_type != T_DOLLAR)
+    if (symbolStack->topToken->token.token_type != T_DOLLAR)
     {
-        stack_pop(&symbolStack);
+        stack_pop(symbolStack);
     }
     else
     {
@@ -1029,18 +1026,29 @@ void equal()
     }
     ////// printf("\n\t\tRULE\t E -> ( E ) \n");
 
-    get_next_token(parsData.token);
+    get_next_token(parsData->token);
     return;
 }
 
 void release_resources()
 {
-    next.token_type = parsData.token->token_type;
-    next.attr = parsData.token->attr;
+    if (parsData != NULL) {
+      if (parsData->token != NULL) {
+        next.token_type = parsData->token->token_type;
+        next.attr = parsData->token->attr;
+        free(parsData->token);
+        parsData->token = NULL;
+      }
+      free(parsData);
+      parsData = NULL;
+    }
     stack_free(&symbolStack);
     stack_free(&tokStack);
-    free(parsData.token);
-    parsData.token = NULL;
+
+    if (frame_stack.first_pd != NULL)
+      frame_stack_pop();
+    else
+      frame_stack_destroy();
 }
 
 void print()
@@ -1048,7 +1056,7 @@ void print()
 
     stackElemPtr tmpT;
     // kontrola elementov na stacku
-    tmpT = tokStack.topToken;
+    tmpT = tokStack->topToken;
     while (tmpT->token.token_type != T_EMPTY)
     {
         // printf("\nTOKEN SHIFT VALUES\t%d", tmpT->token.token_type);
@@ -1057,7 +1065,7 @@ void print()
 
     stackElemPtr tmp;
     // kontrola elementov nastacku
-    tmp = symbolStack.topToken;
+    tmp = symbolStack->topToken;
     while (tmp->token.token_type != T_EMPTY)
     {
         // printf("\nSYMBOL SHIFT VALUES\t%d", tmp->token.token_type);
@@ -1065,46 +1073,143 @@ void print()
     }
 }
 
+
+
+
+void frame_stack_init() {
+  frame_stack.first_pd = NULL;
+  frame_stack.first_tok = NULL;
+  frame_stack.first_sym = NULL;
+}
+
+void frame_stack_destroy() {
+  pd_item_t * next1;
+  for (
+    pd_item_t * it = frame_stack.first_pd;
+    it != NULL;
+    it = next1
+  ) {
+    next1 = it->next;
+    free(it);
+  }
+
+  stack_item_t * next2;
+  for (
+    stack_item_t * it = frame_stack.first_tok;
+    it != NULL;
+    it = next2
+  ) {
+    next2 = it->next;
+    free(it);
+  }
+
+  stack_item_t * next3;
+  for (
+    stack_item_t * it = frame_stack.first_sym;
+    it != NULL;
+    it = next3
+  ) {
+    next3 = it->next;
+    free(it);
+  }
+
+  frame_stack_init();
+}
+
+void frame_stack_push() {
+  pd_item_t * new1 = malloc(sizeof(pd_item_t));
+  stack_item_t * new2 = malloc(sizeof(stack_item_t));
+  stack_item_t * new3 = malloc(sizeof(stack_item_t));
+
+  new1->pd = parsData;
+  new2->ts = tokStack;
+  new3->ts = symbolStack;
+
+  new1->next = frame_stack.first_pd;
+  new2->next = frame_stack.first_tok;
+  new3->next = frame_stack.first_sym;
+
+  frame_stack.first_pd = new1;
+  frame_stack.first_tok = new2;
+  frame_stack.first_sym = new3;
+}
+
+void frame_stack_pop() {
+  if (frame_stack.first_pd == NULL) return;
+
+  if (parsData != NULL) {
+    if (parsData->token != NULL) {
+      next.token_type = parsData->token->token_type;
+      next.attr = parsData->token->attr;
+      free(parsData->token);
+      parsData->token = NULL;
+    }
+    free(parsData);
+    parsData = NULL;
+  }
+  stack_free(&symbolStack);
+  stack_free(&tokStack);
+
+
+  parsData = frame_stack.first_pd->pd;
+  tokStack = frame_stack.first_tok->ts;
+  symbolStack = frame_stack.first_sym->ts;
+
+  pd_item_t * tmp1 = frame_stack.first_pd;
+  stack_item_t * tmp2 = frame_stack.first_tok;
+  stack_item_t * tmp3 = frame_stack.first_sym;
+
+  frame_stack.first_pd = frame_stack.first_pd->next;
+  frame_stack.first_tok = frame_stack.first_tok->next;
+  frame_stack.first_sym = frame_stack.first_sym->next;
+
+
+
+  free(tmp1);
+  free(tmp2);
+  free(tmp3);
+}
+
+
 symtable_value_t parse_expression()
 {
-    ret = false;
-    //printf("\n\n-----START-----\n");
     if (get_index(next) == OP_dollar)
     {
         error(2, "expression parser", NULL, "Missing an expression");
     }
-    parsData.token = (tToken *)malloc(sizeof(tToken));
-    parsData.token->token_type = next.token_type;
-    parsData.token->attr = next.attr;
+
+    if (parsData != NULL) {
+      frame_stack_push();
+    }
+
+    parsData = malloc(sizeof(tPData));
+
+    parsData->token = (tToken *)malloc(sizeof(tToken));
+    parsData->token->token_type = next.token_type;
+    parsData->token->attr = next.attr;
 
     stack_init(&tokStack);
     stack_init(&symbolStack);
-    //int i = 0;
-
-    ////printf("PARS\t%d\n", tokStack.topToken->token.token_type);
-    ////printf("PARS\t%d\n", symbolStack.topToken->token.token_type);
 
     tToken token;
     token.token_type = T_DOLLAR;
-    stack_push(&tokStack, token);
-    stack_push(&symbolStack, token);
+    stack_push(tokStack, token);
+    stack_push(symbolStack, token);
 
     check_func_start();
 
+    if (was_func == true)
+    {
+      release_resources();
+      return retExpr;
+    }
+
     while (1)
     {
-        if (ret == true)
-        {
-            release_resources();
-            return retExpr;
-        }
-
         int indexStack, indexInput = 0;
 
-        indexInput = get_index(*parsData.token);
-        indexStack = get_index(symbolStack.topToken->token);
-        //// printf("\n\nToken\t%d\n", parsData.token->token_type);
-        //printf("\nSTACK x INPUT:\t%d\t%d", indexStack, indexInput);
+        indexInput = get_index(*parsData->token);
+        indexStack = get_index(symbolStack->topToken->token);
 
         switch (precTable[indexStack][indexInput])
         {
@@ -1125,16 +1230,16 @@ symtable_value_t parse_expression()
             //printf("\nERROR\n");
             //print();
 
-            if (symbolStack.topToken->token.token_type == T_DOLLAR)
+            if (symbolStack->topToken->token.token_type == T_DOLLAR)
             {
-                next.token_type = parsData.token->token_type;
-                next.attr = parsData.token->attr;
+                next.token_type = parsData->token->token_type;
+                next.attr = parsData->token->attr;
             }
-            /* else if (tokStack.topToken->originalType == T_STRING_VALUE)
+            /* else if (tokStack->topToken->originalType == T_STRING_VALUE)
             {
                 // ERROR a = string * string || a = string / string or anything starting with string followed by operation
-                free(parsData.token->attr.str_lit.str);
-                parsData.token->attr.str_lit.str = NULL;
+                free(parsData->token->attr.str_lit.str);
+                parsData->token->attr.str_lit.str = NULL;
                 release_resources();
                 error(5, "expression parser", "parse_expression", "Invalid operation with strings");
                 // alebo Faulty input or sth like that
@@ -1142,13 +1247,15 @@ symtable_value_t parse_expression()
             else
             {
                 // f.e a := foo(3)... ')' is left on symbolStack so I pass it to parser
-                next.token_type = symbolStack.topToken->token.token_type;
-                next.attr = symbolStack.topToken->token.attr;
+                next.token_type = symbolStack->topToken->token.token_type;
+                next.attr = symbolStack->topToken->token.attr;
             }
 
             stack_free(&symbolStack);
             stack_free(&tokStack);
-            free(parsData.token);
+            free(parsData->token);
+            parsData->token = NULL;
+            frame_stack_pop();
             return retExpr;
             break;
         case A:
@@ -1156,16 +1263,16 @@ symtable_value_t parse_expression()
             //print();
 
             /*             // Kontrolne vypisy
-            ////printf("\nParse end tok stack\t%d", tokStack.topToken->token.token_type);
-            ////printf("\nParse end symbol stack\t%d\n", symbolStack.topToken->token.token_type);
+            ////printf("\nParse end tok stack\t%d", tokStack->topToken->token.token_type);
+            ////printf("\nParse end symbol stack\t%d\n", symbolStack->topToken->token.token_type);
             stackElemPtr tmp;
-            tmp = tokStack.topToken;
+            tmp = tokStack->topToken;
             while (tmp->token.token_type != T_EMPTY)
             {
                 //printf("TOKEN STACK VALUES\t%d\n", tmp->token.token_type);
                 tmp = tmp->nextTok;
             }
-            tmp = symbolStack.topToken;
+            tmp = symbolStack->topToken;
             while (tmp->token.token_type != T_EMPTY)
             {
                 //printf("SYMBOL STACK VALUES\t%d\n", tmp->token.token_type);
@@ -1173,7 +1280,7 @@ symtable_value_t parse_expression()
             } */
 
             //printf("\n-----END-----\n\n");
-            //printf("\nTOKEN DATA\t%s\n", tokStack.topToken->data->symbol.sym_var_item->name);
+            //printf("\nTOKEN DATA\t%s\n", tokStack->topToken->data->symbol.sym_var_item->name);
             release_resources();
             if (retExpr == NULL)
             {

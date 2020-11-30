@@ -170,10 +170,8 @@ void error(
   scope_destroy();
   func_defs_destroy();
   jmp_label_stack_free_all();
-
-  stack_free(&symbolStack);
-  stack_free(&tokStack);
-  if (parsData.token != NULL) free(parsData.token);
+  release_resources();
+  frame_stack_destroy();
 
   exit( errCode );
 }

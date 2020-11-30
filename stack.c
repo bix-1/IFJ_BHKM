@@ -14,8 +14,9 @@
 #include "stack.h"
 #include "error.h"
 
-void stack_init(tokenStack *stack)
+void stack_init(tokenStack **stack)
 {
+    *stack = malloc(sizeof(tokenStack));
 
     // Insterting the empty flag token
     stackElemPtr newElem = (stackElemPtr)malloc(sizeof(struct stackElem));
@@ -32,7 +33,7 @@ void stack_init(tokenStack *stack)
     newElem->expr = false;
     //newElem->token.attr.int_lit = 0; Not important ??
 
-    stack->topToken = newElem;
+    (*stack)->topToken = newElem;
     //printf("STACK INIT\t%p\t%p\t%d\n", newElem, stack->topToken, newElem->token.token_type);
 }
 
@@ -88,10 +89,12 @@ void stack_empty(tokenStack *stack)
     }
 }
 
-void stack_free(tokenStack *stack)
+void stack_free(tokenStack **stack)
 {
+  if (stack == NULL || *stack == NULL) return;
 
-    if (stack->topToken == NULL)
+
+    if ((*stack)->topToken == NULL)
     {
         // MAYBE ERROR ? TRYING TO FREE UNALLOCATED
         return;
@@ -99,11 +102,13 @@ void stack_free(tokenStack *stack)
 
     stackElemPtr tmp;
 
-    while (stack->topToken != NULL)
+    while ((*stack)->topToken != NULL)
     {
-        tmp = stack->topToken;
-        stack->topToken = stack->topToken->nextTok;
+        tmp = (*stack)->topToken;
+        (*stack)->topToken = (*stack)->topToken->nextTok;
         tmp->data = NULL;
         free(tmp);
     }
+    free(*stack);
+    *stack = NULL;
 }

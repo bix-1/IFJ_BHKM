@@ -16,8 +16,8 @@
 #include "stack.h"
 #include "scanner.h"
 
-extern tokenStack symbolStack; // Symbol stack
-extern tokenStack tokStack;    // Token stack
+extern tokenStack * symbolStack; // Symbol stack
+extern tokenStack * tokStack;    // Token stack
 
 typedef struct parserData
 {
@@ -25,7 +25,28 @@ typedef struct parserData
     tokenStack *stack;
 } tPData;
 
-tPData parsData;
+typedef struct pd_item pd_item_t;
+struct pd_item {
+  tPData * pd;
+  pd_item_t * next;
+};
+
+typedef struct stack_item stack_item_t;
+struct stack_item {
+  tokenStack * ts;
+  stack_item_t * next;
+};
+
+struct frame_stack_t {
+  pd_item_t * first_pd;
+  stack_item_t * first_tok;
+  stack_item_t * first_sym;
+} frame_stack;
+
+void frame_stack_init();
+void frame_stack_destroy();
+void frame_stack_push();
+void frame_stack_pop();
 
 /*
 *   Function returns index of the symbol to choose action from precedence table

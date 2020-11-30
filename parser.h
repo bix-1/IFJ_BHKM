@@ -256,7 +256,7 @@ void body();
 void command();
 void var_(char * id);
 // void var_def();
-void var_move();
+// void var_move();
 void next_id(elem_t * dest);
 void if_();
 void if_cont();

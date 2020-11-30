@@ -310,7 +310,7 @@ void parse() {
   func_defs_destroy();
   undef_types_destroy();
 
-  // codegen();
+  codegen();
 
   list_destroy(&list);
   symtable_free(symtable);
@@ -641,6 +641,7 @@ elem_t * id_find(scope_elem_t *scope, char *old_id) {
     // check for end of scope
     if (tmp_scope == NULL) {
       if (eps) return NULL;
+      // next.attr.str_lit.str = old_id;
       error(3, "parser", "match", "Variable \"%s\" undefined", old_id);
     }
     // get variable's contextual ID
@@ -842,7 +843,7 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
     src = src_item->item;
 
     if (dest != NULL) {
-      if (dest->type == VAR_UNDEFINED) has_def = true;
+      if (!(dest->is_defined)) has_def = true;
 
       if (!check_types(dest, src)) {
         error(
@@ -851,22 +852,6 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
           dest->name, n_dest
         );
       }
-
-      /*
-      if (dest->type == VAR_UNDEFINED) {  // newly defined variable
-        dest->type = src->type;
-        has_def = true;
-      }
-      else {
-        if (dest->type != src->type) {
-          error(
-            7, "parser", "assign_var_def_types",
-            "Variable [%s] and Expression [n.%d] are of different data types",
-            dest->name, n_dest
-          );
-        }
-      }
-      */
     }
 
     // next step
@@ -1874,8 +1859,10 @@ void command() {
       char * id = to_string(&next);
       elem_t * tmp = try_func(&next);
       if (tmp == NULL) var_(id);
-      // func_call handled in try_func
-      else if (tmp->sym_type == SYM_FUNC) break;
+      else if (tmp->sym_type == SYM_FUNC) {
+        instr_type_t type = get_func_instr_type(tmp->symbol.sym_func->name);
+        instr_add_func_call(type);
+      }
       else error(99, "parser", NULL, "INVALID STATE");
 
       break;
@@ -1960,30 +1947,6 @@ void var_(char * id) { // collect list of dest variables
   instr_add_dest(new_move, dest);
   instr_add_elem1(new_move, src);
   list_add(list, new_move);
-}
-
-void var_move() {
-  /*
-  // TODO funexp
-  if (next.token_type != T_IDENTIFIER) {
-    expr_list();
-  } else {
-    // TODO delegate to expr parser
-    // elem_t * tmp = try_func();
-
-    eps = true;
-    elem_t * tmp = id_find(scope_get_head(), to_string(&next));
-    if (tmp != NULL && tmp->sym_type != SYM_FUNC)
-      expr_list();
-    else {
-      elem_t * tmp = try_func(&next);
-      if (tmp == NULL) error(3, "parser", NULL, "Variable \"%s\" undefined", to_string(&next));
-      else {
-        tmp->symbol.sym_func->returns = var_list;
-      }
-    }
-  }
-  */
 }
 
 void next_id(elem_t * dest) {
@@ -2142,9 +2105,6 @@ elem_t * func_call(char * name) {
   match(T_R_BRACKET);
 
   fprintf(stderr, "%s\n\n", *(last_elem->key));
-
-  instr_type_t type = get_func_instr_type(last_elem->symbol.sym_func->name);
-  instr_add_func_call(type);
 
   return func;
 }
