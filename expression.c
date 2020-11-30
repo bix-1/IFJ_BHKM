@@ -165,8 +165,8 @@ void check_func_start()
 
             char *idExpr = create_id();
             char *id_scope = id_add_scope(scope_get_head(), idExpr);
-            // char * expr_id = malloc(sizeof(char) * (strlen(idExpr) + 1));
-            // strcpy(expr_id, idExpr);
+            char * expr_id = malloc(sizeof(char) * (strlen(idExpr) + 1));
+            strcpy(expr_id, idExpr);
 
             // create variable and add to symtable
             sym_var_item_t *var_item = sym_var_item_init(idExpr);
@@ -183,7 +183,8 @@ void check_func_start()
             func_add_ret(func, var_item);
 
             parsData->token->token_type = T_IDENTIFIER;
-            parsData->token->attr.str_lit.str = idExpr;
+            parsData->token->attr.str_lit.str = expr_id;
+            // parsData->token->attr.str_lit.str = idExpr;
             stack_push(tokStack, *parsData->token);
             check_symtable(tokStack->topToken);
 
@@ -204,14 +205,16 @@ void check_func_start()
         // stack_push(symbolStack, *parsData->token);
         int ttype = parsData->token->token_type;
 
-
         parsData->token->token_type = T_IDENTIFIER;
         parsData->token->attr.str_lit.str = id;
         stack_push(tokStack, *parsData->token);
 
         check_symtable(tokStack->topToken);
 
-        // free(id);
+        // if (parsData->token->attr.str_lit.str != NULL) {
+          // free(id);
+        //   parsData->token->attr.str_lit.str = NULL;
+        // }
 
         parsData->token->token_type = ttype;
 
@@ -235,7 +238,11 @@ void check_symtable(stackElemPtr elem)
         // Variable already existing
         eps = false;
         elem->data = id_find(scope_get_head(), to_string(&(elem->token)));
-        free(to_string(&(elem->token)));
+        char ** str = &(parsData->token->attr.str_lit.str);
+        if (*str != NULL) {
+          free(*str);
+          *str = NULL;
+        }
     }
     else
     {

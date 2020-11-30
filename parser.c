@@ -1692,11 +1692,15 @@ void func_list_pre() {
     eps = false;
     return;
   }
-  instr_add_func_def();
   // params
   match(T_L_BRACKET);
   param_list();
   match(T_R_BRACKET);
+
+  // needs to be after declaration of parameters
+  // so codegen's POPS have a target
+  instr_add_func_def();
+
   // returns & body
   func_def_type();
   match(T_EOL);
@@ -2215,7 +2219,6 @@ void func_args() {
   elem_t * func = last_elem;
 
   elem_t * arg = parse_expression();
-  printf("%d\n\n", next.token_type);
   if (arg->sym_type != SYM_FUNC) {
     func_add_param(func, arg->symbol.sym_var_item);
   } else {
@@ -2247,9 +2250,7 @@ void next_arg() {
 }
 
 elem_t * get_expr_list() {
-  printf("\t\t\t--- %d\n", next.token_type);
   elem_t * expr = parse_expression();
-  printf("\t\t\t--- %d\n", next.token_type);
   if (expr->sym_type == SYM_FUNC) return expr;
 
 

@@ -6,9 +6,8 @@ func fee (a int) (int, int) {
 
 func main () {
   a,b := foo(0.5)
-  //a = 0.5
 
-  a = gee(a)
+  a = gee(a) + 5
 }
 
 func gee (a int) (int) {
