@@ -21,8 +21,6 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include "codegen.h"    // instr_type
-
 // Table:
 struct symtable {
 	// content is private
