@@ -56,10 +56,13 @@ void stack_push(tokenStack *stack, tToken tokPush)
     newElem->expr = false;
 
     // Push the token
-    //printf("STACK TOP\t%p\t%d\t%d\n", stack->topToken, stack->topToken->token.token_type);
+    // printf("STACK TOP\t%p\t%d\t%d\n", stack->topToken, stack->topToken->token.token_type);
     newElem->nextTok = stack->topToken;
     stack->topToken = newElem;
-    //printf("STACK PUSH\t%p\t%p\t%d\n", newElem, stack->topToken,newElem->token.token_type);
+    // printf("STACK PUSH\t%p\t%p\t%d\n", newElem, stack->topToken,newElem->token.token_type);
+
+    // printf("%d\n\n", tokPush.token_type);
+    // exit(0);
 }
 
 void stack_pop(tokenStack *stack)

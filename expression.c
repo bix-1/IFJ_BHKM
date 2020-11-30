@@ -143,6 +143,7 @@ void check_func_start()
 {
     if (parsData->token->token_type != T_IDENTIFIER)
     {
+        was_func = false;
         return;
     }
 
@@ -150,26 +151,22 @@ void check_func_start()
     symtable_value_t func = try_func(parsData->token);
     if (func != NULL)
     {
-        if (parsData->token->token_type == T_EOL)
+        int index = get_index(*parsData->token);
+        if (index == OP_dollar || index == OP_parenth_close)
         {
-          instr_type_t type = get_func_instr_type(func->symbol.sym_func->name);
-          instr_add_func_call(type);
             retExpr = func; // a = foo()
             was_func = true;
             return;
         }
         else
         {
-            // a = foo() + ...
             // stack_push(symbolStack, *parsData->token);
-            // ret = false;
-            // shift();
-            var_type_t t_type = parsData->token->token_type;
+            int ttype = parsData->token->token_type;
 
             char *idExpr = create_id();
             char *id_scope = id_add_scope(scope_get_head(), idExpr);
-            char * expr_id = malloc(sizeof(char) * (strlen(idExpr) + 1));
-            strcpy(expr_id, idExpr);
+            // char * expr_id = malloc(sizeof(char) * (strlen(idExpr) + 1));
+            // strcpy(expr_id, idExpr);
 
             // create variable and add to symtable
             sym_var_item_t *var_item = sym_var_item_init(idExpr);
@@ -181,37 +178,52 @@ void check_func_start()
             var_item->is_defined = true;
 
             instr_type_t type = get_func_instr_type(func->symbol.sym_func->name);
-            instr_add_func_call(type);
+            instr_add_func_call(func, type);
 
             func_add_ret(func, var_item);
 
             parsData->token->token_type = T_IDENTIFIER;
-            parsData->token->attr.str_lit.str = expr_id;
-
-            // ret = true;
-            // shift();
-
+            parsData->token->attr.str_lit.str = idExpr;
             stack_push(tokStack, *parsData->token);
+            check_symtable(tokStack->topToken);
 
 
-            parsData->token->token_type = t_type;
-            stack_push(symbolStack, *parsData->token);
-            get_next_token(parsData->token);
-            // ret = true;
-            // shift();
+            parsData->token->token_type = ttype;
         }
     }
     else
     {
-        // for id cleanup
-        next.attr.str_lit.str = id;
         eps = false;
-        // symtable_value_t var = id_find(scope_get_head(), id);
+        id_find(scope_get_head(), id);
+
+
+        // // for id cleanup
+        // next.attr.str_lit.str = id;
+        // eps = false;
+
+        // stack_push(symbolStack, *parsData->token);
+        int ttype = parsData->token->token_type;
+
 
         parsData->token->token_type = T_IDENTIFIER;
         parsData->token->attr.str_lit.str = id;
+        stack_push(tokStack, *parsData->token);
 
-        shift();
+        check_symtable(tokStack->topToken);
+
+        // free(id);
+
+        parsData->token->token_type = ttype;
+
+        // parsData->token->token_type = symbolStack->topToken->token.token_type;
+        // parsData->token->attr = symbolStack->topToken->token.attr;
+
+
+        // check_symtable(tokStack->topToken);
+
+        // ret = true;
+        // shift();
+        // ret = false;
     }
 }
 
@@ -387,10 +399,19 @@ void check_expr(tToken *token)
 
 void shift()
 {
-
     // IF WE WANT TO PUSH NUMBERS
     if (get_index(*parsData->token) == OP_value || get_index(*parsData->token) == OP_STRING)
     {
+        if (
+          get_index(symbolStack->topToken->token) == OP_dollar &&
+          get_index(tokStack->topToken->token) != OP_dollar
+        ) {
+          ret = true;
+          retExpr = tokStack->topToken->data;
+          release_resources();
+          return;
+        }
+
         stack_push(tokStack, *parsData->token);
 
         check_symtable(tokStack->topToken);
@@ -448,10 +469,9 @@ void reduce()
         error(2, "expression parser", "reduce", "Missing an expression");
     }
 
-    // If value stack is !empty
+    // If value stack isn't empty
     if (tokStack->topToken->token.token_type != T_DOLLAR)
     {
-
         check_string(tokenTop, tokenAfterTop, &symbolTop);
 
         check_num(tokenTop, tokenAfterTop);
@@ -1201,12 +1221,13 @@ symtable_value_t parse_expression()
     if (was_func == true)
     {
       release_resources();
+      was_func = false;
       return retExpr;
     }
 
     while (1)
     {
-        int indexStack, indexInput = 0;
+        int indexStack, indexInput;
 
         indexInput = get_index(*parsData->token);
         indexStack = get_index(symbolStack->topToken->token);
@@ -1218,8 +1239,12 @@ symtable_value_t parse_expression()
             reduce();
             break;
         case S: /*<*/
-            //printf("\nSHIFT");
+            // printf("\nSHIFT\n");
             shift();
+            if (ret) {
+              ret = false;
+              return retExpr;
+            }
             break;
         case Eq: /*=*/
             //printf("\nEQUAL");
@@ -1227,8 +1252,7 @@ symtable_value_t parse_expression()
             //print();
             break;
         case Err: /* empty*/
-            //printf("\nERROR\n");
-            //print();
+            // print();
 
             if (symbolStack->topToken->token.token_type == T_DOLLAR)
             {
@@ -1279,6 +1303,12 @@ symtable_value_t parse_expression()
                 tmp = tmp->nextTok;
             } */
 
+            // if (get_index(tokStack->topToken->token) != OP_dollar) {
+            //   error(
+            //     2, "expression parser", NULL, "Invalid expression"
+            //   );
+            // }
+
             //printf("\n-----END-----\n\n");
             //printf("\nTOKEN DATA\t%s\n", tokStack->topToken->data->symbol.sym_var_item->name);
             release_resources();
@@ -1288,6 +1318,8 @@ symtable_value_t parse_expression()
                 error(2, "expression parser", "parse_expression", " Missing expression ");
             }
             //printf("\nAccept\t%s\n", retExpr->symbol.sym_var_item->data.string_t);
+
+
             return retExpr;
             break;
         default:

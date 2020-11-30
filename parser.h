@@ -165,7 +165,7 @@ void skip_empty();
 // additional instructions-related functions
 void instr_add_func_def();
 void instr_add_func_end();
-void instr_add_func_call(instr_type_t type);
+void instr_add_func_call(elem_t * func, instr_type_t type);
 void instr_add_var_decl(elem_t * var);
 void instr_add_var_def();
 void instr_add_if_end();
@@ -178,7 +178,7 @@ void add_next_expr();
 
 // checks
 void assign_var_def_types(elem_t *dest_elem, elem_t *src_elem);
-void check_var_move_types(elem_t *dest_elem, elem_t *src_elem);
+void assign_var_move_types(elem_t *dest_elem, elem_t *src_elem);
 void check_ret(elem_t *func_ret);
 void check_func_call_args(elem_t * func, elem_t * call);
 void check_func_call_rets(elem_t * func, elem_t * dest);
@@ -234,6 +234,9 @@ void undef_types_add(sym_var_item_t * var1, sym_var_item_t * var2);
 void undef_types_check();
 
 
+elem_t * create_expr(elem_t * func);
+
+
 /*
   ___________FUNCTIONS_REPRESENTING___________
   ___________LL_GRAMMAR_NONTERMINALS__________
@@ -265,7 +268,7 @@ void cycle();
 void for_def();
 void for_move();
 void return_();
-void return_list();
+elem_t * return_list();
 void next_ret();
 elem_t * func_call(char * name);
 void func_args();

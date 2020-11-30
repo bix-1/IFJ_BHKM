@@ -172,6 +172,7 @@ void error(
   jmp_label_stack_free_all();
   release_resources();
   frame_stack_destroy();
+  undef_types_destroy();
 
   exit( errCode );
 }
