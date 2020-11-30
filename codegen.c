@@ -87,35 +87,48 @@ void try_create_jump(instr_t instr) {
 
 void declr_var(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
-	elem_t *elem1 = instr.elem1_ptr;
 
 	if (elem_dest->sym_type != SYM_VAR_ITEM) {
 		error(99, "codegen.c", "declr_var", "Invalid symbol type");
 	}
 
-	if (elem1->sym_type != SYM_VAR_ITEM) {
-		error(99, "codegen.c", "declr_var", "Invalid symbol type");
-	}
-
 	sym_var_item_t *sym_dest = instr.elem_dest_ptr->symbol.sym_var_item;
-	sym_var_item_t *sym_elem1 = instr.elem1_ptr->symbol.sym_var_item;
 
 	if (sym_dest == NULL) {
 		error(99, "codegen.c", "declr_var", "NULL symbol");
 	}
 
 	char *frame_dest = get_frame(sym_dest);
-	char *frame_elem1 = get_frame(sym_elem1);
-
-	if (sym_dest->type != sym_elem1->type) {
-		error(99, "codegen.c", "declr_var", "Incompatible symbol");
-	}
 
 	// Declare variable
 	fprintf(OUTPUT, "DEFVAR %s@%s\n", frame_dest, sym_dest->name);
 
+	// Set variable init type
+	// TODO : Check with new bool is defined
+
+	switch (sym_dest->type) {
+		case VAR_INT:
+			fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, 0);
+			break;
+		case VAR_FLOAT64:
+			fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, sym_dest->name, 0.0);
+			break;
+		case VAR_STRING:
+			fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, sym_dest->name, "");
+			break;
+		case VAR_BOOL:
+			fprintf(OUTPUT, "MOVE %s@%s bool@%s\n", frame_dest, sym_dest->name, "false");
+			break;
+		case VAR_NIL:
+			fprintf(OUTPUT, "MOVE %s@%s nil@%s\n", frame_dest, sym_dest->name, "nil");
+			break;
+		case VAR_UNDEFINED:
+			error(99, "codegen.c", "declr_var", "Undefined variable type");
+			break;
+	}
+
 	// Set variable init value
-	if (sym_elem1->is_const) {
+	/*if (sym_elem1->is_const) {
 		switch (elem_dest->symbol.sym_var_item->type) {
 			case VAR_INT:
 				fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t);
@@ -148,7 +161,7 @@ void declr_var(instr_t instr) {
 	}
 	else {
 		fprintf(OUTPUT, "MOVE %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
-	}
+	}*/
 
 }
 
