@@ -648,7 +648,11 @@ elem_t * id_find(scope_elem_t *scope, char *old_id) {
     if (tmp_scope == NULL) {
       if (eps) return NULL;
       // next.attr.str_lit.str = old_id;
-      error(3, "parser", "match", "Variable \"%s\" undefined", old_id);
+      if (!strcmp(old_id, "_")){
+        error (2, "parser", NULL, "Unable to read from special variable \"_\"");
+      } else {
+        error(3, "parser", "match", "Variable \"%s\" undefined", old_id);
+      }
     }
     // get variable's contextual ID
     id = id_add_scope(tmp_scope, old_id);
@@ -1658,6 +1662,13 @@ elem_t * make_dest(int operation) {
       tmp = next
     ) {
       next = tmp->next;
+      // for cleanup in case of error
+      id_list.first = tmp;
+
+      if (!strcmp(tmp->id, "_")) {
+        error (2, "parser", NULL, "Redefinition of special variable \"_\"");
+      }
+
       // try to get existing variable -- in current scope
       char * id = id_add_scope(scope_get_head(), tmp->id);
       symtable_iterator_t it = symtable_find(symtable, id);
@@ -1680,8 +1691,6 @@ elem_t * make_dest(int operation) {
         sym_var_list_add(dest_list, list_item);
       }
       free(tmp);
-      // for cleanup in case of error
-      id_list.first = next;
     }
   } else { // =
     for (
