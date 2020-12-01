@@ -1427,6 +1427,67 @@ else
         echo "TEST FAILED"
 fi
 
+echo "--Complex tests 11-13_complex_11.go--"
+./ifj20 < compiler_tests/13_complex_11.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--Complex tests 12-13_complex_12.go--"
+./ifj20 < compiler_tests/13_complex_12.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--Complex tests 13-13_complex_13.go--"
+./ifj20 < compiler_tests/13_complex_13.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--Complex tests 14-13_complex_14.go--"
+./ifj20 < compiler_tests/13_complex_14.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--Complex tests 15-13_complex_15.go--"
+./ifj20 < compiler_tests/13_complex_15.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--Complex tests 16-13_complex_16.go--"
+./ifj20 < compiler_tests/13_complex_16.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+
 echo "#------------------EOL tests------------------#"
 echo "--compiler_tests/EOL_1.go--"
 ./ifj20 < compiler_tests/EOL_1.go > /dev/null 2>&1
@@ -1536,6 +1597,7 @@ else
         errorcount=$((errorcount + 1))
         echo "TEST FAILED"
 fi
+
 
 if [ $errorcount -eq 0 ]; then
 	echo "#------------------TESTS PASSED------------------#"
