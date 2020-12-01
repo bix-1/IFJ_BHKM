@@ -208,8 +208,6 @@ void add_built_in();  // add built-in functions to symtable
 
 elem_t * try_func(tToken * token);
 
-elem_t * get_next_var();
-
 // list in last_elem
 void list_add_var(elem_t * list, elem_t * var);
 
@@ -233,9 +231,25 @@ void undef_types_destroy();
 void undef_types_add(sym_var_item_t * var1, sym_var_item_t * var2);
 void undef_types_check();
 
-
 elem_t * create_expr(elem_t * func);
 
+
+typedef struct id id_t;
+struct id {
+  char * id;
+  id_t * next;
+};
+
+struct id_list_t {
+  id_t * first;
+  id_t * last;
+} id_list;
+
+void id_list_init();
+void id_list_destroy();
+void id_list_add(char * id);
+// create dest_list from id_list according to given operation
+elem_t * make_dest(int operation);
 
 /*
   ___________FUNCTIONS_REPRESENTING___________
@@ -260,7 +274,7 @@ void command();
 void var_(char * id);
 // void var_def();
 // void var_move();
-void next_id(elem_t * dest);
+void next_id();
 void if_();
 void if_cont();
 void else_();
@@ -269,7 +283,7 @@ void for_def();
 void for_move();
 void return_();
 elem_t * return_list();
-void next_ret();
+// void next_ret();
 elem_t * func_call(char * name);
 void func_args();
 void next_arg();

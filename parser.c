@@ -316,6 +316,7 @@ void parse() {
   scope_destroy();
   func_defs_destroy();
   undef_types_destroy();
+  id_list_destroy();
 
   codegen();
 
@@ -888,7 +889,6 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
   }
 }
 
-// TODO
 void assign_var_move_types(elem_t * dest_elem, elem_t * src_elem) {
   // check whether expression types match
   // their corresponding variables
@@ -1512,24 +1512,6 @@ elem_t * try_func(tToken * token) {
   } else return NULL;
 }
 
-
-elem_t * get_next_var() {
-  // try to get existing variable -- in current scope
-  char * id = id_add_scope(scope_get_head(), to_string(&next));
-  symtable_iterator_t it = symtable_find(symtable, id);
-  free(id); // contextual id no longer needed
-  if (symtable_iterator_valid(it)) { // found in current scope
-    token_cleanup(); // name no longer needed
-    if (get_next) get_next_token(&next);
-    return symtable_iterator_get_value(it);
-  }
-
-  // not found --> new definition
-  def = true; eps = false;
-  match(T_VAR_ID);
-  return last_elem;
-}
-
 void list_add_var(elem_t * list, elem_t * var) {
   list_item_t * item = list_item_init(var->symbol.sym_var_item);
   sym_var_list_add(list->symbol.sym_var_list, item);
@@ -1540,26 +1522,20 @@ bool check_types(sym_var_item_t * var1, sym_var_item_t * var2) {
   var_type_t type1 = var1->type;
   var_type_t type2 = var2->type;
 
-  // printf("INSIDE %s -- %s\n\n", var1->name, var2->name);
-  // printf("%d -- %d\n", type1, type2);
-
   if (type1 != VAR_UNDEFINED) {
     if (type2 != VAR_UNDEFINED) { // compare
       if (type1 == type2) return true;
       else return false;
     }
     else {  // [assign] type2 <-- type1
-      // printf("-->\n\n\n");
       var2->type = type1;
     }
   }
   else {
     if (type2 != VAR_UNDEFINED) { // [assign] type1 <-- type2
-      // printf("<--\n\n\n");
       var1->type = type2;
     }
     else {
-      // printf("--\n\n\n");
       undef_types_add(var1, var2);
     }
   }
@@ -1627,6 +1603,110 @@ elem_t * create_expr(elem_t * func) {
 
   return expr_elem;
 }
+
+
+void id_list_init() {
+  id_list.first = NULL;
+  id_list.last = NULL;
+}
+
+void id_list_destroy() {
+  id_t * next;
+  for (
+    id_t * it = id_list.first;
+    it != NULL;
+    it = next
+  ) {
+    next = it->next;
+    free(it->id);
+    free(it);
+  }
+  id_list_init();
+}
+
+void id_list_add(char * id) {
+  id_t * new = malloc(sizeof(id_t));
+  if (new == NULL) error(99, "parser", NULL, "Memory allocation failed");
+
+  char * new_id = malloc(sizeof(char) * (strlen(id) + 1));
+  strcpy(new_id, id);
+
+  new->id = new_id;
+  new->next = NULL;
+
+  if (id_list.first == NULL) {
+    id_list.first = new;
+  } else {
+    id_list.last->next = new;
+  }
+
+  id_list.last = new;
+}
+
+elem_t * make_dest(int operation) {
+  // create dest
+  sym_var_list_t * dest_list = sym_var_list_init();
+  symbol_t dest_list_sym = {.sym_var_list = dest_list};
+  elem_t * dest = elem_init(SYM_VAR_LIST, dest_list_sym);
+  symtable_insert(symtable, make_unique(dest), dest);
+
+  id_t * next;
+  if (operation == T_DEF_IDENT) { // :=
+    for (
+      id_t * tmp = id_list.first;
+      tmp != NULL;
+      tmp = next
+    ) {
+      next = tmp->next;
+      // try to get existing variable -- in current scope
+      char * id = id_add_scope(scope_get_head(), tmp->id);
+      symtable_iterator_t it = symtable_find(symtable, id);
+
+      if (symtable_iterator_valid(it)) { // found in current scope
+        // add existing item to list
+        sym_var_item_t * item = symtable_iterator_get_value(it)->symbol.sym_var_item;
+        list_item_t * list_item = list_item_init(item);
+        sym_var_list_add(dest_list, list_item);
+        free(id); // contextual id no longer needed
+        free(tmp->id);
+      } else {
+        // create new item
+        sym_var_item_t * new_item = sym_var_item_init(tmp->id);
+        symbol_t new_sym = {.sym_var_item = new_item};
+        elem_t * new = elem_init(SYM_VAR_ITEM, new_sym);
+        symtable_insert(symtable, id, new);
+        // add to the list
+        list_item_t * list_item = list_item_init(new_item);
+        sym_var_list_add(dest_list, list_item);
+      }
+      free(tmp);
+      // for cleanup in case of error
+      id_list.first = next;
+    }
+  } else { // =
+    for (
+      id_t * tmp = id_list.first;
+      tmp != NULL;
+      tmp = next
+    ) {
+      next = tmp->next;
+      // try to get ID -- in all scopes
+      eps = false;
+      elem_t * var = id_find(scope_get_head(), tmp->id);
+      // add exitsting item to list
+      list_item_t * list_item = list_item_init(var->symbol.sym_var_item);
+      sym_var_list_add(dest_list, list_item);
+      free(tmp->id);
+
+      free(tmp);
+    }
+  }
+
+  id_list_init();
+  return dest;
+}
+
+
 
 /*
   ___________FUNCTIONS_REPRESENTING___________
@@ -1926,55 +2006,21 @@ void command() {
 
 // expects ID of variable & following token in [next]
 void var_(char * id) { // collect list of dest variables
-  // create dest
-  sym_var_list_t * dest_list = sym_var_list_init();
-  symbol_t dest_list_sym = {.sym_var_list = dest_list};
-  elem_t * dest = elem_init(SYM_VAR_LIST, dest_list_sym);
-  symtable_insert(symtable, make_unique(dest), dest);
-
-  // first variable needs to be handled separately
-  // -- special context created by the use of try_func:
-  //      ID of the first variable is given via the parameter id
-  //      & following token is stored in [tToken] next
-
-  // stash next token
-  int type = next.token_type;
-  // setup for matching the first id
-  next.token_type = T_IDENTIFIER;
-  next.attr.str_lit.str = id;
-  // add first variable
-  get_next = false; // the next token is stashed
-  list_add_var(dest, get_next_var());
-  get_next = true;  // default state
-  //   restore next token
-  // the only valid lexemas that can follow are ',' '=' & ':='
-  // so no .attr restoration is needed
-  next.token_type = type;
-
-  // get the rest of dest vars
-  next_id(dest);
+  // get list of dest variables
+  id_list_add(id);
+  free(id);
+  next_id();
 
   int operation = next.token_type;
 
-  if (operation == T_DEF_IDENT) {
+  if (operation == T_DEF_IDENT)
     match(T_DEF_IDENT);
-  } else if (operation == T_ASSIGNMENT) {
+  else if (operation == T_ASSIGNMENT)
     match(T_ASSIGNMENT);
-    // check for undefined vars
-    for (
-      list_item_t * it = dest_list->first;
-      it != NULL;
-      it = it->next
-    ) {
-      if (it->item != NULL && !(it->item->is_defined)) {
-        error(3, "parser", "match", "Variable \"%s\" undefined", it->item->name);
-      }
-    }
-  }
-  else
-    error(2, "parser", NULL, "Invalid operation following list of variables");
+  else error(2, "parser", NULL, "Invalid operation following list of variables");
 
-  // get list of source expressions
+  // create dest & src lists
+  elem_t * dest = make_dest(operation);
   elem_t * src = get_expr_list();
 
   // handle a := foo()
@@ -1983,7 +2029,7 @@ void var_(char * id) { // collect list of dest variables
     instr_type_t type = get_func_instr_type(src->symbol.sym_func->name);
     instr_add_func_call(src, type);
 
-    src->symbol.sym_func->returns = dest_list;
+    src->symbol.sym_func->returns = dest->symbol.sym_var_list;
 
     if (operation == T_DEF_IDENT)
       assign_var_def_types(dest, dest);  // & assign types
@@ -1993,9 +2039,8 @@ void var_(char * id) { // collect list of dest variables
     return;
   }
 
-  // check correction of operation
   if (operation == T_DEF_IDENT)
-    assign_var_def_types(dest, src);  // & assign types
+    assign_var_def_types(dest, src);
   else
     assign_var_move_types(dest, src);
 
@@ -2007,17 +2052,25 @@ void var_(char * id) { // collect list of dest variables
   list_add(list, new_move);
 }
 
-void next_id(elem_t * dest) {
+void next_id() {
   eps = true;
   match(T_COMMA);
   if (eps) {
     eps = false;
     return;
   }
-  def = false; eps = false;
-  list_add_var(dest, get_next_var());
+  // def = false; eps = false;
+  // list_add_var(dest, get_next_var());
 
-  next_id(dest);
+  if (next.token_type != T_IDENTIFIER) {
+    match(T_VAR_ID);
+  }
+
+  id_list_add(to_string(&next));
+  token_cleanup();
+  get_next_token(&next);
+
+  next_id();
 }
 
 void if_() {
@@ -2169,49 +2222,7 @@ elem_t * return_list() {
 
   elem_t * expr = get_expr_list();
   return expr;
-
-
-  // if (expr->sym_type == SYM_FUNC) {
-  //   return expr;
-  // }
-
-  /*
-  // create return list
-  sym_var_list_t * ret_list = sym_var_list_init();
-  symbol_t ret_list_sym = {.sym_var_list = ret_list};
-  elem_t * ret_list_elem = elem_init(SYM_VAR_LIST, ret_list_sym);
-  symtable_insert(symtable, make_unique(ret_list_elem), ret_list_elem);
-  last_elem = ret_list_elem;
-
-  // add expression
-  list_item_t * expr_item = list_item_init(expr->symbol.sym_var_item);
-  sym_var_list_add(last_elem->symbol.sym_var_list, expr_item);
-
-  next_ret();
-
-  return ret_list_elem;
-  */
 }
-
-// void next_ret() {
-  // eps = true;
-  // match(T_COMMA);
-  // if (eps) {
-  //   eps = false;
-  //   return;
-  // }
-  //
-  // elem_t * expr = parse_expression();
-  // if (expr->sym_type == SYM_FUNC) {
-  //   elem_t * create_expr(last_func);
-  //
-  // } else {
-  //   list_item_t * expr_item = list_item_init(expr->symbol.sym_var_item);
-  //   sym_var_list_add(last_elem->symbol.sym_var_list, expr_item);
-  // }
-  //
-  // next_ret();
-// }
 
 elem_t * func_call(char * name) {
   next.token_type = T_IDENTIFIER;

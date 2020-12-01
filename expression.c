@@ -117,6 +117,8 @@ int get_index(tToken token)
     case T_IDENTIFIER:
     case T_INT_VALUE:
     case T_DEC_VALUE:
+    case T_TRUE:
+    case T_FALSE:
         return OP_value;
         break;
     case T_STRING_VALUE:
@@ -406,8 +408,6 @@ int var_type_check(stackElemPtr elem)
         return VAR_STRING;
         break;
     case T_TRUE:
-        return VAR_BOOL;
-        break;
     case T_FALSE:
         return VAR_BOOL;
         break;

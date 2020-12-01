@@ -173,6 +173,7 @@ void error(
   release_resources();
   frame_stack_destroy();
   undef_types_destroy();
+  id_list_destroy();
 
   exit( errCode );
 }
