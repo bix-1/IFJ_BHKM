@@ -167,12 +167,11 @@ void declr_var(instr_t instr) {
 
 void def_var(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem_1 = instr.elem1_ptr;
 
 	if (elem_dest == NULL) {
 		error(99, "codegen.c", "def_var", "NULL element");
 	}
-
-	elem_t *elem_1 = instr.elem1_ptr;
 
 	if (elem_1 == NULL) {
 		error(99, "codegen.c", "def_var", "NULL element");
@@ -205,7 +204,7 @@ void def_var(instr_t instr) {
 			error(99, "codegen.c", "def_var", "Incompatible data types");
 		}
 
-		if (sym_dest->is_const) {
+		if (sym_elem1->is_const) {
 			switch (sym_dest->type) {
 				case VAR_INT:
 					fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t);
@@ -2038,12 +2037,12 @@ void if_def() {
 }
 
 void if_start() {
-	fprintf(OUTPUT, "CREATEFRAME\n");
-	fprintf(OUTPUT, "PUSHFRAME\n");
+	//fprintf(OUTPUT, "CREATEFRAME\n");
+	//fprintf(OUTPUT, "PUSHFRAME\n");
 }
 
 void if_end(instr_t instr) {
-	fprintf(OUTPUT, "POPFRAME\n");
+	//fprintf(OUTPUT, "POPFRAME\n");
 	fprintf(OUTPUT, "JUMP %s%d\n", IF_END, jmp_label_stack_top(end_labels_top));
 	fprintf(OUTPUT, "LABEL %s%d\n", IF_SKIP, jmp_label_stack_pop(skip_labels_bottom, skip_labels_top));
 
@@ -2058,12 +2057,12 @@ void elseif_def() {
 }
 
 void elseif_start() {
-	fprintf(OUTPUT, "CREATEFRAME\n");
-	fprintf(OUTPUT, "PUSHFRAME\n");
+	//fprintf(OUTPUT, "CREATEFRAME\n");
+	//fprintf(OUTPUT, "PUSHFRAME\n");
 }
 
 void elseif_end(instr_t instr) {
-	fprintf(OUTPUT, "POPFRAME\n");
+	//fprintf(OUTPUT, "POPFRAME\n");
 	fprintf(OUTPUT, "JUMP %s%d\n", IF_END, jmp_label_stack_top(end_labels_top));
 	fprintf(OUTPUT, "LABEL %s%d\n", IF_SKIP, jmp_label_stack_pop(skip_labels_bottom, skip_labels_top));
 
@@ -2074,16 +2073,16 @@ void elseif_end(instr_t instr) {
 }
 
 void else_start() {
-	fprintf(OUTPUT, "CREATEFRAME\n");
-	fprintf(OUTPUT, "PUSHFRAME\n");
+	//fprintf(OUTPUT, "CREATEFRAME\n");
+	//fprintf(OUTPUT, "PUSHFRAME\n");
 }
 
 void else_end() {
-	fprintf(OUTPUT, "POPFRAME\n");
 	fprintf(OUTPUT, "JUMP %s%d\n", IF_END, jmp_label_stack_top(end_labels_top));
 
 	// if block end
 	fprintf(OUTPUT, "LABEL %s%d\n", IF_END, jmp_label_stack_pop(end_labels_bottom, end_labels_top));
+	//fprintf(OUTPUT, "POPFRAME\n");
 }
 
 void for_def_codegen() {
