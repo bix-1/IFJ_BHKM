@@ -12,14 +12,22 @@
 
 /*
 TODO:
-  fix a := .. a ..
+  func calls in the middle
+  main:x --> main-x
+
+  multival named returns
+
+  merge to master
+  dig through the tests
+
 
   ?? condition checking
 
-  func call as return
+  DOCUMENTATION
+
+  fix LL table
 
   remove unused functions
-  refactor func comments
   crossreference LL.pdf & implemented rules
 */
 
@@ -578,7 +586,7 @@ void scope_push(char * new_name) {
   if (tmp == NULL) {
     new->name = malloc(sizeof(char) * (strlen(new_name) + 2));
     strcpy(new->name, new_name);
-    strcat(new->name, ":");
+    strcat(new->name, "-");
   } else {
     new->name = malloc(
       sizeof(char) *
@@ -586,7 +594,7 @@ void scope_push(char * new_name) {
     );
     strcpy(new->name, tmp->name);
     strcat(new->name, new_name);
-    strcat(new->name, ":");
+    strcat(new->name, "-");
   }
   free(new_name);
   new->next = tmp;
@@ -1358,7 +1366,7 @@ void func_def_add_ret(elem_t * func, var_type_t type) {
   char * func_name = *(func->key);
   char * ret_id = malloc(sizeof(char) * (strlen(func_name) + 6));
   strcpy(ret_id, func_name);
-  strcat(ret_id, ":");
+  strcat(ret_id, "-");
   if (func->symbol.sym_func->returns == NULL) strcat(ret_id, "0ret");
   else strcat(ret_id, "1ret");
 
@@ -1378,7 +1386,7 @@ void func_def_add_param(elem_t * func, var_type_t type) {
   char * func_name = *(func->key);
   char * param_id = malloc(sizeof(char) * (strlen(func_name) + 6));
   strcpy(param_id, func_name);
-  strcat(param_id, ":");
+  strcat(param_id, "-");
 
   // TODO add real cycle
   if (func->symbol.sym_func->params == NULL) strcat(param_id, "0prm");
