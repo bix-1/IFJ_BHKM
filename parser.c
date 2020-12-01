@@ -12,8 +12,6 @@
 
 /*
 TODO:
-  main:x --> main-x
-
   multival named returns
 
   merge to master
@@ -2087,9 +2085,12 @@ void if_() {
   match(T_IF);
   instr_add_if_def();
   // condition
-  parse_expression(); // condition handling
-  if (!(instr_get_type(list->last) >= IC_LT_VAR && instr_get_type(list->last) <= IC_NOT_VAR))
+  elem_t * cond = parse_expression(); // condition handling
+  // if (!(instr_get_type(list->last) >= IC_LT_VAR && instr_get_type(list->last) <= IC_NOT_VAR))
+    // error(2, "parser", NULL, "Invalid condition");
+  if (cond->symbol.sym_var_item->type != VAR_BOOL)
     error(2, "parser", NULL, "Invalid condition");
+
   match(T_LEFT_BRACE);
   match(T_EOL);
 
@@ -2136,8 +2137,13 @@ void cycle() {
   instr_t * for_cond = instr_create();
   instr_set_type(for_cond, IC_FOR_COND);
   list_add(list, for_cond);
-  parse_expression(); // expression parser call
-  if (!(instr_get_type(list->last) >= IC_LT_VAR && instr_get_type(list->last) <= IC_NOT_VAR))
+  // parse_expression(); // expression parser call
+  // if (!(instr_get_type(list->last) >= IC_LT_VAR && instr_get_type(list->last) <= IC_NOT_VAR))
+    error(2, "parser", NULL, "Invalid condition");
+  elem_t * cond = parse_expression(); // condition handling
+  // if (!(instr_get_type(list->last) >= IC_LT_VAR && instr_get_type(list->last) <= IC_NOT_VAR))
+    // error(2, "parser", NULL, "Invalid condition");
+  if (cond->symbol.sym_var_item->type != VAR_BOOL)
     error(2, "parser", NULL, "Invalid condition");
   match(T_SEMICOLON);
   // step
