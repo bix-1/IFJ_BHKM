@@ -1427,6 +1427,115 @@ else
         echo "TEST FAILED"
 fi
 
+echo "#------------------EOL tests------------------#"
+echo "--compiler_tests/EOL_1.go--"
+./ifj20 < compiler_tests/EOL_1.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/EOL_2.go--"
+./ifj20 < compiler_tests/EOL_2.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/EOL_3.go--"
+./ifj20 < compiler_tests/EOL_3.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/EOL_4.go--"
+./ifj20 < compiler_tests/EOL_4.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/EOL_5.go--"
+./ifj20 < compiler_tests/EOL_5.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/EOL_5.go--"
+./ifj20 < compiler_tests/EOL_5.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/EOL_6.go--"
+./ifj20 < compiler_tests/EOL_6.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/EOL_7.go--"
+./ifj20 < compiler_tests/EOL_7.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+echo "--compiler_tests/EOL_8.go--"
+./ifj20 < compiler_tests/EOL_8.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/EOL_9.go--"
+./ifj20 < compiler_tests/EOL_9.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/EOL_10.go--"
+./ifj20 < compiler_tests/EOL_10.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
 
 if [ $errorcount -eq 0 ]; then
 	echo "#------------------TESTS PASSED------------------#"
