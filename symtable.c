@@ -435,9 +435,6 @@ void sym_func_free(sym_func_t *sym_func) {
 		error(99, "symtable.c", "sym_func_free", "Failed to free symbol func");
 	}
 
-	sym_var_list_t *sym_func_params = sym_func->params;
-	sym_var_list_t *sym_func_returns = sym_func->returns;
-
 	free(sym_func->name);
 	free(sym_func);
 }
