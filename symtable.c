@@ -397,6 +397,7 @@ sym_var_item_t *sym_var_item_init(char *name) {
 	sym_var_item->type = VAR_UNDEFINED;
 	sym_var_item->is_const = false;
 	sym_var_item->is_global = false;
+	sym_var_item->is_defined = false;
 	sym_var_item->is_formatted = false;
 
 	return sym_var_item;
@@ -434,17 +435,6 @@ void sym_func_free(sym_func_t *sym_func) {
 		error(99, "symtable.c", "sym_func_free", "Failed to free symbol func");
 	}
 
-	sym_var_list_t *sym_func_params = sym_func->params;
-	sym_var_list_t *sym_func_returns = sym_func->returns;
-
-	if (sym_func_params != NULL) {
-		// sym_var_list_free(sym_func_params);
-	}
-
-	if (sym_func_returns != NULL) {
-		// sym_var_list_free(sym_func_returns);
-	}
-
 	free(sym_func->name);
 	free(sym_func);
 }
@@ -453,9 +443,6 @@ void sym_var_item_free(sym_var_item_t *sym_var_item) {
 	if (sym_var_item == NULL) {
 		error(99, "symtable.c", "sym_var_item_free", "Failed to free symbol var item");
 	}
-
-	if (sym_var_item->name != NULL)
-		free(sym_var_item->name);
 
 	if (sym_var_item->type == VAR_STRING) {
 		if (sym_var_item->data.string_t != NULL) {

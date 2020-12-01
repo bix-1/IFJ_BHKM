@@ -40,7 +40,7 @@ typedef struct tokenStack
 /*
 *   Function which initializes stack
 */
-void stack_init(tokenStack *stack);
+void stack_init(tokenStack **stack);
 
 /*
 *   Function pushes tokPush on the top of the stack
@@ -60,6 +60,6 @@ void stack_empty(tokenStack *stack);
 /*
 *   Function which free's the stack
 */
-void stack_free(tokenStack *stack);
+void stack_free(tokenStack **stack);
 
 #endif //IFJ_BHKM_STACK_H

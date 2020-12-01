@@ -14,8 +14,9 @@
 #include "stack.h"
 #include "error.h"
 
-void stack_init(tokenStack *stack)
+void stack_init(tokenStack **stack)
 {
+    *stack = malloc(sizeof(tokenStack));
 
     // Insterting the empty flag token
     stackElemPtr newElem = (stackElemPtr)malloc(sizeof(struct stackElem));
@@ -32,7 +33,7 @@ void stack_init(tokenStack *stack)
     newElem->expr = false;
     //newElem->token.attr.int_lit = 0; Not important ??
 
-    stack->topToken = newElem;
+    (*stack)->topToken = newElem;
     //printf("STACK INIT\t%p\t%p\t%d\n", newElem, stack->topToken, newElem->token.token_type);
 }
 
@@ -55,10 +56,13 @@ void stack_push(tokenStack *stack, tToken tokPush)
     newElem->expr = false;
 
     // Push the token
-    //printf("STACK TOP\t%p\t%d\t%d\n", stack->topToken, stack->topToken->token.token_type);
+    // printf("STACK TOP\t%p\t%d\t%d\n", stack->topToken, stack->topToken->token.token_type);
     newElem->nextTok = stack->topToken;
     stack->topToken = newElem;
-    //printf("STACK PUSH\t%p\t%p\t%d\n", newElem, stack->topToken,newElem->token.token_type);
+    // printf("STACK PUSH\t%p\t%p\t%d\n", newElem, stack->topToken,newElem->token.token_type);
+
+    // printf("%d\n\n", tokPush.token_type);
+    // exit(0);
 }
 
 void stack_pop(tokenStack *stack)
@@ -88,10 +92,12 @@ void stack_empty(tokenStack *stack)
     }
 }
 
-void stack_free(tokenStack *stack)
+void stack_free(tokenStack **stack)
 {
+  if (stack == NULL || *stack == NULL) return;
 
-    if (stack->topToken == NULL)
+
+    if ((*stack)->topToken == NULL)
     {
         // MAYBE ERROR ? TRYING TO FREE UNALLOCATED
         return;
@@ -99,11 +105,13 @@ void stack_free(tokenStack *stack)
 
     stackElemPtr tmp;
 
-    while (stack->topToken != NULL)
+    while ((*stack)->topToken != NULL)
     {
-        tmp = stack->topToken;
-        stack->topToken = stack->topToken->nextTok;
+        tmp = (*stack)->topToken;
+        (*stack)->topToken = (*stack)->topToken->nextTok;
         tmp->data = NULL;
         free(tmp);
     }
+    free(*stack);
+    *stack = NULL;
 }

@@ -1,0 +1,27 @@
+package main
+
+
+func foo (a int) (int) {
+  return fee(a) + a
+}
+
+func main () {
+  a := foo(fee(0)) + fee(0) + 5
+  a,b := flee()
+}
+
+func fee (a int) (int) {
+  return a + 2
+}
+
+func faa () (int, int) {
+  return 0,0
+}
+
+func flee () (int, int) {
+  return gee()
+}
+
+func gee () (int, int) {
+  return 0,0
+}

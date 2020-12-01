@@ -103,66 +103,6 @@ void declr_var(instr_t instr) {
 	// Declare variable
 	fprintf(OUTPUT, "DEFVAR %s@%s\n", frame_dest, sym_dest->name);
 
-	// Set variable init type
-	// TODO : Check with new bool is defined
-
-	switch (sym_dest->type) {
-		case VAR_INT:
-			fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, 0);
-			break;
-		case VAR_FLOAT64:
-			fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, sym_dest->name, 0.0);
-			break;
-		case VAR_STRING:
-			fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, sym_dest->name, "");
-			break;
-		case VAR_BOOL:
-			fprintf(OUTPUT, "MOVE %s@%s bool@%s\n", frame_dest, sym_dest->name, "false");
-			break;
-		case VAR_NIL:
-			fprintf(OUTPUT, "MOVE %s@%s nil@%s\n", frame_dest, sym_dest->name, "nil");
-			break;
-		case VAR_UNDEFINED:
-			error(99, "codegen.c", "declr_var", "Undefined variable type");
-			break;
-	}
-
-	// Set variable init value
-	/*if (sym_elem1->is_const) {
-		switch (elem_dest->symbol.sym_var_item->type) {
-			case VAR_INT:
-				fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t);
-				break;
-			case VAR_FLOAT64:
-				fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, sym_dest->name, sym_elem1->data.float64_t);
-				break;
-			case VAR_STRING: {
-				fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, sym_dest->name, sym_elem1->data.string_t);
-				break;
-			}
-			case VAR_BOOL:
-				if (sym_dest->data.bool_t) {
-					fprintf(OUTPUT, "MOVE %s@%s bool@true\n", frame_dest, sym_dest->name);
-				}
-				else {
-					fprintf(OUTPUT, "MOVE %s@%s bool@false\n", frame_dest, sym_dest->name);
-				}
-				break;
-			case VAR_NIL:
-				fprintf(OUTPUT, "MOVE %s@%s nil@nil\n", frame_dest, sym_dest->name);
-				break;
-			case VAR_UNDEFINED:
-				error(99, "codegen.c", "declr_var", "Undefined data type");
-				break;
-			default:
-				error(99, "codegen.c", "declr_var", "Wrong data type");
-				break;
-		}
-	}
-	else {
-		fprintf(OUTPUT, "MOVE %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
-	}*/
-
 }
 
 void def_var(instr_t instr) {

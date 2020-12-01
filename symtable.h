@@ -59,6 +59,7 @@ struct sym_var_item {
 	char *name;
 	bool is_const;
 	bool is_global;
+	bool is_defined;
 	bool is_formatted;
 	var_type_t type;
 	variable_t data;
