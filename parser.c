@@ -12,7 +12,6 @@
 
 /*
 TODO:
-  func calls in the middle
   main:x --> main-x
 
   multival named returns
@@ -508,18 +507,16 @@ void match(int term) {
           var->symbol.sym_var_item->data.string_t = NULL;
           // add to symtable
           symtable_insert(symtable, id, var);
-          instr_add_var_decl(var);
-          fprintf(stderr, "\t---%s\n", id);
 
           // check if var is parameter of func
-          // if (last_elem != NULL && last_elem->sym_type == SYM_FUNC) {
-          //   func_add_param(last_elem, var->symbol.sym_var_item);
-          //   last_elem = var;
-          // } else {
-          //   last_elem = var;
-          // }
+          // --> skip declaration
+          if (last_elem == NULL || last_elem->sym_type != SYM_FUNC) {
+            instr_add_var_decl(var);
+          }
 
           last_elem = var;
+
+          fprintf(stderr, "\t---%s\n", id);
         }
       }
       else {  // var_call expected
@@ -1194,6 +1191,7 @@ void check_func_call_rets(elem_t * def_e, elem_t * call_e) {
       );
     }
 
+    // printf("CHECKING %s -- %s\n\n", def->item->name, call->item->name);
     if (!check_types(def->item, call->item)) {
       char def_type[NAME_MAX_L] = "";
       char call_type[NAME_MAX_L] = "";
@@ -1542,20 +1540,26 @@ bool check_types(sym_var_item_t * var1, sym_var_item_t * var2) {
   var_type_t type1 = var1->type;
   var_type_t type2 = var2->type;
 
+  // printf("INSIDE %s -- %s\n\n", var1->name, var2->name);
+  // printf("%d -- %d\n", type1, type2);
+
   if (type1 != VAR_UNDEFINED) {
     if (type2 != VAR_UNDEFINED) { // compare
       if (type1 == type2) return true;
       else return false;
     }
     else {  // [assign] type2 <-- type1
+      // printf("-->\n\n\n");
       var2->type = type1;
     }
   }
   else {
     if (type2 != VAR_UNDEFINED) { // [assign] type1 <-- type2
+      // printf("<--\n\n\n");
       var1->type = type2;
     }
     else {
+      // printf("--\n\n\n");
       undef_types_add(var1, var2);
     }
   }
@@ -1601,8 +1605,9 @@ void undef_types_check() {
     it != NULL;
     it = it->next
   ) {
+    // printf("%s -- %s\n\n", it->var1->name, it->var2->name);
     if (!check_types(it->var1, it->var2)) {
-      error(99, "parser", "undef_types_check", "INVALID STATE");
+      error(5, "parser", "undef_types_check", "Function call destination types do not match");
     }
   }
 }
@@ -2144,6 +2149,8 @@ void return_() {
         func_add_ret(ret_list, expr->symbol.sym_var_item);
       }
     }
+    instr_type_t type = get_func_instr_type(ret_list->symbol.sym_func->name);
+    instr_add_func_call(ret_list, type);
   } else {
     func->symbol.sym_func->returns = ret_list->symbol.sym_var_list;
   }

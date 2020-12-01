@@ -139,6 +139,62 @@ int get_index(tToken token)
     return 0;
 }
 
+void check_func() {
+  // stash ID
+  char *id = to_string(parsData->token);
+  // check for func
+  symtable_value_t func = try_func(parsData->token);
+
+  if (func == NULL) { // recovery
+    // check if defined
+    eps = false;
+    id_find(scope_get_head(), id);
+    // stash following token
+    int ttype = parsData->token->token_type;
+    // add stashed ID
+    parsData->token->token_type = T_IDENTIFIER;
+    parsData->token->attr.str_lit.str = id;
+    stack_push(tokStack, *parsData->token);
+    check_symtable(tokStack->topToken);
+    // restore following token
+    parsData->token->token_type = ttype;
+  }
+  else { // adding func call as expression
+    // stash following token
+    int ttype = parsData->token->token_type;
+
+    // create key, name & token's name for dest variable
+    char *idExpr = create_id();
+    char *id_scope = id_add_scope(scope_get_head(), idExpr);
+    char * expr_id = malloc(sizeof(char) * (strlen(idExpr) + 1));
+    strcpy(expr_id, idExpr);
+
+    // create dest variable for func's return
+    sym_var_item_t *var_item = sym_var_item_init(idExpr);
+    sym_var_item_set_type(var_item, VAR_UNDEFINED);
+    symbol_t var_sym = {.sym_var_item = var_item};
+    elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
+    symtable_insert(symtable, id_scope, var);
+    instr_add_var_decl(var);
+    var_item->is_defined = true;
+
+    // add func call instruction
+    instr_type_t type = get_func_instr_type(func->symbol.sym_func->name);
+    instr_add_func_call(func, type);
+    // link func call to the rest of the expression
+    func_add_ret(func, var_item);
+
+    // add dest variable to stack
+    parsData->token->token_type = T_IDENTIFIER;
+    parsData->token->attr.str_lit.str = expr_id;
+    stack_push(tokStack, *parsData->token);
+    check_symtable(tokStack->topToken);
+
+    // restore following token
+    parsData->token->token_type = ttype;
+  }
+}
+
 void check_func_start()
 {
     if (parsData->token->token_type != T_IDENTIFIER)
@@ -409,6 +465,7 @@ void shift()
     // IF WE WANT TO PUSH NUMBERS
     if (get_index(*parsData->token) == OP_value || get_index(*parsData->token) == OP_STRING)
     {
+        // two elements without separating operation
         if (
           get_index(symbolStack->topToken->token) == OP_dollar &&
           get_index(tokStack->topToken->token) != OP_dollar
@@ -419,9 +476,15 @@ void shift()
           return;
         }
 
-        stack_push(tokStack, *parsData->token);
+        if (parsData->token->token_type == T_IDENTIFIER) {
+          check_func();
+          return;
+        } else {
+          // printf("NOT ID\n\n\n");
+          stack_push(tokStack, *parsData->token);
+          check_symtable(tokStack->topToken);
+        }
 
-        check_symtable(tokStack->topToken);
         //print();
 
     } // IF WE WANT TO PUSH SYMBOLS
@@ -490,9 +553,15 @@ void reduce()
             if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
 
-                // bool check_types(tokenTop,tokenAfterTop);
+                check_types(
+                  tokenTop->data->symbol.sym_var_item,
+                  tokenAfterTop->data->symbol.sym_var_item
+                );
                 symtable_value_t dest = create_dest(tokenTop);
-                // bool check_types(dest,tokenTop);
+                check_types(
+                  dest->symbol.sym_var_item,
+                  tokenTop->data->symbol.sym_var_item
+                );
 
                 if (tokenTop->originalType == T_STRING_VALUE && tokenAfterTop->originalType == T_STRING_VALUE)
                 {
@@ -1200,6 +1269,7 @@ void frame_stack_pop() {
 
 symtable_value_t parse_expression()
 {
+  // printf("CALLED\n\n");
     if (get_index(next) == OP_dollar)
     {
         error(2, "expression parser", NULL, "Missing an expression");
@@ -1238,6 +1308,8 @@ symtable_value_t parse_expression()
 
         indexInput = get_index(*parsData->token);
         indexStack = get_index(symbolStack->topToken->token);
+
+        // printf("%d -- %d\n\n", indexStack, indexInput);
 
         switch (precTable[indexStack][indexInput])
         {

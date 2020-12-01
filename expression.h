@@ -55,6 +55,7 @@ int get_index(tToken token);
 
 void print();
 void check_func_start();
+void check_func();
 
 /*
 *   Function creates variable in symtable
