@@ -208,7 +208,6 @@ void parse() {
         break;
       case IC_CALL_FUN:
        fprintf(stderr, "\tFUNC CALL\t%s\n", instr_get_dest(tmp)->symbol.sym_func->name);
-       // fprintf(stderr, "%s\n", instr_get_dest(tmp)->symbol.sym_func->returns->first->item->name);
         break;
       case IC_RET_FUN: {
      fprintf(stderr, "\tRET %s    ", instr_get_dest(tmp)->symbol.sym_func->name);
@@ -500,7 +499,8 @@ void match(int term) {
         }
         else {  // first occurrence
           // create var
-          sym_var_item_t * var_item = sym_var_item_init(to_string(&next));
+          token_cleanup();
+          sym_var_item_t * var_item = sym_var_item_init(id);
           symbol_t var_sym = {.sym_var_item = var_item};
           elem_t * var = elem_init(SYM_VAR_ITEM, var_sym);
           var->symbol.sym_var_item->data.string_t = NULL;
@@ -645,7 +645,6 @@ elem_t * id_find(scope_elem_t *scope, char *old_id) {
     // check for end of scope
     if (tmp_scope == NULL) {
       if (eps) return NULL;
-      // next.attr.str_lit.str = old_id;
       if (!strcmp(old_id, "_")){
         error (2, "parser", NULL, "Unable to read from special variable \"_\"");
       } else {
@@ -673,7 +672,7 @@ char * get_unique() {
 }
 
 char * make_unique(elem_t * elem) {
-  char type[6] = "";  // TODO const
+  char type[6] = "";
   switch(elem->sym_type) {
     case SYM_VAR_LIST:
       strcpy(type, "list");
@@ -1583,7 +1582,6 @@ void undef_types_check() {
     it != NULL;
     it = it->next
   ) {
-    // printf("%s -- %s\n\n", it->var1->name, it->var2->name);
     if (!check_types(it->var1, it->var2)) {
       error(5, "parser", "undef_types_check", "Function call destination types do not match");
     }
@@ -1592,12 +1590,8 @@ void undef_types_check() {
 
 
 elem_t * create_expr(elem_t * func) {
-  char * index = get_unique();
-  char * id = malloc(sizeof(char) * (strlen(index) + 6));
-  strcpy(id, index);
-  strcat(id, "f_exp");
   char * key = make_unique(func);
-  sym_var_item_t * expr = sym_var_item_init(id);
+  sym_var_item_t * expr = sym_var_item_init(key);
   symbol_t expr_sym = {.sym_var_item = expr};
   elem_t * expr_elem = elem_init(SYM_VAR_ITEM, expr_sym);
   symtable_insert(symtable, key, expr_elem);
@@ -1680,7 +1674,8 @@ elem_t * make_dest(int operation) {
         free(tmp->id);
       } else {
         // create new item
-        sym_var_item_t * new_item = sym_var_item_init(tmp->id);
+        free(tmp->id);
+        sym_var_item_t * new_item = sym_var_item_init(id);
         symbol_t new_sym = {.sym_var_item = new_item};
         elem_t * new = elem_init(SYM_VAR_ITEM, new_sym);
         symtable_insert(symtable, id, new);
@@ -2066,8 +2061,6 @@ void next_id() {
     eps = false;
     return;
   }
-  // def = false; eps = false;
-  // list_add_var(dest, get_next_var());
 
   if (next.token_type != T_IDENTIFIER) {
     match(T_VAR_ID);
@@ -2137,9 +2130,6 @@ void cycle() {
   instr_t * for_cond = instr_create();
   instr_set_type(for_cond, IC_FOR_COND);
   list_add(list, for_cond);
-  // parse_expression(); // expression parser call
-  // if (!(instr_get_type(list->last) >= IC_LT_VAR && instr_get_type(list->last) <= IC_NOT_VAR))
-    error(2, "parser", NULL, "Invalid condition");
   elem_t * cond = parse_expression(); // condition handling
   // if (!(instr_get_type(list->last) >= IC_LT_VAR && instr_get_type(list->last) <= IC_NOT_VAR))
     // error(2, "parser", NULL, "Invalid condition");
@@ -2330,7 +2320,6 @@ void next_expr() {
     sym_var_list_add(last_elem->symbol.sym_var_list, list_item);
   }
 
-  // // add_next_expr();
   next_expr();
 }
 

@@ -168,11 +168,9 @@ void check_func() {
     // create key, name & token's name for dest variable
     char *idExpr = create_id();
     char *id_scope = id_add_scope(scope_get_head(), idExpr);
-    char * expr_id = malloc(sizeof(char) * (strlen(idExpr) + 1));
-    strcpy(expr_id, idExpr);
 
     // create dest variable for func's return
-    sym_var_item_t *var_item = sym_var_item_init(idExpr);
+    sym_var_item_t *var_item = sym_var_item_init(id_scope);
     sym_var_item_set_type(var_item, VAR_UNDEFINED);
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
@@ -188,7 +186,7 @@ void check_func() {
 
     // add dest variable to stack
     parsData->token->token_type = T_IDENTIFIER;
-    parsData->token->attr.str_lit.str = expr_id;
+    parsData->token->attr.str_lit.str = idExpr;
     stack_push(tokStack, *parsData->token);
     check_symtable(tokStack->topToken);
 
@@ -223,11 +221,9 @@ void check_func_start()
 
             char *idExpr = create_id();
             char *id_scope = id_add_scope(scope_get_head(), idExpr);
-            char * expr_id = malloc(sizeof(char) * (strlen(idExpr) + 1));
-            strcpy(expr_id, idExpr);
 
             // create variable and add to symtable
-            sym_var_item_t *var_item = sym_var_item_init(idExpr);
+            sym_var_item_t *var_item = sym_var_item_init(id_scope);
             sym_var_item_set_type(var_item, VAR_UNDEFINED);
             symbol_t var_sym = {.sym_var_item = var_item};
             elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
@@ -241,8 +237,7 @@ void check_func_start()
             func_add_ret(func, var_item);
 
             parsData->token->token_type = T_IDENTIFIER;
-            parsData->token->attr.str_lit.str = expr_id;
-            // parsData->token->attr.str_lit.str = idExpr;
+            parsData->token->attr.str_lit.str = idExpr;
             stack_push(tokStack, *parsData->token);
             check_symtable(tokStack->topToken);
 
@@ -317,9 +312,10 @@ symtable_value_t create_dest(stackElemPtr elem)
 {
     char *id = create_id();
     char *id_scope = id_add_scope(scope_get_head(), id);
+    free(id);
 
     // create variable and add to symtable
-    sym_var_item_t *var_item = sym_var_item_init(id);
+    sym_var_item_t *var_item = sym_var_item_init(id_scope);
     sym_var_item_set_type(var_item, elem->data->symbol.sym_var_item->type);
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
@@ -334,8 +330,9 @@ symtable_value_t create_variable(stackElemPtr elem)
 {
     char *id = create_id();
     char *id_scope = id_add_scope(scope_get_head(), id);
+    free(id);
     // create variable and add to symtable
-    sym_var_item_t *var_item = sym_var_item_init(id);
+    sym_var_item_t *var_item = sym_var_item_init(id_scope);
     sym_var_item_set_type(var_item, var_type_check(elem));
     sym_var_item_set_const(var_item, true);
 
