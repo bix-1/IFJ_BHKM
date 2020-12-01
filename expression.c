@@ -216,7 +216,6 @@ void check_func_start()
         }
         else
         {
-            // stack_push(symbolStack, *parsData->token);
             int ttype = parsData->token->token_type;
 
             char *idExpr = create_id();
@@ -250,36 +249,14 @@ void check_func_start()
         eps = false;
         id_find(scope_get_head(), id);
 
-
-        // // for id cleanup
-        // next.attr.str_lit.str = id;
-        // eps = false;
-
-        // stack_push(symbolStack, *parsData->token);
         int ttype = parsData->token->token_type;
 
         parsData->token->token_type = T_IDENTIFIER;
         parsData->token->attr.str_lit.str = id;
         stack_push(tokStack, *parsData->token);
-
         check_symtable(tokStack->topToken);
 
-        // if (parsData->token->attr.str_lit.str != NULL) {
-          // free(id);
-        //   parsData->token->attr.str_lit.str = NULL;
-        // }
-
         parsData->token->token_type = ttype;
-
-        // parsData->token->token_type = symbolStack->topToken->token.token_type;
-        // parsData->token->attr = symbolStack->topToken->token.attr;
-
-
-        // check_symtable(tokStack->topToken);
-
-        // ret = true;
-        // shift();
-        // ret = false;
     }
 }
 
@@ -477,7 +454,6 @@ void shift()
           check_func();
           return;
         } else {
-          // printf("NOT ID\n\n\n");
           stack_push(tokStack, *parsData->token);
           check_symtable(tokStack->topToken);
         }
@@ -488,6 +464,19 @@ void shift()
     else if (get_index(*parsData->token) == OP_plus_minus || get_index(*parsData->token) == OP_mult_div || get_index(*parsData->token) == OP_parenth_close || get_index(*parsData->token) == OP_parenth_open || get_index(*parsData->token) == OP_rel_comp || get_index(*parsData->token) == OP_dollar)
     {
         stack_push(symbolStack, *parsData->token);
+        get_next_token(parsData->token);
+
+        if (
+          get_index(symbolStack->topToken->token) != OP_dollar &&
+          parsData->token->token_type == T_EOL
+        ) {
+          next.token_type = parsData->token->token_type;
+          next.attr = parsData->token->attr;
+          skip_empty();
+          parsData->token->token_type = next.token_type;
+          parsData->token->attr = next.attr;
+        }
+        ret = true;
     }
     else
     {
@@ -495,15 +484,15 @@ void shift()
         error(2, "expression parser", "reduce", "Missing an expression");
     }
 
-    if (ret == true)
-    {
-        return;
-    }
-
-    get_next_token(parsData->token);
+    if (!ret) get_next_token(parsData->token);
+    else ret = false;
 
     // ERROR if '(' is followed by ')' without expression ... f.e.  a= 5+5*()5
-    if (symbolStack->topToken->token.token_type == T_L_BRACKET && parsData->token->token_type == T_R_BRACKET)
+    if (
+      symbolStack->topToken->token.token_type == T_L_BRACKET &&
+      parsData->token->token_type == T_R_BRACKET &&
+      get_index(tokStack->topToken->token) == OP_dollar
+    )
     {
         release_resources();
         error(2, "expression parser", "reduce", "Missing an expression");
@@ -1266,7 +1255,6 @@ void frame_stack_pop() {
 
 symtable_value_t parse_expression()
 {
-  // printf("CALLED\n\n");
     if (get_index(next) == OP_dollar)
     {
         error(2, "expression parser", NULL, "Missing an expression");
@@ -1306,12 +1294,10 @@ symtable_value_t parse_expression()
         indexInput = get_index(*parsData->token);
         indexStack = get_index(symbolStack->topToken->token);
 
-        // printf("%d -- %d\n\n", indexStack, indexInput);
-
         switch (precTable[indexStack][indexInput])
         {
         case R: /*>*/
-            //printf("\nREDUCE");
+            // printf("\nREDUCE");
             reduce();
             break;
         case S: /*<*/

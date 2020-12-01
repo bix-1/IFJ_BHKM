@@ -1856,6 +1856,7 @@ void next_param() {
     eps = false;
     return;
   }
+  skip_empty();
 
   match(T_VAR_ID);
   func_add_param(last_func, last_elem->symbol.sym_var_item);
@@ -1953,7 +1954,12 @@ void ret_list_def() {
 void next_ret_def() {
   eps = true;
   match(T_COMMA);
-  if (eps) return;
+  if (eps) {
+    eps = false;
+    return;
+  }
+  skip_empty();
+
   type();
   next_ret_def();
 }
@@ -2237,6 +2243,7 @@ elem_t * func_call(char * name) {
   elem_t * func = last_elem;
 
   // '(' already matched in try_func
+  skip_empty();
   func_args();
   match(T_R_BRACKET);
 
@@ -2274,6 +2281,8 @@ void next_arg() {
     eps = false;
     return;
   }
+  skip_empty();
+
   elem_t * arg = parse_expression();
   func_add_param(last_elem, arg->symbol.sym_var_item);
 
@@ -2342,7 +2351,7 @@ void type() {
       type = VAR_BOOL;
       break;
     default:
-      error(1, "parser", "type", "Invalid variable type");
+      error(2, "parser", "type", "Invalid variable type");
       break;
   }
 
