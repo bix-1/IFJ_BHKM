@@ -17,7 +17,13 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "symtable.h"
+#include "error.h"
+#include "escape_format.h"
+
 #include "codegen_stack.h"
+
+typedef struct instruction instr_t;
 
 // Define intermediate code instructions
 typedef enum instr_type {
@@ -56,7 +62,7 @@ typedef enum instr_type {
 	 * Variable/variables declaration
 	 *
 	 * elem_dest: symbol var
-	 * elem_1: symbol var || symbol const
+	 * elem_1: NULL
 	 * elem_2: NULL
 	 *
 	 * Example:
@@ -849,7 +855,56 @@ typedef enum instr_type {
 
 } instr_type_t;
 
+struct instruction {
+	instr_type_t type;
+	elem_t *elem_dest_ptr;
+	elem_t *elem1_ptr;
+	elem_t *elem2_ptr;
+	instr_t *next;
+};
+
 void codegen_init();
+char *get_frame(sym_var_item_t *sym_var_item);
+void try_create_jump(instr_t instr);
+void declr_var(instr_t instr);
+void def_var(instr_t instr);
+void call_fun(instr_t instr);
+void ret_fun(instr_t instr);
+void add_var(instr_t instr);
+void sub_var(instr_t instr);
+void mul_var(instr_t instr);
+void div_var(instr_t instr);
+void lt_var(instr_t instr);
+void gt_var(instr_t instr);
+void eq_var(instr_t instr);
+void and_var(instr_t instr);
+void or_var(instr_t instr);
+void not_var(instr_t instr);
+void int2float(instr_t instr);
+void float2int(instr_t instr);
+void int2char(instr_t instr);
+void str2int(instr_t instr);
+void read_var(instr_t instr);
+void write_var(instr_t instr);
+void concat_str(instr_t instr);
+void strlen_str(instr_t instr);
+void getchar_str(instr_t instr);
+void setchar_str(instr_t instr);
+void substr_str();
+void if_def();
+void if_start();
+void if_end(instr_t instr);
+void elseif_def();
+void elseif_start();
+void elseif_end(instr_t instr);
+void else_start();
+void else_end();
+void for_def_codegen();
+void for_cond();
+void for_step();
+void for_body_start();
+void for_body_end();
+void codegen_generate_instr();
 void codegen();
 
 #endif //CODEGEN_H

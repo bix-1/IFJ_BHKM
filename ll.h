@@ -14,17 +14,8 @@
 #ifndef LL_H
 #define LL_H
 
-#include "symtable.h" // instr_t
+#include "codegen.h" // instr_t
 #include <stdbool.h>  // list_is_empty
-
-typedef struct instruction instr_t;
-struct instruction {
-	instr_type_t type;
-	elem_t *elem_dest_ptr;
-	elem_t *elem1_ptr;
-	elem_t *elem2_ptr;
-	instr_t *next;
-};
 
 typedef struct {
   instr_t * first;
