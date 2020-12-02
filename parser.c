@@ -165,7 +165,8 @@ void parse() {
           it != NULL;
           it = it->next
         ) {
-          fprintf(stderr, "%s, ", it->item->name);
+          if (it->item == NULL) fprintf(stderr, "_, ");
+          else fprintf(stderr, "%s, ", it->item->name);
         }
         fprintf(stderr, "    ===    ");
         for (
@@ -727,22 +728,6 @@ void instr_add_var_decl(elem_t * var) {
   list_add(list, new_var);
 }
 
-void instr_add_var_def() {
-  // create var & expr lists
-  sym_var_list_t * dest_list = sym_var_list_init();
-  sym_var_list_t * src_list = sym_var_list_init();
-  symbol_t dest_sym = {.sym_var_list = dest_list};
-  symbol_t src_sym = {.sym_var_list = src_list};
-  elem_t * dest_elem = elem_init(SYM_VAR_LIST, dest_sym);
-  elem_t * src_elem = elem_init(SYM_VAR_LIST, src_sym);
-  // create instr & add lists
-  instr_t * var_def = instr_create();
-  instr_set_type(var_def, IC_DEF_VAR);
-  instr_add_dest(var_def, dest_elem);
-  instr_add_elem1(var_def, src_elem);
-  list_add(list, var_def);
-}
-
 void instr_add_if_def() {
   instr_t * new_if = instr_create();
   instr_set_type(new_if, IC_IF_DEF);
@@ -818,6 +803,8 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
   // assign src to dest
   // & check their types in case of previously defined variables
 
+  // flag for ensuring the presence of
+  // at least a single undefined variable
   bool has_def = false;
 
   // dest setup
@@ -863,6 +850,9 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
         );
       }
     }
+    // ^ skips special variable "_"
+    // & leaves out raising has_def flag
+    // -- as it cannot be defined
 
     // next step
     dest_item = dest_item->next;
@@ -1657,13 +1647,19 @@ elem_t * make_dest(int operation) {
       // for cleanup in case of error
       id_list.first = tmp;
 
-      if (!strcmp(tmp->id, "_")) {
-        error (2, "parser", NULL, "Redefinition of special variable \"_\"");
-      }
-
       // try to get existing variable -- in current scope
       char * id = id_add_scope(scope_get_head(), tmp->id);
       symtable_iterator_t it = symtable_find(symtable, id);
+
+      // handling of special variable
+      if (!strcmp(tmp->id, "_")) {
+        list_item_t * list_item = list_item_init(NULL);
+        sym_var_list_add(dest_list, list_item);
+        free(tmp->id);
+        free(tmp);
+        free(id);
+        continue;
+      }
 
       if (symtable_iterator_valid(it)) { // found in current scope
         // add existing item to list
@@ -1682,6 +1678,8 @@ elem_t * make_dest(int operation) {
         // add to the list
         list_item_t * list_item = list_item_init(new_item);
         sym_var_list_add(dest_list, list_item);
+        // add instruction
+        instr_add_var_decl(new);
       }
       free(tmp);
     }
@@ -1692,14 +1690,27 @@ elem_t * make_dest(int operation) {
       tmp = next
     ) {
       next = tmp->next;
+      // for cleanup in case of error
+      id_list.first = tmp;
+
+      // handling of special variable
+      if (!strcmp(tmp->id, "_")) {
+        list_item_t * list_item = list_item_init(NULL);
+        sym_var_list_add(dest_list, list_item);
+        free(tmp->id);
+        free(tmp);
+        continue;
+      }
+
       // try to get ID -- in all scopes
       eps = false;
       elem_t * var = id_find(scope_get_head(), tmp->id);
+
       // add exitsting item to list
       list_item_t * list_item = list_item_init(var->symbol.sym_var_item);
       sym_var_list_add(dest_list, list_item);
-      free(tmp->id);
 
+      free(tmp->id);
       free(tmp);
     }
   }

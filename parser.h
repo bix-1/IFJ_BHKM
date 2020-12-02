@@ -167,7 +167,6 @@ void instr_add_func_def();
 void instr_add_func_end();
 void instr_add_func_call(elem_t * func, instr_type_t type);
 void instr_add_var_decl(elem_t * var);
-void instr_add_var_def();
 void instr_add_if_end();
 void instr_add_else_start();
 void instr_add_else_end();
