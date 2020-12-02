@@ -39,6 +39,7 @@ int for_body_index = 0;
 int for_end_index = 0;
 
 int codegen_tmp_read_index = 0;
+int codegen_tmp_str2int_index = 0;
 
 void codegen_init() {
 	jmp_label_stack_init();
@@ -1652,11 +1653,8 @@ void str2int(instr_t instr) {
 		error(99, "codegen.c", "str2int", "NULL symbol");
 	}
 
-	// TODO : create new scope to check sym_err error
-	// ...
-	// else valid :
-
 	char *frame_dest = get_frame(sym_dest);
+	char *frame_err = get_frame(sym_err);
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
 
@@ -1672,7 +1670,53 @@ void str2int(instr_t instr) {
 		error(99, "codegen.c", "str2int", "Incompatible data type");
 	}
 
-	if (sym_elem1->is_const && sym_elem2->is_const) {
+	if (sym_err->type != VAR_INT) {
+		error(99, "codegen.c", "str2int", "Incompatible data type");
+	}
+
+	// Define temporary variables (in case of error)
+
+	if (sym_elem1->is_const) {
+		fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-src-%d string@%s\n", codegen_tmp_str2int_index, sym_elem1->data.string_t);
+	}
+	else {
+		fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-src-%d %s@%s\n", codegen_tmp_str2int_index, frame_elem1, sym_elem1->name);
+	}
+
+	if (sym_elem2->is_const) {
+		fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-index-%d int@%d\n", codegen_tmp_str2int_index, sym_elem2->data.int_t);
+	}
+	else {
+		fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-index-%d %s@%s\n", codegen_tmp_str2int_index, frame_elem2, sym_elem2->name);
+	}
+
+	fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-src-len-%d\n", codegen_tmp_str2int_index);
+	fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-src-res-%d\n", codegen_tmp_str2int_index);
+	fprintf(OUTPUT, "MOVE LF@tmp-str2int-src-len-%d int@0\n", codegen_tmp_str2int_index);
+	fprintf(OUTPUT, "MOVE LF@tmp-str2int-src-res-%d bool@false\n", codegen_tmp_str2int_index);
+
+	fprintf(OUTPUT, "STRLEN LF@tmp-str2int-src-len-%d LF@tmp-str2int-src-%d\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index);
+	fprintf(OUTPUT, "SUB LF@tmp-str2int-src-len-%d LF@tmp-str2int-src-len-%d int@1\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index);
+
+	// Check conditions
+	fprintf(OUTPUT, "LT LF@tmp-str2int-src-res-%d LF@tmp-str2int-index-%d int@0\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index);
+	fprintf(OUTPUT, "JUMPIFEQ tmp-str2int-error-%d LF@tmp-str2int-src-res-%d bool@true\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index);
+	fprintf(OUTPUT, "GT LF@tmp-str2int-src-res-%d LF@tmp-str2int-index-%d LF@tmp-str2int-src-len-%d\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index, codegen_tmp_str2int_index);
+	fprintf(OUTPUT, "JUMPIFEQ tmp-str2int-error-%d LF@tmp-str2int-src-res-%d bool@true\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index);
+
+	// valid
+	fprintf(OUTPUT, "MOVE %s@%s int@0\n", frame_err, sym_err->name);
+	fprintf(OUTPUT, "STRI2INT %s@%s LF@tmp-str2int-src-%d LF@tmp-str2int-index-%d\n", frame_dest, sym_dest->name, codegen_tmp_str2int_index, codegen_tmp_str2int_index);
+	fprintf(OUTPUT, "JUMP tmp-str2int-exit-%d\n", codegen_tmp_str2int_index);
+
+	// error
+	fprintf(OUTPUT, "LABEL tmp-str2int-error-%d\n", codegen_tmp_str2int_index);
+	fprintf(OUTPUT, "MOVE %s@%s int@1\n", frame_err, sym_err->name);
+
+	// exit
+	fprintf(OUTPUT, "LABEL tmp-str2int-exit-%d\n", codegen_tmp_str2int_index);
+
+	/*if (sym_elem1->is_const && sym_elem2->is_const) {
 		fprintf(OUTPUT, "STR2INT %s@%s string@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.string_t,
 		        sym_elem2->data.int_t);
 	}
@@ -1687,7 +1731,7 @@ void str2int(instr_t instr) {
 	else {
 		fprintf(OUTPUT, "STR2INT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
 		        frame_elem2, sym_elem2->name);
-	}
+	}*/
 }
 
 void read_var(instr_t instr) {
