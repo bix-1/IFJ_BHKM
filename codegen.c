@@ -38,6 +38,8 @@ int for_step_index = 0;
 int for_body_index = 0;
 int for_end_index = 0;
 
+int codegen_tmp_read_index = 0;
+
 void codegen_init() {
 	jmp_label_stack_init();
 
@@ -1696,28 +1698,57 @@ void read_var(instr_t instr) {
 	}
 
 	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
+	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
 
-	if (sym_dest == NULL) {
+	if (sym_dest == NULL || sym_err == NULL) {
 		error(99, "codegen.c", "read_var", "NULL symbol");
 	}
 
+	if (sym_err->type != VAR_INT) {
+		error(99, "codegen.c", "read_var", "Invalid error data type");
+	}
+
 	char *frame_dest = get_frame(sym_dest);
+	char *frame_err = get_frame(sym_err);
+
+	fprintf(OUTPUT, "DEFVAR LF@tmp-read-dest-%d\n", codegen_tmp_read_index);
+	fprintf(OUTPUT, "DEFVAR LF@tmp-read-res-%d\n", codegen_tmp_read_index);
+	fprintf(OUTPUT, "MOVE LF@tmp-read-res-%d bool@false\n", codegen_tmp_read_index);
 
 	if (sym_dest->type == VAR_INT) {
-		fprintf(OUTPUT, "READ %s@%s int\n", frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "READ LF@tmp-read-dest-%d int\n", codegen_tmp_read_index);
+		//fprintf(OUTPUT, "READ %s@%s int\n", frame_dest, sym_dest->name);
 	}
 	else if (sym_dest->type == VAR_FLOAT64) {
-		fprintf(OUTPUT, "READ %s@%s float\n", frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "READ LF@tmp-read-dest-%d float\n", codegen_tmp_read_index);
+		//fprintf(OUTPUT, "READ %s@%s float\n", frame_dest, sym_dest->name);
 	}
 	else if (sym_dest->type == VAR_STRING) {
-		fprintf(OUTPUT, "READ %s@%s string\n", frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "READ LF@tmp-read-dest-%d string\n", codegen_tmp_read_index);
+		//fprintf(OUTPUT, "READ %s@%s string\n", frame_dest, sym_dest->name);
 	}
 	else if (sym_dest->type == VAR_BOOL) {
-		fprintf(OUTPUT, "READ %s@%s bool\n", frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "READ LF@tmp-read-dest-%d bool\n", codegen_tmp_read_index);
+		//fprintf(OUTPUT, "READ %s@%s bool\n", frame_dest, sym_dest->name);
 	}
 	else {
 		error(99, "codegen.c", "read_var", "Invalid data type");
 	}
+
+	fprintf(OUTPUT, "EQ LF@tmp-read-res-%d LF@tmp-read-dest-%d nil@nil\n", codegen_tmp_read_index, codegen_tmp_read_index);
+	fprintf(OUTPUT, "JUMPIFEQ tmp-read-valid-%d LF@tmp-read-res-%d bool@false\n", codegen_tmp_read_index, codegen_tmp_read_index);
+
+	// error
+	fprintf(OUTPUT, "MOVE %s@%s int@1\n", frame_err, sym_err->name);
+	fprintf(OUTPUT, "JUMP tmp-read-exit-%d\n", codegen_tmp_read_index);
+
+	// valid
+	fprintf(OUTPUT, "LABEL tmp-read-valid-%d\n", codegen_tmp_read_index);
+	fprintf(OUTPUT, "MOVE %s@%s LF@tmp-read-dest-%d\n", frame_dest, sym_dest->name, codegen_tmp_read_index);
+	fprintf(OUTPUT, "MOVE %s@%s int@0\n", frame_err, sym_err->name);
+
+	fprintf(OUTPUT, "LABEL tmp-read-exit-%d\n", codegen_tmp_read_index);
+	codegen_tmp_read_index++;
 }
 
 void write_var(instr_t instr) {
@@ -1734,7 +1765,8 @@ void write_var(instr_t instr) {
 	sym_var_list_t *sym_var_list = instr.elem_dest_ptr->symbol.sym_func->params;
 
 	if (sym_var_list == NULL) {
-		error(99, "codegen.c", "write_var", "Invalid symbol");
+		return;
+		//error(99, "codegen.c", "write_var", "Invalid symbol");
 	}
 
 	sym_var_item_t *active = sym_var_list_next(sym_var_list);
