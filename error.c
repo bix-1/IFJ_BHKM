@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>         // string operations
 #include <stdarg.h>         // va_start, va_end
+#include "expression.h"     // release_resources
 
 
 const char * code_to_name(int in) {

@@ -12,12 +12,6 @@
 
 /*
 TODO:
-  multival named returns
-
-  merge to master
-  dig through the tests
-
-
   ?? condition checking
 
   DOCUMENTATION
@@ -40,6 +34,7 @@ TODO:
 #include "codegen.h"  // instruction types
 #include "ll.h"       // list of instructions
 #include "str.h"      // contextual IDs
+#include "expression.h" // expression parser
 
 /*_____________GLOBAL_VARIABLES_____________*/
 extern list_t * list;
@@ -615,11 +610,6 @@ scope_elem_t * scope_get_head() {
   return scope.first;
 }
 
-char * scope_get() {
-  if (scope.first == NULL) return NULL;
-  return scope.first->name;
-}
-
 char * id_add_scope(scope_elem_t * tmp_scope, char * old_id) {
   if (tmp_scope == NULL) {
     char * new_id = malloc(sizeof(char) * (strlen(old_id) + 1));
@@ -786,27 +776,6 @@ void instr_add_for_def() {
   scope_push(for_scope);
 }
 
-void instr_add_ret() {
-  // create return instruction
-  instr_t * func_ret = instr_create();
-  instr_set_type(func_ret, IC_RET_FUN);
-
-  // create function element
-  char * func_name = malloc(sizeof(char) * (strlen(*(last_func->key)) + 1));
-  strcpy(func_name, *(last_func->key));
-  sym_func_t * func_sym = sym_func_init(func_name, NULL, NULL);
-  symbol_t func = {.sym_func = func_sym};
-  elem_t * func_elem = elem_init(SYM_FUNC, func);
-  // add to symtable
-  symtable_insert(symtable, make_unique(func_elem), func_elem);
-  // add to instruction
-  instr_add_dest(func_ret, func_elem);
-  list_add(list, func_ret);
-
-  last_elem = func_elem;
-}
-
-
 void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
   // assign src to dest
   // & check their types in case of previously defined variables
@@ -958,12 +927,6 @@ void assign_var_move_types(elem_t * dest_elem, elem_t * src_elem) {
       n_src, n_dest
     );
   }
-}
-
-void add_next_expr() {
-  elem_t * expr = parse_expression();
-  list_item_t * list_item = list_item_init(expr->symbol.sym_var_item);
-  sym_var_list_add(last_elem->symbol.sym_var_list, list_item);
 }
 
 
@@ -1510,12 +1473,6 @@ elem_t * try_func(tToken * token) {
     return func;
   } else return NULL;
 }
-
-void list_add_var(elem_t * list, elem_t * var) {
-  list_item_t * item = list_item_init(var->symbol.sym_var_item);
-  sym_var_list_add(list->symbol.sym_var_list, item);
-}
-
 
 bool check_types(sym_var_item_t * var1, sym_var_item_t * var2) {
   var_type_t type1 = var1->type;
@@ -2454,13 +2411,12 @@ elem_t * get_expr_list() {
   elem_t * expr = parse_expression();
   if (expr->sym_type == SYM_FUNC) return expr;
 
-
   // create var list
   sym_var_list_t * var_list = sym_var_list_init();
   symbol_t var_list_sym = {.sym_var_list = var_list};
   elem_t * var_list_elem = elem_init(SYM_VAR_LIST, var_list_sym);
   symtable_insert(symtable, make_unique(var_list_elem), var_list_elem);
-  last_elem = var_list_elem; // setup for add_next_expr
+  last_elem = var_list_elem;
 
   // add first expression
   list_item_t * list_item = list_item_init(expr->symbol.sym_var_item);
