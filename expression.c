@@ -300,6 +300,11 @@ symtable_value_t create_dest(stackElemPtr elem)
     instr_add_var_decl(var);
     var_item->is_defined = true;
 
+    check_types(
+      var->symbol.sym_var_item,
+      tokStack->topToken->data->symbol.sym_var_item
+    );
+
     return var;
 }
 
@@ -398,12 +403,12 @@ int var_type_check(stackElemPtr elem)
 
 void check_string(stackElemPtr top, stackElemPtr afterTop, tToken *symbol)
 {
-    // ERROR if both expressions are not strings
-    if ((top->data->symbol.sym_var_item->type == VAR_STRING && afterTop->data->symbol.sym_var_item->type != VAR_STRING) || (top->data->symbol.sym_var_item->type != VAR_STRING && afterTop->data->symbol.sym_var_item->type == VAR_STRING))
-    {
-        release_resources();
-        error(5, "expression parser", "check_string", "Variable types do not match");
-    }
+    // // ERROR if both expressions are not strings
+    // if ((top->data->symbol.sym_var_item->type == VAR_STRING && afterTop->data->symbol.sym_var_item->type != VAR_STRING) || (top->data->symbol.sym_var_item->type != VAR_STRING && afterTop->data->symbol.sym_var_item->type == VAR_STRING))
+    // {
+    //     release_resources();
+    //     error(5, "expression parser", "check_string", "Variable types do not match");
+    // }
 
     // ERROR if strings are operated with -,*,/ (string concatenation)
     if (top->data->symbol.sym_var_item->type == VAR_STRING && afterTop->data->symbol.sym_var_item->type == VAR_STRING && (symbol->token_type == T_MINUS || symbol->token_type == T_MUL || symbol->token_type == T_DIV))
@@ -415,7 +420,6 @@ void check_string(stackElemPtr top, stackElemPtr afterTop, tToken *symbol)
 
 void check_num(stackElemPtr top, stackElemPtr afterTop)
 {
-
     if ((top->data->symbol.sym_var_item->type == VAR_INT && afterTop->data->symbol.sym_var_item->type == VAR_FLOAT64) || (top->data->symbol.sym_var_item->type == VAR_FLOAT64 && afterTop->data->symbol.sym_var_item->type == VAR_INT))
     {
         release_resources();
@@ -527,9 +531,20 @@ void reduce()
     // If value stack isn't empty
     if (tokStack->topToken->token.token_type != T_DOLLAR)
     {
-        check_string(tokenTop, tokenAfterTop, &symbolTop);
+        if (
+          !check_types(
+            tokenTop->data->symbol.sym_var_item,
+            tokenAfterTop->data->symbol.sym_var_item
+          )
+        ) {
+          error(5, "expression parser", "check_string", "Variable types do not match");
+        }
 
-        check_num(tokenTop, tokenAfterTop);
+        if (tokenTop->data->symbol.sym_var_item->type == VAR_STRING) {
+          check_string(tokenTop, tokenAfterTop, &symbolTop);
+        }
+
+        // check_num(tokenTop, tokenAfterTop);
 
         switch (symbolTop.token_type)
         {
@@ -537,16 +552,7 @@ void reduce()
             //IF E + E IS ON STACK
             if (tokenTop->expr == true && tokenAfterTop->expr == true)
             {
-
-                check_types(
-                  tokenTop->data->symbol.sym_var_item,
-                  tokenAfterTop->data->symbol.sym_var_item
-                );
                 symtable_value_t dest = create_dest(tokenTop);
-                check_types(
-                  dest->symbol.sym_var_item,
-                  tokenTop->data->symbol.sym_var_item
-                );
 
                 if (tokenTop->originalType == T_STRING_VALUE && tokenAfterTop->originalType == T_STRING_VALUE)
                 {
