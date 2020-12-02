@@ -1,0 +1,17 @@
+package main
+
+func foo () (x int, y int) {
+  return
+}
+
+func fee () (x int, y int) {
+  x,y = 5,5
+  return
+}
+
+func faa (a int, b int) (int, int) {
+  return fee()
+}
+
+func main () {
+}

@@ -250,6 +250,8 @@ void id_list_add(char * id);
 // create dest_list from id_list according to given operation
 elem_t * make_dest(int operation);
 
+void var_init(elem_t * var);
+
 /*
   ___________FUNCTIONS_REPRESENTING___________
   ___________LL_GRAMMAR_NONTERMINALS__________
@@ -268,6 +270,8 @@ void func_def_type();
 void func_def_ret();
 void ret_list_def();
 void next_ret_def();
+void ret_list_def_named();
+void next_ret_def_named();
 void body();
 void command();
 void var_(char * id);
