@@ -1639,6 +1639,7 @@ elem_t * make_dest(int operation) {
         sym_var_item_t * new_item = sym_var_item_init(id);
         symbol_t new_sym = {.sym_var_item = new_item};
         elem_t * new = elem_init(SYM_VAR_ITEM, new_sym);
+        new->symbol.sym_var_item->data.string_t = NULL;
         symtable_insert(symtable, id, new);
         // add to the list
         list_item_t * list_item = list_item_init(new_item);
