@@ -165,7 +165,8 @@ void parse() {
           it != NULL;
           it = it->next
         ) {
-          fprintf(stderr, "%s, ", it->item->name);
+          if (it->item == NULL) fprintf(stderr, "_, ");
+          else fprintf(stderr, "%s, ", it->item->name);
         }
         fprintf(stderr, "    ===    ");
         for (
@@ -416,8 +417,8 @@ void match(int term) {
       }
 
       if (!strcmp(to_string(&next), "_")) {
-        if (def)  error (2, "parser", NULL, "Redefinition of special variable \"_\"");
-        else      error (2, "parser", NULL, "Unable to read from special variable \"_\"");
+        if (def)  error (3, "parser", NULL, "Redefinition of special variable \"_\"");
+        else      error (3, "parser", NULL, "Unable to read from special variable \"_\"");
       }
 
       // expected func definition && func != main
@@ -486,6 +487,11 @@ void match(int term) {
       }
 
       if (def) {  // definition expected
+        // handle special variable
+        if (!strcmp(to_string(&next), "_")) {
+          error (3, "parser", NULL, "Redefinition of special variable \"_\"");
+        }
+
         // get variable's contextual ID
         char * id = id_add_scope(scope_get_head(), to_string(&next));
         symtable_iterator_t it = symtable_find(symtable, id);
@@ -646,7 +652,7 @@ elem_t * id_find(scope_elem_t *scope, char *old_id) {
     if (tmp_scope == NULL) {
       if (eps) return NULL;
       if (!strcmp(old_id, "_")){
-        error (2, "parser", NULL, "Unable to read from special variable \"_\"");
+        error (3, "parser", NULL, "Unable to read from special variable \"_\"");
       } else {
         error(3, "parser", "match", "Variable \"%s\" undefined", old_id);
       }
@@ -678,7 +684,10 @@ char * make_unique(elem_t * elem) {
       strcpy(type, "list");
       break;
     case SYM_FUNC:
-      strcpy(type, "foo");
+      strcpy(type, "func");
+      break;
+    case SYM_VAR_ITEM:
+      strcpy(type, "f_ret");
       break;
     default:
       strcpy(type, "undef");
@@ -725,22 +734,6 @@ void instr_add_var_decl(elem_t * var) {
   instr_set_type(new_var, IC_DECL_VAR);
   instr_add_dest(new_var, var);
   list_add(list, new_var);
-}
-
-void instr_add_var_def() {
-  // create var & expr lists
-  sym_var_list_t * dest_list = sym_var_list_init();
-  sym_var_list_t * src_list = sym_var_list_init();
-  symbol_t dest_sym = {.sym_var_list = dest_list};
-  symbol_t src_sym = {.sym_var_list = src_list};
-  elem_t * dest_elem = elem_init(SYM_VAR_LIST, dest_sym);
-  elem_t * src_elem = elem_init(SYM_VAR_LIST, src_sym);
-  // create instr & add lists
-  instr_t * var_def = instr_create();
-  instr_set_type(var_def, IC_DEF_VAR);
-  instr_add_dest(var_def, dest_elem);
-  instr_add_elem1(var_def, src_elem);
-  list_add(list, var_def);
 }
 
 void instr_add_if_def() {
@@ -818,6 +811,8 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
   // assign src to dest
   // & check their types in case of previously defined variables
 
+  // flag for ensuring the presence of
+  // at least a single undefined variable
   bool has_def = false;
 
   // dest setup
@@ -863,6 +858,9 @@ void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
         );
       }
     }
+    // ^ skips special variable "_"
+    // & leaves out raising has_def flag
+    // -- as it cannot be defined
 
     // next step
     dest_item = dest_item->next;
@@ -1657,13 +1655,19 @@ elem_t * make_dest(int operation) {
       // for cleanup in case of error
       id_list.first = tmp;
 
-      if (!strcmp(tmp->id, "_")) {
-        error (2, "parser", NULL, "Redefinition of special variable \"_\"");
-      }
-
       // try to get existing variable -- in current scope
       char * id = id_add_scope(scope_get_head(), tmp->id);
       symtable_iterator_t it = symtable_find(symtable, id);
+
+      // handling of special variable
+      if (!strcmp(tmp->id, "_")) {
+        list_item_t * list_item = list_item_init(NULL);
+        sym_var_list_add(dest_list, list_item);
+        free(tmp->id);
+        free(tmp);
+        free(id);
+        continue;
+      }
 
       if (symtable_iterator_valid(it)) { // found in current scope
         // add existing item to list
@@ -1682,6 +1686,8 @@ elem_t * make_dest(int operation) {
         // add to the list
         list_item_t * list_item = list_item_init(new_item);
         sym_var_list_add(dest_list, list_item);
+        // add instruction
+        instr_add_var_decl(new);
       }
       free(tmp);
     }
@@ -1692,14 +1698,27 @@ elem_t * make_dest(int operation) {
       tmp = next
     ) {
       next = tmp->next;
+      // for cleanup in case of error
+      id_list.first = tmp;
+
+      // handling of special variable
+      if (!strcmp(tmp->id, "_")) {
+        list_item_t * list_item = list_item_init(NULL);
+        sym_var_list_add(dest_list, list_item);
+        free(tmp->id);
+        free(tmp);
+        continue;
+      }
+
       // try to get ID -- in all scopes
       eps = false;
       elem_t * var = id_find(scope_get_head(), tmp->id);
+
       // add exitsting item to list
       list_item_t * list_item = list_item_init(var->symbol.sym_var_item);
       sym_var_list_add(dest_list, list_item);
-      free(tmp->id);
 
+      free(tmp->id);
       free(tmp);
     }
   }
@@ -1906,13 +1925,114 @@ void func_def_ret() {
     match(T_RIGHT_BRACE);
   }
   else {
-    ret_list_def();
+    if (next.token_type == T_IDENTIFIER) {
+      ret_list_def_named();
+    } else {
+      ret_list_def();
+    }
     match(T_R_BRACKET);
     match(T_LEFT_BRACE);
     match(T_EOL);
     body();
     match(T_RIGHT_BRACE);
   }
+}
+
+void var_init(elem_t * var) {
+  // create initializing expression
+  char * key = make_unique(var);
+  sym_var_item_t * expr_item = sym_var_item_init(key);
+  symbol_t expr_sym = {.sym_var_item = expr_item};
+  elem_t * expr = elem_init(SYM_VAR_ITEM, expr_sym);
+  symtable_insert(symtable, key, expr);
+
+  // create initializing data
+  variable_t init;
+  switch (var->symbol.sym_var_item->type) {
+    case VAR_INT:
+      init.int_t = 0;
+      break;
+    case VAR_FLOAT64:
+      init.float64_t = 0.0;
+      break;
+    case VAR_STRING: {
+      char * empty = malloc(sizeof(char));
+      empty[0] = '\0';
+      init.string_t = empty;
+      break;}
+    case VAR_BOOL:
+      init.bool_t = false;
+      break;
+    default:
+      break;
+  }
+  sym_var_item_set_type(
+    expr->symbol.sym_var_item,
+    var->symbol.sym_var_item->type
+  );
+  sym_var_item_set_data(expr->symbol.sym_var_item, init);
+  sym_var_item_set_const(expr->symbol.sym_var_item, true);
+
+  // create lists for var_def instruction
+  sym_var_list_t * dest_list = sym_var_list_init();
+  sym_var_list_t * src_list = sym_var_list_init();
+  symbol_t dest_sym = {.sym_var_list = dest_list};
+  symbol_t src_sym = {.sym_var_list = src_list};
+  elem_t * dest_elem = elem_init(SYM_VAR_LIST, dest_sym);
+  elem_t * src_elem = elem_init(SYM_VAR_LIST, src_sym);
+  symtable_insert(symtable, make_unique(dest_elem), dest_elem);
+  symtable_insert(symtable, make_unique(src_elem), src_elem);
+  // add initializator & var to lists
+  list_item_t * var_item = list_item_init(var->symbol.sym_var_item);
+  list_item_t * init_item = list_item_init(expr->symbol.sym_var_item);
+  sym_var_list_add(dest_list, var_item);
+  sym_var_list_add(src_list, init_item);
+
+  // add initializing instruction
+  instr_t * new_init = instr_create();
+  instr_set_type(new_init, IC_DEF_VAR);
+  instr_add_dest(new_init, dest_elem);
+  instr_add_elem1(new_init, src_elem);
+  list_add(list, new_init);
+}
+
+void ret_list_def_named() {
+  // add variable
+  def = true; eps = false;
+  match(T_VAR_ID);
+  elem_t * var = last_elem;
+  func_add_ret(last_func, var->symbol.sym_var_item);
+  var->symbol.sym_var_item->is_defined = true;
+  instr_add_var_decl(var);
+
+  // add type & initialize
+  type();
+  var_init(var);
+
+  next_ret_def_named();
+}
+
+void next_ret_def_named() {
+  eps = true;
+  match(T_COMMA);
+  if (eps) {
+    eps = false;
+    return;
+  }
+  skip_empty();
+
+  def = true; eps = false;
+  match(T_VAR_ID);
+  elem_t * var = last_elem;
+  func_add_ret(last_func, var->symbol.sym_var_item);
+  var->symbol.sym_var_item->is_defined = true;
+  instr_add_var_decl(var);
+
+  // add type & initialize
+  type();
+  var_init(var);
+
+  next_ret_def_named();
 }
 
 void ret_list_def() {
@@ -2185,7 +2305,49 @@ void for_move() {
 void return_() {
   match(T_RETURN);
 
-  if (next.token_type == T_EOL) return; // TODO multival named returns
+  sym_var_list_t * rets = last_func->symbol.sym_func->returns;
+
+  elem_t * ret_list = return_list();
+
+  // handle return list
+  if (ret_list == NULL) {
+    if (rets == NULL) return;
+    // check for named returns
+    else if (rets->first->item->name != NULL) {
+      // create return list
+      sym_var_list_t * r_list = sym_var_list_init();
+      symbol_t rl_sym = {.sym_var_list = r_list};
+      elem_t * rl_elem = elem_init(SYM_VAR_LIST, rl_sym);
+      symtable_insert(symtable, make_unique(rl_elem), rl_elem);
+
+      ret_list = rl_elem;
+
+      // add named returns to list
+      for (
+        list_item_t * it = rets->first;
+        it != NULL;
+        it = it->next
+      ) {
+        list_item_t * list_item = list_item_init(it->item);
+        sym_var_list_add(r_list, list_item);
+      }
+    }
+    else {
+      error(
+        6, "parser", "return call",
+        "Function [%s] with unempty return list returns void",
+        *(last_func->key)
+      );
+    }
+  } else {
+    if (rets->first->item->name != NULL) {
+      error(
+        6, "parser", "return call",
+        "Function [%s]'s return call must be empty -- named returns",
+        *(last_func->key)
+      );
+    }
+  }
 
   // create function element
   char * func_name = malloc(sizeof(char) * (strlen(*(last_func->key)) + 1));
@@ -2195,28 +2357,27 @@ void return_() {
   elem_t * func = elem_init(SYM_FUNC, func_sym_sym);
   symtable_insert(symtable, make_unique(func), func);
 
-  elem_t * ret_list = return_list();
-
-  // handle "return foo()"
-  if (ret_list->sym_type == SYM_FUNC) {
-    sym_var_list_t * rets = last_func->symbol.sym_func->returns;
-    // check for empty returns
-    if (rets != NULL) {
-      // assign defined returns as dests for func_call
-      for (
-        list_item_t * it = rets->first;
-        it != NULL;
-        it = it->next
-      ) {
-        elem_t * expr = create_expr(last_func);
-        func_add_ret(func, expr->symbol.sym_var_item);
-        func_add_ret(ret_list, expr->symbol.sym_var_item);
+  if (ret_list != NULL) {
+    // handle "return foo()"
+    if ( ret_list != NULL && ret_list->sym_type == SYM_FUNC) {
+      // check for empty returns
+      if (rets != NULL) {
+        // assign defined returns as dests for func_call
+        for (
+          list_item_t * it = rets->first;
+          it != NULL;
+          it = it->next
+        ) {
+          elem_t * expr = create_expr(last_func);
+          func_add_ret(func, expr->symbol.sym_var_item);
+          func_add_ret(ret_list, expr->symbol.sym_var_item);
+        }
       }
+      instr_type_t type = get_func_instr_type(ret_list->symbol.sym_func->name);
+      instr_add_func_call(ret_list, type);
+    } else {
+      func->symbol.sym_func->returns = ret_list->symbol.sym_var_list;
     }
-    instr_type_t type = get_func_instr_type(ret_list->symbol.sym_func->name);
-    instr_add_func_call(ret_list, type);
-  } else {
-    func->symbol.sym_func->returns = ret_list->symbol.sym_var_list;
   }
 
   check_ret(func);
@@ -2361,25 +2522,20 @@ void type() {
       last_elem->symbol.sym_var_item->data.string_t = NULL;
   }
   else { // return list of function
-    if (last_func == NULL)
+    if (last_func == NULL) {
       error(99, "parser", "type", "Missing function to assign parameter to");
-
-    // get returns
-    sym_var_list_t ** rets = &(last_func->symbol.sym_func->returns);
-    if (rets == NULL)
-      error(99, "parser", "type", "Failed to access function's returns");
-    if (*rets == NULL)  // ret list empty
-      *rets = sym_var_list_init();
+    }
 
     //create item
     sym_var_item_t * new = sym_var_item_init(NULL);
     sym_var_item_set_type(new, type);
     if (type == VAR_STRING)
       new->data.string_t = NULL;
+    symbol_t new_sym = {.sym_var_item = new};
+    elem_t * new_elem = elem_init(SYM_VAR_ITEM, new_sym);
+    symtable_insert(symtable, make_unique(new_elem), new_elem);
 
-    // add to return list
-    list_item_t * list_item = list_item_init(new);
-    sym_var_list_add(*rets, list_item);
+    func_add_ret(last_func, new);
   }
 
   last_elem = last_func;

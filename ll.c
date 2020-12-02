@@ -193,19 +193,19 @@ void instr_delete(instr_t *i)
       // *params = NULL;
     // }
     // free returns of func
-    sym_var_list_t ** rets = &(i->elem_dest_ptr->symbol.sym_func->returns);
-    if (*rets != NULL) {
-      list_item_t * tmp = (*rets)->first;
-      list_item_t * next;
-      while (tmp != NULL) {
-        sym_var_item_free(tmp->item);
-        next = tmp->next;
-        free(tmp);
-        tmp = next;
-      }
-      free(*rets);
-      *rets = NULL;
-    }
+    // sym_var_list_t ** rets = &(i->elem_dest_ptr->symbol.sym_func->returns);
+    // if (*rets != NULL) {
+    //   list_item_t * tmp = (*rets)->first;
+    //   list_item_t * next;
+    //   while (tmp != NULL) {
+    //     sym_var_item_free(tmp->item);
+    //     next = tmp->next;
+    //     free(tmp);
+    //     tmp = next;
+    //   }
+    //   free(*rets);
+    //   *rets = NULL;
+    // }
   }
 
   free( i );

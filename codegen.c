@@ -137,7 +137,12 @@ void def_var(instr_t instr) {
 	sym_var_item_t *sym_dest = sym_var_list_next(elem_dest->symbol.sym_var_list);
 	sym_var_item_t *sym_elem1 = sym_var_list_next(elem_1->symbol.sym_var_list);
 
-	while (sym_dest != NULL && sym_elem1 != NULL) {
+	while (sym_elem1 != NULL) {
+		if (sym_dest == NULL) {
+			sym_dest = sym_var_list_next(elem_dest->symbol.sym_var_list);
+			sym_elem1 = sym_var_list_next(elem_1->symbol.sym_var_list);
+			continue;
+		}
 
 		char *frame_dest = get_frame(sym_dest);
 		char *frame_elem1 = get_frame(sym_elem1);
