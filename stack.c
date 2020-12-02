@@ -83,19 +83,23 @@ void stack_pop(tokenStack *stack)
     }
 }
 
-void stack_empty(tokenStack *stack)
+int stack_count(tokenStack **stack)
 {
+    int i = 0;
+    stackElemPtr tmp = (*stack)->topToken;
     // While only empty flag token is left on the stack
-    while (stack->topToken->token.token_type != T_EMPTY)
+    while (tmp->token.token_type != T_EMPTY)
     {
-        stack_pop(stack);
+        tmp = tmp->nextTok;
+        i++;
     }
+    return i;
 }
 
 void stack_free(tokenStack **stack)
 {
-  if (stack == NULL || *stack == NULL) return;
-
+    if (stack == NULL || *stack == NULL)
+        return;
 
     if ((*stack)->topToken == NULL)
     {

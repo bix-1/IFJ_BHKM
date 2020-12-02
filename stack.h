@@ -55,7 +55,7 @@ void stack_pop(tokenStack *stack);
 /*
 *   Function which empties the stack
 */
-void stack_empty(tokenStack *stack);
+int stack_count(tokenStack **stack);
 
 /*
 *   Function which free's the stack
