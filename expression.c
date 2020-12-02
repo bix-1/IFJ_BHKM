@@ -296,7 +296,14 @@ symtable_value_t create_dest(stackElemPtr elem)
 
     // create variable and add to symtable
     sym_var_item_t *var_item = sym_var_item_init(id_scope);
-    sym_var_item_set_type(var_item, elem->data->symbol.sym_var_item->type);
+    if (get_index(symbolStack->topToken->token) == OP_rel_comp)
+    {
+        sym_var_item_set_type(var_item, VAR_BOOL);
+    }
+    else
+    {
+        sym_var_item_set_type(var_item, elem->data->symbol.sym_var_item->type);
+    }
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
     symtable_insert(symtable, id_scope, var);
@@ -525,7 +532,7 @@ void int_to_float(stackElemPtr elem)
 
 void reduce()
 {
-    print();
+    //print();
 
     stackElemPtr tokenTop = tokStack->topToken;               // Top member on VALUE stack
     stackElemPtr tokenAfterTop = tokStack->topToken->nextTok; // Second from the top member on VALUE stack
@@ -1312,11 +1319,11 @@ symtable_value_t parse_expression()
         switch (precTable[indexStack][indexInput])
         {
         case R: /*>*/
-            printf("\nREDUCE");
+            //printf("\nREDUCE");
             reduce();
             break;
         case S: /*<*/
-            printf("\nSHIFT\n");
+            //printf("\nSHIFT\n");
             shift();
             if (ret)
             {
@@ -1325,12 +1332,12 @@ symtable_value_t parse_expression()
             }
             break;
         case Eq: /*=*/
-            printf("\nEQUAL");
+            //printf("\nEQUAL");
             equal();
             //print();
             break;
         case Err: /* empty*/
-            print();
+            //print();
 
             if (symbolStack->topToken->token.token_type == T_DOLLAR)
             {
@@ -1361,10 +1368,10 @@ symtable_value_t parse_expression()
             return retExpr;
             break;
         case A:
-            printf("\nACCEPT\n");
-            print();
+            //printf("\nACCEPT\n");
+            //print();
 
-            // ERROR if dollar & expression is not left on tokStack ... 
+            // ERROR if dollar & expression is not left on tokStack ...
             if (stack_count(&tokStack) != 2)
             {
                 release_resources();
