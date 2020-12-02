@@ -417,8 +417,8 @@ void match(int term) {
       }
 
       if (!strcmp(to_string(&next), "_")) {
-        if (def)  error (2, "parser", NULL, "Redefinition of special variable \"_\"");
-        else      error (2, "parser", NULL, "Unable to read from special variable \"_\"");
+        if (def)  error (3, "parser", NULL, "Redefinition of special variable \"_\"");
+        else      error (3, "parser", NULL, "Unable to read from special variable \"_\"");
       }
 
       // expected func definition && func != main
@@ -487,6 +487,11 @@ void match(int term) {
       }
 
       if (def) {  // definition expected
+        // handle special variable
+        if (!strcmp(to_string(&next), "_")) {
+          error (3, "parser", NULL, "Redefinition of special variable \"_\"");
+        }
+
         // get variable's contextual ID
         char * id = id_add_scope(scope_get_head(), to_string(&next));
         symtable_iterator_t it = symtable_find(symtable, id);
@@ -647,7 +652,7 @@ elem_t * id_find(scope_elem_t *scope, char *old_id) {
     if (tmp_scope == NULL) {
       if (eps) return NULL;
       if (!strcmp(old_id, "_")){
-        error (2, "parser", NULL, "Unable to read from special variable \"_\"");
+        error (3, "parser", NULL, "Unable to read from special variable \"_\"");
       } else {
         error(3, "parser", "match", "Variable \"%s\" undefined", old_id);
       }

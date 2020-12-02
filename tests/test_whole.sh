@@ -27,7 +27,7 @@ do
 		printf '[OK]\t\t%s\n' `echo $file | cut -d "/" -f 2`
 	else
 		errorcount=$((errorcount + 1))
-		echo "atom tests/$file" >>$failed
+		echo "atom tests/$file &&" >>$failed
 		printf '[FAILED]\t%s\n' `echo $file | cut -d "/" -f 2`
 	fi
 done
@@ -42,3 +42,6 @@ else
 	echo
 	echo
 fi
+
+
+echo "echo" >>$failed
