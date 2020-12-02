@@ -1935,7 +1935,11 @@ void func_def_ret() {
 
 void var_init(elem_t * var) {
   // create initializing expression
-  elem_t * expr = create_expr(var);
+  char * key = make_unique(var);
+  sym_var_item_t * expr_item = sym_var_item_init(key);
+  symbol_t expr_sym = {.sym_var_item = expr_item};
+  elem_t * expr = elem_init(SYM_VAR_ITEM, expr_sym);
+  symtable_insert(symtable, key, expr);
 
   // create initializing data
   variable_t init;

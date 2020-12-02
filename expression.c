@@ -341,7 +341,6 @@ symtable_value_t create_variable(stackElemPtr elem)
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
     symtable_insert(symtable, id_scope, var);
-    instr_add_var_decl(var);
 
     return var;
 }
