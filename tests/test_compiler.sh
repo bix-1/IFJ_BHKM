@@ -494,7 +494,7 @@ fi
 echo "--Wrong func return 11--"
 ./ifj20 < compiler_tests/06_se_funcret_11.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 7 ]; then
+if [ $OUT -eq 6 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -504,7 +504,7 @@ fi
 echo "--Wrong func return 12--"
 ./ifj20 < compiler_tests/06_se_funcret_12.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 6 ]; then
+if [ $OUT -eq 3 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -1299,7 +1299,7 @@ fi
 echo "--SUB 4-- 12_sy_operations_41.go"
 ./ifj20 < compiler_tests/12_sy_operations_41.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 5 ]; then
+if [ $OUT -eq 2 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -1309,8 +1309,8 @@ fi
 echo "--SUB 5--"
 ./ifj20 < compiler_tests/12_sy_operations_42.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 5 ]; then
-        echo "TEST OK"
+if [ $OUT -eq 2 ]; then
+       echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
         echo "TEST FAILED"
@@ -1598,6 +1598,258 @@ else
         echo "TEST FAILED"
 fi
 
+echo "#------------------FUNEXP------------------#"
+echo "--compiler_tests/FUNEXP_1.go--"
+./ifj20 < compiler_tests/FUNEXP_1.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_2.go--"
+./ifj20 < compiler_tests/FUNEXP_2.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_3.go--"
+./ifj20 < compiler_tests/FUNEXP_3.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_4.go--"
+./ifj20 < compiler_tests/FUNEXP_4.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_5.go--"
+./ifj20 < compiler_tests/FUNEXP_5.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_6.go--"
+./ifj20 < compiler_tests/FUNEXP_6.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_7.go--"
+./ifj20 < compiler_tests/FUNEXP_7.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_8.go--"
+./ifj20 < compiler_tests/FUNEXP_8.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_9.go--"
+./ifj20 < compiler_tests/FUNEXP_9.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_10.go--"
+./ifj20 < compiler_tests/FUNEXP_10.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_11.go--"
+./ifj20 < compiler_tests/FUNEXP_11.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_12.go--"
+./ifj20 < compiler_tests/FUNEXP_12.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+
+echo "--compiler_tests/FUNEXP_13.go--"
+./ifj20 < compiler_tests/FUNEXP_13.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_14.go--"
+./ifj20 < compiler_tests/FUNEXP_14.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_15.go--"
+./ifj20 < compiler_tests/FUNEXP_15.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+
+echo "--compiler_tests/FUNEXP_16.go--"
+./ifj20 < compiler_tests/FUNEXP_16.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_17.go--"
+./ifj20 < compiler_tests/FUNEXP_17.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_18.go--"
+./ifj20 < compiler_tests/FUNEXP_18.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_19.go--"
+./ifj20 < compiler_tests/FUNEXP_19.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_20.go--"
+./ifj20 < compiler_tests/FUNEXP_20.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_21.go--"
+./ifj20 < compiler_tests/FUNEXP_21.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_22.go--"
+./ifj20 < compiler_tests/FUNEXP_22.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_23.go--"
+./ifj20 < compiler_tests/FUNEXP_23.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_24.go--"
+./ifj20 < compiler_tests/FUNEXP_24.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--compiler_tests/FUNEXP_25.go--"
+./ifj20 < compiler_tests/FUNEXP_25.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
 
 if [ $errorcount -eq 0 ]; then
 	echo "#------------------TESTS PASSED------------------#"

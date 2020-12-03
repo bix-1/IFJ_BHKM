@@ -1,6 +1,6 @@
 package main
 
-func foo1_(_ int)(int) {
+func foo1_(l int)(int) {
 
 	return 0.0
 }
