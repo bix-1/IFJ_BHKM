@@ -222,6 +222,14 @@ elem_t * create_expr(elem_t * func);
 //    b -- initialized to ""
 void var_init(elem_t * var);
 
+/*___________LISTS_OF_DECLARATIONS__________*/
+elem_t * decl_list;
+elem_t * decl_list_init();
+void decl_list_clear();
+void decl_list_add(sym_var_item_t *);
+
+
+
 /*____________LISTS_OF_VARIABLES____________*/
 // Used for handling destinations of
 //    variable definitions (a,b := 2,2)

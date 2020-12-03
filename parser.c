@@ -701,6 +701,7 @@ void instr_add_func_def() {
   instr_t * new_func = instr_create();
   instr_set_type(new_func, IC_DEF_FUN);
   instr_add_dest(new_func, last_func);
+  instr_add_elem1(new_func, decl_list_init());
   list_add(list, new_func);
 }
 
@@ -709,6 +710,8 @@ void instr_add_func_end() {
   instr_set_type(end_func, IC_END_FUN);
   instr_add_dest(end_func, last_func);
   list_add(list, end_func);
+
+  decl_list_clear();
 }
 
 void instr_add_func_call(elem_t * func, instr_type_t type) {
@@ -719,10 +722,12 @@ void instr_add_func_call(elem_t * func, instr_type_t type) {
 }
 
 void instr_add_var_decl(elem_t * var) {
-  instr_t * new_var = instr_create();
-  instr_set_type(new_var, IC_DECL_VAR);
-  instr_add_dest(new_var, var);
-  list_add(list, new_var);
+  decl_list_add(var->symbol.sym_var_item);
+
+  // instr_t * new_var = instr_create();
+  // instr_set_type(new_var, IC_DECL_VAR);
+  // instr_add_dest(new_var, var);
+  // list_add(list, new_var);
 }
 
 void instr_add_if_def() {
@@ -1522,6 +1527,8 @@ void undef_types_destroy() {
     next = it->next;
     free(it);
   }
+
+  undef_types_init();
 }
 
 void undef_types_add(sym_var_item_t * var1, sym_var_item_t * var2) {
@@ -1694,6 +1701,24 @@ elem_t * make_dest(int operation) {
   return dest;
 }
 
+elem_t * decl_list_init() {
+  sym_var_list_t * list = sym_var_list_init();
+  symbol_t list_sym = {.sym_var_list = list};
+  elem_t * list_elem = elem_init(SYM_VAR_LIST, list_sym);
+  symtable_insert(symtable, make_unique(list_elem), list_elem);
+  decl_list = list_elem;
+
+  return list_elem;
+}
+
+void decl_list_clear() {
+  decl_list = NULL;
+}
+
+void decl_list_add(sym_var_item_t *item) {
+  list_item_t * list_item = list_item_init(item);
+  sym_var_list_add(decl_list->symbol.sym_var_list, list_item);
+}
 
 
 /*
