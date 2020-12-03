@@ -40,6 +40,8 @@ int for_end_index = 0;
 
 int codegen_tmp_read_index = 0;
 int codegen_tmp_str2int_index = 0;
+int codegen_tmp_getchr_index = 0;
+int codegen_tmp_substr_index = 0;
 
 void codegen_init() {
 	jmp_label_stack_init();
@@ -1596,9 +1598,14 @@ void int2char(instr_t instr) {
 	}
 
 	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
+	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
 	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
 
 	if (sym_dest == NULL) {
+		error(99, "codegen.c", "int2char", "NULL symbol");
+	}
+
+	if (sym_err == NULL) {
 		error(99, "codegen.c", "int2char", "NULL symbol");
 	}
 
@@ -1607,9 +1614,14 @@ void int2char(instr_t instr) {
 	}
 
 	char *frame_dest = get_frame(sym_dest);
+	char *frame_err = get_frame(sym_err);
 	char *frame_elem1 = get_frame(sym_elem1);
 
 	if (sym_dest->type != VAR_STRING) {
+		error(99, "codegen.c", "int2char", "Incompatible data type");
+	}
+
+	if (sym_err->type != VAR_INT) {
 		error(99, "codegen.c", "int2char", "Incompatible data type");
 	}
 
@@ -1618,11 +1630,32 @@ void int2char(instr_t instr) {
 	}
 
 	if (sym_elem1->is_const) {
-		fprintf(OUTPUT, "INT2CHAR %s@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.int_t);
+		fprintf(OUTPUT, "DEFVAR LF@tmp-getchar-code-%d int@%d\n", codegen_tmp_getchr_index, sym_elem1->data.int_t);
 	}
 	else {
-		fprintf(OUTPUT, "INT2CHAR %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name);
+		fprintf(OUTPUT, "DEFVAR LF@tmp-getchar-code-%d %s@%s\n", codegen_tmp_getchr_index, frame_elem1, sym_elem1->name);
 	}
+
+	fprintf(OUTPUT, "DEFVAR LF@tmp-getchar-res-%d\n", codegen_tmp_getchr_index);
+	fprintf(OUTPUT, "MOVE LF@tmp-getchar-res-%d bool@false\n", codegen_tmp_getchr_index);
+
+	// condition
+	fprintf(OUTPUT, "LT LF@tmp-getchar-res-%d LF@code int@0\n", codegen_tmp_getchr_index);
+	fprintf(OUTPUT, "JUMPIFEQ tmp-getchar-error-%d LF@tmp-getchar-res-%d bool@true\n", codegen_tmp_getchr_index, codegen_tmp_getchr_index);
+	fprintf(OUTPUT, "GT LF@tmp-getchar-res-%d LF@code int@255\n", codegen_tmp_getchr_index);
+	fprintf(OUTPUT, "JUMPIFEQ tmp-getchar-error-%d LF@tmp-getchar-res-%d bool@true\n", codegen_tmp_getchr_index, codegen_tmp_getchr_index);
+
+	// valid
+	fprintf(OUTPUT, "MOVE %s@%s int@0\n", frame_err, sym_err->name);
+	fprintf(OUTPUT, "INT2CHAR %s@%s LF@tmp-getchar-code-%d\n", frame_dest, sym_dest->name, codegen_tmp_getchr_index);
+	fprintf(OUTPUT, "JUMP tmp-getchar-exit-%d\n", codegen_tmp_getchr_index);
+
+	// error
+	fprintf(OUTPUT, "LABEL tmp-getchar-error-%d\n", codegen_tmp_getchr_index);
+	fprintf(OUTPUT, "MOVE %s@%s int@1\n", frame_err, sym_err->name);
+
+	// exit
+	fprintf(OUTPUT, "LABEL tmp-getchar-exit-%d\n", codegen_tmp_getchr_index);
 }
 
 void str2int(instr_t instr) {
@@ -1715,23 +1748,6 @@ void str2int(instr_t instr) {
 
 	// exit
 	fprintf(OUTPUT, "LABEL tmp-str2int-exit-%d\n", codegen_tmp_str2int_index);
-
-	/*if (sym_elem1->is_const && sym_elem2->is_const) {
-		fprintf(OUTPUT, "STR2INT %s@%s string@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.string_t,
-		        sym_elem2->data.int_t);
-	}
-	else if (sym_elem1->is_const && !sym_elem2->is_const) {
-		fprintf(OUTPUT, "STR2INT %s@%s string@%s %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.string_t,
-		        frame_elem2, sym_elem2->name);
-	}
-	else if (!sym_elem1->is_const && sym_elem2->is_const) {
-		fprintf(OUTPUT, "STR2INT %s@%s %s@%s int@%d\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		  sym_elem2->data.int_t);
-	}
-	else {
-		fprintf(OUTPUT, "STR2INT %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        frame_elem2, sym_elem2->name);
-	}*/
 }
 
 void read_var(instr_t instr) {
