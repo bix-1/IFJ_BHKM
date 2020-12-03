@@ -1279,7 +1279,7 @@ fi
 echo "--SUB 5--"
 ./ifj20 < compiler_tests/12_sy_operations_42.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 2 ]; then
+if [ $OUT -eq 5 ]; then
        echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -1449,6 +1449,16 @@ fi
 
 echo "--Complex tests 16-13_complex_16.go--"
 ./ifj20 < compiler_tests/13_complex_16.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--Complex tests 17-13_complex_17.go--"
+./ifj20 < compiler_tests/13_complex_17.go > /dev/null 2>&1
 OUT=$?
 if [ $OUT -eq 0 ]; then
         echo "TEST OK"
