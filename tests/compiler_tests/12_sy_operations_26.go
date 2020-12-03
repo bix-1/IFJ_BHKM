@@ -1,7 +1,7 @@
 package main
 
 func main () {
-	s:"sas"
+s:="sas"
 if 1< s {
 
 }
