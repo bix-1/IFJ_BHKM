@@ -61,7 +61,7 @@ typedef enum
 int precTable[8][8] = {
     /*  +- *,/  (   )   RC  i  STRING  $ */
     {R, S, S, R, R, S, S, R},           // +-
-    {R, R, S, R, R, S, Err, R},         // */
+    {R, R, S, R, R, S, S, R},         // */
     {S, S, S, Eq, S, S, Err, Err},      // (
     {R, R, Err, R, R, Err, Err, R},     // )
     {S, S, S, R, Err, S, S, R},       // RC
@@ -275,6 +275,7 @@ void check_symtable(stackElemPtr elem)
         {
             free(*str);
             *str = NULL;
+            next.attr.str_lit.str = NULL;
         }
     }
     else
@@ -431,7 +432,7 @@ void check_string(stackElemPtr top, stackElemPtr afterTop, tToken *symbol)
     if (top->data->symbol.sym_var_item->type == VAR_STRING && afterTop->data->symbol.sym_var_item->type == VAR_STRING && (symbol->token_type == T_MINUS || symbol->token_type == T_MUL || symbol->token_type == T_DIV))
     {
         release_resources();
-        error(2, "expression parser", "check_string", "INVALID INPUT EXPRESSION");
+        error(5, "expression parser", "check string", "Invalid string operation");
     }
 }
 
@@ -440,7 +441,7 @@ void check_num(stackElemPtr top, stackElemPtr afterTop)
     if ((top->data->symbol.sym_var_item->type == VAR_INT && afterTop->data->symbol.sym_var_item->type == VAR_FLOAT64) || (top->data->symbol.sym_var_item->type == VAR_FLOAT64 && afterTop->data->symbol.sym_var_item->type == VAR_INT))
     {
         release_resources();
-        error(5, "expression parser", "check_string", "Variable types do not match");
+        error(5, "expression parser", "check_num", "Variable types do not match");
     }
 }
 
@@ -556,7 +557,7 @@ void reduce()
             tokenAfterTop->data->symbol.sym_var_item
           )
         ) {
-          error(5, "expression parser", "check_string", "Variable types do not match");
+          error(5, "expression parser", "check types", "Variable types do not match");
         }
 
         if (tokenTop->data->symbol.sym_var_item->type == VAR_STRING) {
