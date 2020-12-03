@@ -404,7 +404,6 @@ int get_next_token(tToken *token) {
                 if (isdigit(c)) {
                     str_add_char(&attr, (char) c);
                 } else {
-                    ungetc(c, source);
                     token->token_type = T_DEC_VALUE;
                     token->attr.dec_lit = strtod(attr.str, NULL);
                     char_clear(&attr, c);
