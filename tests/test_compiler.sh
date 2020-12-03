@@ -625,45 +625,15 @@ fi
 echo "--For expression 4--"
 ./ifj20 < compiler_tests/08_se_for_4.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 2 ]; then
+if [ $OUT -eq 3 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
         echo "TEST FAILED"
 fi
 
-echo "--For expression 4--"
-./ifj20 < compiler_tests/08_se_for_4.go > /dev/null 2>&1
-OUT=$?
-if [ $OUT -eq 2 ]; then
-        echo "TEST OK"
-else
-        errorcount=$((errorcount + 1))
-        echo "TEST FAILED"
-fi
-
-echo "--For expression 4--"
-./ifj20 < compiler_tests/08_se_for_4.go > /dev/null 2>&1
-OUT=$?
-if [ $OUT -eq 2 ]; then
-        echo "TEST OK"
-else
-        errorcount=$((errorcount + 1))
-        echo "TEST FAILED"
-fi
-
-echo "--For expression 4--"
-./ifj20 < compiler_tests/08_se_for_4.go > /dev/null 2>&1
-OUT=$?
-if [ $OUT -eq 2 ]; then
-        echo "TEST OK"
-else
-        errorcount=$((errorcount + 1))
-        echo "TEST FAILED"
-fi
-
-echo "--For expression 4--"
-./ifj20 < compiler_tests/08_se_for_4.go > /dev/null 2>&1
+echo "--For expression 5--"
+./ifj20 < compiler_tests/08_se_for_5.go > /dev/null 2>&1
 OUT=$?
 if [ $OUT -eq 2 ]; then
         echo "TEST OK"
@@ -686,8 +656,8 @@ fi
 echo "--If 2 FUNXP --"
 ./ifj20 < compiler_tests/09_se_if_2.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 0 ]; then
-        echo "TEST OK"
+if [ $OUT -eq 7 ]; then
+       echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
         echo "TEST FAILED"
@@ -1019,7 +989,7 @@ fi
 echo "--NEQ 6--"
 ./ifj20 < compiler_tests/12_sy_operations_13.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 0 ]; then
+if [ $OUT -eq 5 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -1079,7 +1049,7 @@ fi
 echo "--GREATER OR EQ --"
 ./ifj20 < compiler_tests/12_sy_operations_19.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 0 ]; then
+if [ $OUT -eq 5 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -1119,7 +1089,7 @@ fi
 echo "--GREATER OR EQ 5-- 12_sy_operations_23.go"
 ./ifj20 < compiler_tests/12_sy_operations_23.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 1 ]; then
+if [ $OUT -eq 0 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
@@ -1129,7 +1099,7 @@ fi
 echo "--GREATER OR EQ 6-- 12_sy_operations_24.go"
 ./ifj20 < compiler_tests/12_sy_operations_24.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 1 ]; then
+if [ $OUT -eq 0 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
