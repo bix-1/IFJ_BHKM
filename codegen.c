@@ -451,6 +451,11 @@ void add_var(instr_t instr) {
 	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
 	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
 
+	if (sym_dest->type == VAR_STRING && sym_elem1->type == VAR_STRING && sym_elem2->type == VAR_STRING) {
+		concat_str(instr);
+		return;
+	}
+
 	if (sym_dest == NULL) {
 		error(99, "codegen.c", "add_var", "NULL symbol");
 	}
@@ -1819,15 +1824,17 @@ void write_var(instr_t instr) {
 }
 
 void concat_str(instr_t instr) {
-	elem_t *elem_dest = instr.elem_dest_ptr;
+	elem_t *elem_dest = instr_get_dest(&instr);
+	elem_t *elem1 = instr_get_elem1(&instr);
+	elem_t *elem2 = instr_get_elem2(&instr);
 
-	if (elem_dest == NULL) {
+	if (elem_dest == NULL || elem1 == NULL || elem2 == NULL) {
 		error(99, "codegen.c", "concat_str", "NULL element");
 	}
 
-	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
-	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
-	sym_var_item_t *sym_elem2 = elem_dest->symbol.sym_func->params->first->next->item;
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
+	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
+	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
 
 	if (sym_dest == NULL) {
 		error(99, "codegen.c", "concat_str", "NULL symbol");

@@ -577,9 +577,9 @@ typedef enum instr_type {
 	/*
 	 * Concatenate two strings to one
 	 *
-	 * elem_dest: symbol func
-	 * elem_1: NULL
-	 * elem_2: NULL
+	 * elem_dest: symbol var (dest)
+	 * elem_1: symbol var (string1)
+	 * elem_2: symbol var (string2)
 	 *
 	 * symbol func:     params  -> 2: [symbol var || symbol const (src1),
 	 *                                 symbol var || symbol const (src2)]
@@ -588,6 +588,7 @@ typedef enum instr_type {
 	 * Example:
 	 * x = concat("Hello ", "world!")
 	 * x = concat(a, b)
+	 * x = "string1" + "string2"
 	 *
 	 * ==========================
 	 * Note:

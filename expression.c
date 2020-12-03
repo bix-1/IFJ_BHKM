@@ -573,7 +573,7 @@ void reduce()
             {
                 symtable_value_t dest = create_dest(tokenTop);
 
-                if (tokenTop->originalType == T_STRING_VALUE && tokenAfterTop->originalType == T_STRING_VALUE)
+                if (tokenTop->originalType == T_STRING_VALUE || tokenAfterTop->originalType == T_STRING_VALUE)
                 {
                     // Because valgring was fucking me up about conditional jump on uninitialised value
                     dest->symbol.sym_var_item->data.string_t = NULL;
@@ -585,6 +585,8 @@ void reduce()
                     instr_add_elem1(instrCONCAT, tokenAfterTop->data);
                     instr_add_elem2(instrCONCAT, tokenTop->data);
                     list_add(list, instrCONCAT);
+
+                    // printf("GOT HERE\n\n"); exit(0);
                 }
                 else
                 {

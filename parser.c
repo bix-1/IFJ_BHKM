@@ -12,14 +12,11 @@
 
 /*
 TODO:
-  ?? condition checking
-
   DOCUMENTATION
 
   fix LL table
 
   remove unused functions
-  crossreference LL.pdf & implemented rules
 */
 
 
@@ -1197,6 +1194,10 @@ void check_func_call_rets(elem_t * def_e, elem_t * call_e) {
       );
     }
 
+    if (call->item->type == VAR_STRING) {
+      call->item->data.string_t = NULL;
+    }
+
     // next step
     def = def->next;
     call = call->next;
@@ -1485,11 +1486,17 @@ bool check_types(sym_var_item_t * var1, sym_var_item_t * var2) {
     }
     else {  // [assign] type2 <-- type1
       var2->type = type1;
+      if (var2->type == VAR_STRING) {
+        var2->data.string_t = NULL;
+      }
     }
   }
   else {
     if (type2 != VAR_UNDEFINED) { // [assign] type1 <-- type2
       var1->type = type2;
+      if (var1->type == VAR_STRING) {
+        var1->data.string_t = NULL;
+      }
     }
     else {
       undef_types_add(var1, var2);
