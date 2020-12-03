@@ -64,7 +64,7 @@ int precTable[8][8] = {
     {R, R, S, R, R, S, Err, R},         // */
     {S, S, S, Eq, S, S, Err, Err},      // (
     {R, R, Err, R, R, Err, Err, R},     // )
-    {S, S, S, R, Err, S, Err, R},       // RC
+    {S, S, S, R, Err, S, S, R},       // RC
     {R, R, Err, R, R, Err, Err, R},     // i
     {R, Err, Err, Err, R, Err, Err, R}, // STRING
     {S, S, S, Err, S, S, S, A},         // $
@@ -303,6 +303,10 @@ symtable_value_t create_dest(stackElemPtr elem)
     else
     {
         sym_var_item_set_type(var_item, elem->data->symbol.sym_var_item->type);
+        check_types(
+          var_item,
+          tokStack->topToken->data->symbol.sym_var_item
+        );
     }
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
@@ -310,10 +314,6 @@ symtable_value_t create_dest(stackElemPtr elem)
     instr_add_var_decl(var);
     var_item->is_defined = true;
 
-    check_types(
-      var->symbol.sym_var_item,
-      tokStack->topToken->data->symbol.sym_var_item
-    );
 
     return var;
 }
@@ -1283,6 +1283,8 @@ void frame_stack_pop()
 
 symtable_value_t parse_expression()
 {
+    // printf("CALLED\n\n");
+
     if (get_index(next) == OP_dollar)
     {
         error(2, "expression parser", NULL, "Missing an expression");

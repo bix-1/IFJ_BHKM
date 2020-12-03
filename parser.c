@@ -549,7 +549,9 @@ void match(int term) {
   // eps == FALSE --> non-eps terminal matched
   eps = false;
 
-  if (get_next) get_next_token(&next);
+  if (get_next) {
+    get_next_token(&next);
+  }
 }
 
 
@@ -2152,6 +2154,7 @@ void next_id() {
     eps = false;
     return;
   }
+  skip_empty();
 
   if (next.token_type != T_IDENTIFIER) {
     match(T_VAR_ID);
@@ -2397,6 +2400,9 @@ void func_args() {
     instr_add_func_call(arg, type);
   }
 
+  // restore current func
+  last_elem = func;
+
   next_arg();
 }
 
@@ -2409,8 +2415,24 @@ void next_arg() {
   }
   skip_empty();
 
+  // stash last function locally
+  elem_t * func = last_elem;
+  // get argument
   elem_t * arg = parse_expression();
-  func_add_param(last_elem, arg->symbol.sym_var_item);
+
+  if (arg->sym_type != SYM_FUNC) {
+    func_add_param(func, arg->symbol.sym_var_item);
+  } else {
+    // create expression
+    elem_t * expr = create_expr(arg);
+
+    func_add_ret(arg, expr->symbol.sym_var_item);
+    func_add_param(func, arg->symbol.sym_var_item);
+
+    // add func call instruction
+    instr_type_t type = get_func_instr_type(arg->symbol.sym_func->name);
+    instr_add_func_call(arg, type);
+  }
 
   next_arg();
 }
@@ -2442,6 +2464,7 @@ void next_expr() {
     eps = false;
     return;
   }
+  skip_empty();
 
   elem_t * expr = parse_expression();
   if (expr->sym_type == SYM_FUNC) {

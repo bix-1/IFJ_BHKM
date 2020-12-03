@@ -56,6 +56,7 @@ expr_parser.a: expression.o parser.o stack.o scanner.a
 
 ########## Testing ##########
 tests: ifj20
+	cp ifj20 tests/
 	cd tests && ./test_whole.sh
 	@cat tests/failed_tests
 

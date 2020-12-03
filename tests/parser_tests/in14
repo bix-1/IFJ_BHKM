@@ -1,0 +1,13 @@
+package main
+
+func foo (a int, b int) (int) {
+  return 0
+}
+
+func faa () (int) {
+  return 0
+}
+
+func main () {
+  a := foo(faa(), faa())
+}
