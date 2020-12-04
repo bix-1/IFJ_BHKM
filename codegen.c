@@ -29,7 +29,6 @@
 #define FOR_BODY "for-body-"
 #define FOR_END "for-end-"
 
-int main_fun_deep = 1;      // main function is called once on start
 instr_t *last_instr = NULL;
 int skip_index = 0;
 int end_index = 0;
@@ -370,11 +369,6 @@ void call_fun(instr_t instr) {
 			return_active = sym_var_list_next(returns);
 		}*/
 	}
-
-	if (strcmp(elem1->symbol.sym_func->name, "main") == 0) {
-		// main function
-		main_fun_deep++;
-	}
 }
 
 void ret_fun(instr_t instr) {
@@ -438,17 +432,9 @@ void ret_fun(instr_t instr) {
 	fprintf(OUTPUT, "POPFRAME\n");
 
 	// check if function is main, if yes then EXIT may be called
-	// check main_fun_deep (if its not 1, then EXIT instr cannot be called)
 	if (strcmp(elem_dest->symbol.sym_func->name, "main") == 0) {
 		// main function
-		// TODO remove main_fun_deep - keep only EXIT on return
-		if (main_fun_deep == 1) {
 			fprintf(OUTPUT, "EXIT int@0\n\n");
-		}
-		else {
-			fprintf(OUTPUT, "RETURN\n\n");
-		}
-		main_fun_deep--;
 	}
 	else {
 		fprintf(OUTPUT, "RETURN\n\n");
