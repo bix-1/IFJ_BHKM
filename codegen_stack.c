@@ -178,15 +178,15 @@ void jmp_label_stack_push(jmp_label_stack_top_t *top, int value) {
 
 int jmp_label_stack_pop(jmp_label_stack_t *stack, jmp_label_stack_top_t *top) {
 	if (stack == NULL) {
-		error(99, "codegen_stack.c", "jmp_label_stack_push", "NULL pointer");
+		error(99, "codegen_stack.c", "jmp_label_stack_pop", "NULL pointer");
 	}
 
 	if (top == NULL) {
-		error(99, "codegen_stack.c", "jmp_label_stack_push", "NULL pointer");
+		error(99, "codegen_stack.c", "jmp_label_stack_pop", "NULL pointer");
 	}
 
 	if (top->top == stack) {
-		error(99, "codegen_stack.c", "jmp_label_stack_push", "Cannot pop bottom");
+		error(99, "codegen_stack.c", "jmp_label_stack_pop", "Cannot pop bottom");
 	}
 
 	jmp_label_stack_t *temp = top->top;
