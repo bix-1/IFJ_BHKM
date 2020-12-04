@@ -200,16 +200,11 @@ void def_fun(instr_t instr) {
 		error(99, "codegen.c", "def_fun", "NULL element");
 	}
 
-	if (elem1 == NULL) {
-		error(99, "codegen.c", "def_fun", "NULL element");
-	}
-
 	if (elem_dest->sym_type != SYM_FUNC) {
 		error(99, "codegen.c", "def_fun", "Invalid symbol");
 	}
 
 	sym_func_t *sym_func = elem_dest->symbol.sym_func;
-	sym_var_list_t *sym_declarations = elem1->symbol.sym_var_list;
 
 	if (sym_func == NULL) {
 		error(99, "codegen.c", "def_fun", "NULL element");
@@ -233,17 +228,20 @@ void def_fun(instr_t instr) {
 
 	fprintf(OUTPUT, "PUSHFRAME\n");
 
-	// Declare all variables in function
-	if (sym_declarations != NULL) {
-		sym_var_item_t *declaration = sym_var_list_next(sym_declarations);
+	if (elem1 != NULL) {
+		sym_var_list_t *sym_declarations = elem1->symbol.sym_var_list;
+		// Declare all variables in function
+		if (sym_declarations != NULL) {
+			sym_var_item_t *declaration = sym_var_list_next(sym_declarations);
 
-		while (declaration != NULL) {
-			char *frame_declaration = get_frame(declaration);
+			while (declaration != NULL) {
+				char *frame_declaration = get_frame(declaration);
 
-			// Declare variable
-			fprintf(OUTPUT, "DEFVAR %s@%s\n", frame_declaration, declaration->name);
+				// Declare variable
+				fprintf(OUTPUT, "DEFVAR %s@%s\n", frame_declaration, declaration->name);
 
-			declaration = sym_var_list_next(sym_declarations);
+				declaration = sym_var_list_next(sym_declarations);
+			}
 		}
 	}
 }
