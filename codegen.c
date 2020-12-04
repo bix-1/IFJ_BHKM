@@ -32,10 +32,7 @@
 instr_t *last_instr = NULL;
 int skip_index = 0;
 int end_index = 0;
-int for_cond_index = 0;
-int for_step_index = 0;
-int for_body_index = 0;
-int for_end_index = 0;
+int for_def_index = 0;
 
 bool read_int_used = false;
 bool read_float_used = false;
@@ -83,12 +80,8 @@ void try_create_jump(instr_t instr) {
 		skip_index++;
 	}
 	else if (instr.next->type == IC_FOR_STEP) {
-		jmp_label_stack_push(for_body_top, for_body_index);
-		jmp_label_stack_push(for_end_top, for_end_index);
-		fprintf(OUTPUT, "JUMPIFEQ %s%d %s@%s bool@true\n", FOR_BODY, for_body_index, frame_dest, sym_dest->name);
-		fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", FOR_END, for_end_index, frame_dest, sym_dest->name);
-		for_body_index++;
-		for_end_index++;
+		fprintf(OUTPUT, "JUMPIFEQ %s%d %s@%s bool@true\n", FOR_BODY, jmp_label_stack_top(for_def_top), frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", FOR_END, jmp_label_stack_top(for_def_top), frame_dest, sym_dest->name);
 	}
 }
 
@@ -2439,34 +2432,28 @@ void else_end() {
 }
 
 void for_def_codegen() {
-	//
+	jmp_label_stack_push(for_def_top, for_def_index);
+	for_def_index++;
 }
 
 void for_cond() {
-	jmp_label_stack_push(for_cond_top, for_cond_index);
-	fprintf(OUTPUT, "LABEL %s%d\n", FOR_COND, for_cond_index);
-	for_cond_index++;
+	fprintf(OUTPUT, "LABEL %s%d\n", FOR_COND, jmp_label_stack_top(for_def_top));
 }
 
 void for_step() {
-	jmp_label_stack_push(for_step_top, for_step_index);
-	fprintf(OUTPUT, "LABEL %s%d\n", FOR_STEP, for_step_index);
-	for_step_index++;
+	fprintf(OUTPUT, "LABEL %s%d\n", FOR_STEP, jmp_label_stack_top(for_def_top));
 }
 
 void for_body_start() {
-	fprintf(OUTPUT, "JUMP %s%d\n", FOR_COND, jmp_label_stack_top(for_cond_top));
-	fprintf(OUTPUT, "LABEL %s%d\n", FOR_BODY, jmp_label_stack_top(for_body_top));
+	fprintf(OUTPUT, "JUMP %s%d\n", FOR_COND, jmp_label_stack_top(for_def_top));
+	fprintf(OUTPUT, "LABEL %s%d\n", FOR_BODY, jmp_label_stack_top(for_def_top));
 }
 
 void for_body_end() {
-	fprintf(OUTPUT, "JUMP %s%d\n", FOR_STEP, jmp_label_stack_top(for_step_top));
-	fprintf(OUTPUT, "LABEL %s%d\n", FOR_END, jmp_label_stack_top(for_end_top));
+	fprintf(OUTPUT, "JUMP %s%d\n", FOR_STEP, jmp_label_stack_top(for_def_top));
+	fprintf(OUTPUT, "LABEL %s%d\n", FOR_END, jmp_label_stack_top(for_def_top));
 
-	jmp_label_stack_pop(for_cond_bottom, for_cond_top);
-	jmp_label_stack_pop(for_step_bottom, for_step_top);
-	jmp_label_stack_pop(for_body_bottom, for_body_top);
-	jmp_label_stack_pop(for_end_bottom, for_end_top);
+	jmp_label_stack_pop(for_def_bottom, for_def_top);
 }
 
 void codegen_generate_instr() {
