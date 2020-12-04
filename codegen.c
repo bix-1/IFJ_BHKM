@@ -436,6 +436,7 @@ void ret_fun(instr_t instr) {
 	// check main_fun_deep (if its not 1, then EXIT instr cannot be called)
 	if (strcmp(elem_dest->symbol.sym_func->name, "main") == 0) {
 		// main function
+		// TODO remove main_fun_deep - keep only EXIT on return
 		if (main_fun_deep == 1) {
 			fprintf(OUTPUT, "EXIT int@0\n\n");
 		}
@@ -2206,13 +2207,13 @@ void str2int_def() {
 	fprintf(OUTPUT, "JUMPIFEQ str2int--error LF@str2int-src-res bool@true\n");
 
 	// valid
-	fprintf(OUTPUT, "MOVE LT@error int@0\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
 	fprintf(OUTPUT, "STRI2INT LF@dest LF@src LF@index\n");
 	fprintf(OUTPUT, "JUMP str2int--exit\n");
 
 	// error
 	fprintf(OUTPUT, "LABEL str2int--error\n");
-	fprintf(OUTPUT, "MOVE LT@error int@1\n");
+	fprintf(OUTPUT, "MOVE LF@error int@1\n");
 
 	// exit
 	fprintf(OUTPUT, "LABEL str2int--exit\n");
