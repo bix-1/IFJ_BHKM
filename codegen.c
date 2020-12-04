@@ -38,10 +38,13 @@ int for_step_index = 0;
 int for_body_index = 0;
 int for_end_index = 0;
 
-int codegen_tmp_read_index = 0;
-int codegen_tmp_str2int_index = 0;
-int codegen_tmp_getchr_index = 0;
-int codegen_tmp_substr_index = 0;
+bool read_int_used = false;
+bool read_float_used = false;
+bool read_string_used = false;
+bool read_bool_used = false;
+bool getchar_used = false;
+bool str2int_used = false;
+bool substr_used = false;
 
 void codegen_init() {
 	jmp_label_stack_init();
@@ -1591,71 +1594,7 @@ void float2int(instr_t instr) {
 }
 
 void int2char(instr_t instr) {
-	elem_t *elem_dest = instr.elem_dest_ptr;
-
-	if (elem_dest == NULL) {
-		error(99, "codegen.c", "int2char", "NULL element");
-	}
-
-	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
-	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
-	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
-
-	if (sym_dest == NULL) {
-		error(99, "codegen.c", "int2char", "NULL symbol");
-	}
-
-	if (sym_err == NULL) {
-		error(99, "codegen.c", "int2char", "NULL symbol");
-	}
-
-	if (sym_elem1 == NULL) {
-		error(99, "codegen.c", "int2char", "NULL symbol");
-	}
-
-	char *frame_dest = get_frame(sym_dest);
-	char *frame_err = get_frame(sym_err);
-	char *frame_elem1 = get_frame(sym_elem1);
-
-	if (sym_dest->type != VAR_STRING) {
-		error(99, "codegen.c", "int2char", "Incompatible data type");
-	}
-
-	if (sym_err->type != VAR_INT) {
-		error(99, "codegen.c", "int2char", "Incompatible data type");
-	}
-
-	if (sym_elem1->type != VAR_INT) {
-		error(99, "codegen.c", "int2char", "Incompatible data type");
-	}
-
-	if (sym_elem1->is_const) {
-		fprintf(OUTPUT, "DEFVAR LF@tmp-getchar-code-%d int@%d\n", codegen_tmp_getchr_index, sym_elem1->data.int_t);
-	}
-	else {
-		fprintf(OUTPUT, "DEFVAR LF@tmp-getchar-code-%d %s@%s\n", codegen_tmp_getchr_index, frame_elem1, sym_elem1->name);
-	}
-
-	fprintf(OUTPUT, "DEFVAR LF@tmp-getchar-res-%d\n", codegen_tmp_getchr_index);
-	fprintf(OUTPUT, "MOVE LF@tmp-getchar-res-%d bool@false\n", codegen_tmp_getchr_index);
-
-	// condition
-	fprintf(OUTPUT, "LT LF@tmp-getchar-res-%d LF@code int@0\n", codegen_tmp_getchr_index);
-	fprintf(OUTPUT, "JUMPIFEQ tmp-getchar-error-%d LF@tmp-getchar-res-%d bool@true\n", codegen_tmp_getchr_index, codegen_tmp_getchr_index);
-	fprintf(OUTPUT, "GT LF@tmp-getchar-res-%d LF@code int@255\n", codegen_tmp_getchr_index);
-	fprintf(OUTPUT, "JUMPIFEQ tmp-getchar-error-%d LF@tmp-getchar-res-%d bool@true\n", codegen_tmp_getchr_index, codegen_tmp_getchr_index);
-
-	// valid
-	fprintf(OUTPUT, "MOVE %s@%s int@0\n", frame_err, sym_err->name);
-	fprintf(OUTPUT, "INT2CHAR %s@%s LF@tmp-getchar-code-%d\n", frame_dest, sym_dest->name, codegen_tmp_getchr_index);
-	fprintf(OUTPUT, "JUMP tmp-getchar-exit-%d\n", codegen_tmp_getchr_index);
-
-	// error
-	fprintf(OUTPUT, "LABEL tmp-getchar-error-%d\n", codegen_tmp_getchr_index);
-	fprintf(OUTPUT, "MOVE %s@%s int@1\n", frame_err, sym_err->name);
-
-	// exit
-	fprintf(OUTPUT, "LABEL tmp-getchar-exit-%d\n", codegen_tmp_getchr_index);
+	//
 }
 
 void str2int(instr_t instr) {
@@ -1707,47 +1646,26 @@ void str2int(instr_t instr) {
 		error(99, "codegen.c", "str2int", "Incompatible data type");
 	}
 
-	// Define temporary variables (in case of error)
-
+	//push params
 	if (sym_elem1->is_const) {
-		fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-src-%d string@%s\n", codegen_tmp_str2int_index, sym_elem1->data.string_t);
+		fprintf(OUTPUT, "PUSHS string@%s\n", sym_elem1->data.string_t);
 	}
 	else {
-		fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-src-%d %s@%s\n", codegen_tmp_str2int_index, frame_elem1, sym_elem1->name);
+		fprintf(OUTPUT, "PUSHS %s@%s\n", frame_elem1, sym_elem1->name);
 	}
 
 	if (sym_elem2->is_const) {
-		fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-index-%d int@%d\n", codegen_tmp_str2int_index, sym_elem2->data.int_t);
+		fprintf(OUTPUT, "PUSHS int@%d\n", sym_elem2->data.int_t);
 	}
 	else {
-		fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-index-%d %s@%s\n", codegen_tmp_str2int_index, frame_elem2, sym_elem2->name);
+		fprintf(OUTPUT, "PUSHS %s@%s\n", frame_elem2, sym_elem2->name);
 	}
 
-	fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-src-len-%d\n", codegen_tmp_str2int_index);
-	fprintf(OUTPUT, "DEFVAR LF@tmp-str2int-src-res-%d\n", codegen_tmp_str2int_index);
-	fprintf(OUTPUT, "MOVE LF@tmp-str2int-src-len-%d int@0\n", codegen_tmp_str2int_index);
-	fprintf(OUTPUT, "MOVE LF@tmp-str2int-src-res-%d bool@false\n", codegen_tmp_str2int_index);
+	fprintf(OUTPUT, "CALL str2int--def\n");
 
-	fprintf(OUTPUT, "STRLEN LF@tmp-str2int-src-len-%d LF@tmp-str2int-src-%d\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index);
-	fprintf(OUTPUT, "SUB LF@tmp-str2int-src-len-%d LF@tmp-str2int-src-len-%d int@1\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index);
-
-	// Check conditions
-	fprintf(OUTPUT, "LT LF@tmp-str2int-src-res-%d LF@tmp-str2int-index-%d int@0\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index);
-	fprintf(OUTPUT, "JUMPIFEQ tmp-str2int-error-%d LF@tmp-str2int-src-res-%d bool@true\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index);
-	fprintf(OUTPUT, "GT LF@tmp-str2int-src-res-%d LF@tmp-str2int-index-%d LF@tmp-str2int-src-len-%d\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index, codegen_tmp_str2int_index);
-	fprintf(OUTPUT, "JUMPIFEQ tmp-str2int-error-%d LF@tmp-str2int-src-res-%d bool@true\n", codegen_tmp_str2int_index, codegen_tmp_str2int_index);
-
-	// valid
-	fprintf(OUTPUT, "MOVE %s@%s int@0\n", frame_err, sym_err->name);
-	fprintf(OUTPUT, "STRI2INT %s@%s LF@tmp-str2int-src-%d LF@tmp-str2int-index-%d\n", frame_dest, sym_dest->name, codegen_tmp_str2int_index, codegen_tmp_str2int_index);
-	fprintf(OUTPUT, "JUMP tmp-str2int-exit-%d\n", codegen_tmp_str2int_index);
-
-	// error
-	fprintf(OUTPUT, "LABEL tmp-str2int-error-%d\n", codegen_tmp_str2int_index);
-	fprintf(OUTPUT, "MOVE %s@%s int@1\n", frame_err, sym_err->name);
-
-	// exit
-	fprintf(OUTPUT, "LABEL tmp-str2int-exit-%d\n", codegen_tmp_str2int_index);
+	// pop returns
+	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
 }
 
 void read_var(instr_t instr) {
@@ -1771,44 +1689,24 @@ void read_var(instr_t instr) {
 	char *frame_dest = get_frame(sym_dest);
 	char *frame_err = get_frame(sym_err);
 
-	fprintf(OUTPUT, "DEFVAR LF@tmp-read-dest-%d\n", codegen_tmp_read_index);
-	fprintf(OUTPUT, "DEFVAR LF@tmp-read-res-%d\n", codegen_tmp_read_index);
-	fprintf(OUTPUT, "MOVE LF@tmp-read-res-%d bool@false\n", codegen_tmp_read_index);
-
 	if (sym_dest->type == VAR_INT) {
-		fprintf(OUTPUT, "READ LF@tmp-read-dest-%d int\n", codegen_tmp_read_index);
-		//fprintf(OUTPUT, "READ %s@%s int\n", frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "CALL read-int--def\n");
 	}
 	else if (sym_dest->type == VAR_FLOAT64) {
-		fprintf(OUTPUT, "READ LF@tmp-read-dest-%d float\n", codegen_tmp_read_index);
-		//fprintf(OUTPUT, "READ %s@%s float\n", frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "CALL read-float--def\n");
 	}
 	else if (sym_dest->type == VAR_STRING) {
-		fprintf(OUTPUT, "READ LF@tmp-read-dest-%d string\n", codegen_tmp_read_index);
-		//fprintf(OUTPUT, "READ %s@%s string\n", frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "CALL read-string--def\n");
 	}
 	else if (sym_dest->type == VAR_BOOL) {
-		fprintf(OUTPUT, "READ LF@tmp-read-dest-%d bool\n", codegen_tmp_read_index);
-		//fprintf(OUTPUT, "READ %s@%s bool\n", frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "CALL read-bool--def\n");
 	}
 	else {
 		error(99, "codegen.c", "read_var", "Invalid data type");
 	}
 
-	fprintf(OUTPUT, "EQ LF@tmp-read-res-%d LF@tmp-read-dest-%d nil@nil\n", codegen_tmp_read_index, codegen_tmp_read_index);
-	fprintf(OUTPUT, "JUMPIFEQ tmp-read-valid-%d LF@tmp-read-res-%d bool@false\n", codegen_tmp_read_index, codegen_tmp_read_index);
-
-	// error
-	fprintf(OUTPUT, "MOVE %s@%s int@1\n", frame_err, sym_err->name);
-	fprintf(OUTPUT, "JUMP tmp-read-exit-%d\n", codegen_tmp_read_index);
-
-	// valid
-	fprintf(OUTPUT, "LABEL tmp-read-valid-%d\n", codegen_tmp_read_index);
-	fprintf(OUTPUT, "MOVE %s@%s LF@tmp-read-dest-%d\n", frame_dest, sym_dest->name, codegen_tmp_read_index);
-	fprintf(OUTPUT, "MOVE %s@%s int@0\n", frame_err, sym_err->name);
-
-	fprintf(OUTPUT, "LABEL tmp-read-exit-%d\n", codegen_tmp_read_index);
-	codegen_tmp_read_index++;
+	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
 }
 
 void write_var(instr_t instr) {
@@ -1959,108 +1857,512 @@ void getchar_str(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
 
 	if (elem_dest == NULL) {
-		error(99, "codegen.c", "getchar_str", "NULL element");
+		error(99, "codegen.c", "int2char", "NULL element");
+	}
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
+	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
+	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
+
+	if (sym_dest == NULL) {
+		error(99, "codegen.c", "int2char", "NULL symbol");
+	}
+
+	if (sym_err == NULL) {
+		error(99, "codegen.c", "int2char", "NULL symbol");
+	}
+
+	if (sym_elem1 == NULL) {
+		error(99, "codegen.c", "int2char", "NULL symbol");
+	}
+
+	char *frame_dest = get_frame(sym_dest);
+	char *frame_err = get_frame(sym_err);
+	char *frame_elem1 = get_frame(sym_elem1);
+
+	if (sym_dest->type != VAR_STRING) {
+		error(99, "codegen.c", "int2char", "Incompatible data type");
+	}
+
+	if (sym_err->type != VAR_INT) {
+		error(99, "codegen.c", "int2char", "Incompatible data type");
+	}
+
+	if (sym_elem1->type != VAR_INT) {
+		error(99, "codegen.c", "int2char", "Incompatible data type");
+	}
+
+	// push params
+	if (sym_elem1->is_const) {
+		fprintf(OUTPUT, "PUSHS int@%d\n", sym_elem1->data.int_t);
+	}
+	else {
+		fprintf(OUTPUT, "PUSHS %s@%s\n", frame_elem1, sym_elem1->name);
+	}
+
+	fprintf(OUTPUT, "CALL getchar--def\n");
+
+	// pop returns
+	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+}
+
+void setchar_str(instr_t instr) {
+	// TODO : not used directly, remove later
+}
+
+void substr_str(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "substr_str", "NULL element");
 	}
 
 	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
 	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
 	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
 	sym_var_item_t *sym_elem2 = elem_dest->symbol.sym_func->params->first->next->item;
+	sym_var_item_t *sym_elem3 = elem_dest->symbol.sym_func->params->first->next->next->item;
 
 	if (sym_dest == NULL) {
-		error(99, "codegen.c", "getchar_str", "NULL symbol");
+		error(99, "codegen.c", "substr_str", "NULL symbol");
 	}
 
 	if (sym_err == NULL) {
-		error(99, "codegen.c", "getchar_str", "NULL symbol");
+		error(99, "codegen.c", "substr_str", "NULL symbol");
 	}
 
 	if (sym_elem1 == NULL) {
-		error(99, "codegen.c", "getchar_str", "NULL symbol");
+		error(99, "codegen.c", "substr_str", "NULL symbol");
 	}
 
 	if (sym_elem2 == NULL) {
-		error(99, "codegen.c", "getchar_str", "NULL symbol");
+		error(99, "codegen.c", "substr_str", "NULL symbol");
 	}
 
-	// TODO : create new scope to check sym_err error
-	// ...
-	// valid:
+	if (sym_elem3 == NULL) {
+		error(99, "codegen.c", "substr_str", "NULL symbol");
+	}
 
 	char *frame_dest = get_frame(sym_dest);
+	char *frame_err = get_frame(sym_err);
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
+	char *frame_elem3 = get_frame(sym_elem3);
 
-	if (sym_dest->type != VAR_STRING || sym_elem1->type != VAR_STRING || sym_elem2->type != VAR_INT) {
-		error(99, "codegen.c", "getchar_str", "Incompatible data type");
+	if (sym_dest->type != VAR_STRING) {
+		error(99, "codegen.c", "substr_str", "Incompatible data type");
 	}
 
-	if (sym_elem1->is_const && sym_elem2->is_const) {
-		fprintf(OUTPUT, "GETCHAR %s@%s string@%s int@%d\n", frame_dest, sym_dest->name, sym_elem1->data.string_t,
-		        sym_elem2->data.int_t);
+	if (sym_err->type != VAR_INT) {
+		error(99, "codegen.c", "substr_str", "Incompatible data type");
 	}
-	else if (sym_elem1->is_const && !sym_elem2->is_const) {
-		fprintf(OUTPUT, "GETCHAR %s@%s string@%s %s@%s\n", frame_dest, sym_dest->name, sym_elem1->data.string_t,
-		        frame_elem2, sym_elem2->name);
+
+	if (sym_elem1->type != VAR_STRING) {
+		error(99, "codegen.c", "substr_str", "Incompatible data type");
 	}
-	else if (!sym_elem1->is_const && sym_elem2->is_const) {
-		fprintf(OUTPUT, "GETCHAR %s@%s %s@%s int@%d\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        sym_elem2->data.int_t);
+
+	if (sym_elem2->type != VAR_INT) {
+		error(99, "codegen.c", "substr_str", "Incompatible data type");
+	}
+
+	if (sym_elem3->type != VAR_INT) {
+		error(99, "codegen.c", "substr_str", "Incompatible data type");
+	}
+
+	// push params
+	if (sym_elem1->is_const) {
+		fprintf(OUTPUT, "PUSHS string@%s\n", sym_elem1->data.string_t);
 	}
 	else {
-		fprintf(OUTPUT, "GETCHAR %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-		        frame_elem2, sym_elem2->name);
+		fprintf(OUTPUT, "PUSHS %s@%s\n", frame_elem1, sym_elem1->name);
 	}
+
+	if (sym_elem2->is_const) {
+		fprintf(OUTPUT, "PUSHS int@%d\n", sym_elem2->data.int_t);
+	}
+	else {
+		fprintf(OUTPUT, "PUSHS %s@%s\n", frame_elem2, sym_elem2->name);
+	}
+
+	if (sym_elem3->is_const) {
+		fprintf(OUTPUT, "PUSHS int@%d\n", sym_elem3->data.int_t);
+	}
+	else {
+		fprintf(OUTPUT, "PUSHS %s@%s\n", frame_elem3, sym_elem3->name);
+	}
+
+	fprintf(OUTPUT, "CALL substr--def\n");
+
+	// pop returns
+	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
 }
 
-void setchar_str(instr_t instr) {
-	// TODO : not used directly, remove later
-	elem_t *elem_dest = instr.elem_dest_ptr;
-	elem_t *elem1 = instr.elem1_ptr;
-	elem_t *elem2 = instr.elem2_ptr;
+// Build-in function definitions
+void substr_str_def() {
+	fprintf(OUTPUT, "LABEL substr--def\n");
+	fprintf(OUTPUT, "CREATEFRAME\n");
 
-	if (elem_dest == NULL) {
-		error(99, "codegen.c", "setchar_str", "NULL element");
-	}
+	fprintf(OUTPUT, "DEFVAR TF@dest\n");
+	fprintf(OUTPUT, "DEFVAR TF@error\n");
+	fprintf(OUTPUT, "DEFVAR TF@src\n");
+	fprintf(OUTPUT, "DEFVAR TF@index\n");
+	fprintf(OUTPUT, "DEFVAR TF@length\n");
 
-	if (elem1 == NULL) {
-		error(99, "codegen.c", "setchar_str", "NULL element");
-	}
+	fprintf(OUTPUT, "POPS TF@length\n");
+	fprintf(OUTPUT, "POPS TF@index\n");
+	fprintf(OUTPUT, "POPS TF@src\n");
 
-	if (elem2 == NULL) {
-		error(99, "codegen.c", "setchar_str", "NULL element");
-	}
+	fprintf(OUTPUT, "PUSHFRAME\n");
 
-	sym_var_item_t *sym_dest = elem_dest->symbol.sym_var_item;
-	sym_var_item_t *sym_elem1 = elem1->symbol.sym_var_item;
-	sym_var_item_t *sym_elem2 = elem2->symbol.sym_var_item;
+	// init default
+	fprintf(OUTPUT, "MOVE LF@dest string@\n");
+	fprintf(OUTPUT, "MOVE LF@err int@0\n");
 
-	if (sym_dest == NULL) {
-		error(99, "codegen.c", "setchar_str", "NULL symbol");
-	}
+	fprintf(OUTPUT, "DEFVAR LF@substr-res\n");
+	fprintf(OUTPUT, "DEFVAR LF@substr-src-len\n");
+	fprintf(OUTPUT, "MOVE LF@substr-res bool@false\n");
+	fprintf(OUTPUT, "MOVE LF@substr-src-len int@0\n");
 
-	if (sym_elem1 == NULL) {
-		error(99, "codegen.c", "setchar_str", "NULL symbol");
-	}
+	fprintf(OUTPUT, "STRLEN LF@substr-src-len LF@src\n");
 
-	if (sym_elem2 == NULL) {
-		error(99, "codegen.c", "setchar_str", "NULL symbol");
-	}
+	// conditions
+	fprintf(OUTPUT, "LT LF@substr-res LF@index int@0\n");
+	fprintf(OUTPUT, "JUMPIFEQ substr--error LF@substr-res bool@true\n");
+	fprintf(OUTPUT, "GT LF@substr-res LF@index LF@substr-src-len\n");
+	fprintf(OUTPUT, "JUMPIFEQ substr--error LF@substr-res bool@true\n");
+	fprintf(OUTPUT, "LT LF@substr-res LF@length int@0\n");
+	fprintf(OUTPUT, "JUMPIFEQ substr--error LF@substr-res bool@true\n");
 
-	char *frame_dest = get_frame(sym_dest);
-	char *frame_elem1 = get_frame(sym_elem1);
-	char *frame_elem2 = get_frame(sym_elem2);
+	// valid
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
 
-	if (sym_dest->type != VAR_STRING || sym_elem1->type != VAR_STRING || sym_elem2->type != VAR_INT) {
-		error(99, "codegen.c", "setchar_str", "Incompatible data type");
-	}
+	// clean (prepare) destination
+	fprintf(OUTPUT, "MOVE LF@dest string@\n");
 
-	fprintf(OUTPUT, "SETCHAR %s@%s %s@%s %s@%s\n", frame_dest, sym_dest->name, frame_elem1, sym_elem1->name,
-	        frame_elem2, sym_elem2->name);
+	// check if length > strlen(src) > index
+	fprintf(OUTPUT, "DEFVAR LF@substr-overflow\n");
+	fprintf(OUTPUT, "DEFVAR LF@substr-len-min-i\n");
+	fprintf(OUTPUT, "DEFVAR LF@substr-final-size\n");
+
+	fprintf(OUTPUT, "MOVE LF@substr-overflow bool@false\n");
+	fprintf(OUTPUT, "MOVE LF@substr-len-min-i int@0\n");
+	fprintf(OUTPUT, "SUB LF@substr-len-min-i LF@substr-src-len LF@index\n");
+	fprintf(OUTPUT, "GT LF@substr-overflow LF@length LF@substr-len-min-i\n");
+	fprintf(OUTPUT, "JUMPIFEQ substr--method-alt LF@substr-overflow bool@true\n");
+
+	// use n
+	fprintf(OUTPUT, "MOVE LF@substr-final-size LF@length\n");
+	fprintf(OUTPUT, "JUMP substr--cycle-init\n");
+
+	// use strlen(src) - index
+	fprintf(OUTPUT, "LABEL substr--method-alt\n");
+	fprintf(OUTPUT, "MOVE LF@substr-final-size LF@substr-len-min-i\n");
+
+	// cycle from index
+	fprintf(OUTPUT, "LABEL substr--cycle-init\n");
+	fprintf(OUTPUT, "ADD LF@substr-final-size LF@substr-final-size LF@index\n");
+	fprintf(OUTPUT, "DEFVAR LF@substr-cycle-i\n");
+	fprintf(OUTPUT, "DEFVAR LF@substr-cycle-b\n");
+	fprintf(OUTPUT, "DEFVAR LF@substr-cycle-dest\n");
+	fprintf(OUTPUT, "MOVE LF@substr-cycle-i LF@index\n");
+	fprintf(OUTPUT, "MOVE LF@substr-cycle-b bool@false\n");
+	fprintf(OUTPUT, "MOVE LF@substr-cycle-dest string@\n");
+
+	// cycle iteration
+	fprintf(OUTPUT, "LABEL substr--cycle-start\n");
+	fprintf(OUTPUT, "LT LF@substr-cycle-b LF@substr-cycle-i LF@substr-final-size\n");
+	fprintf(OUTPUT, "JUMPIFEQ substr--cycle-stop LF@substr-cycle-b bool@false\n");
+	fprintf(OUTPUT, "GETCHAR LF@substr-cycle-dest LF@src LF@substr-cycle-i\n");
+	fprintf(OUTPUT, "CONCAT LF@dest LF@dest LF@substr-cycle-dest\n");
+
+	// cycle post iteration
+	fprintf(OUTPUT, "ADD LF@substr-cycle-i LF@substr-cycle-i int@1\n");
+	fprintf(OUTPUT, "JUMP substr--cycle-start\n");
+
+	// cycle end
+	fprintf(OUTPUT, "LABEL substr--cycle-stop\n");
+	fprintf(OUTPUT, "JUMP substr--exit\n");
+
+	// error
+	fprintf(OUTPUT, "LABEL substr--error\n");
+	fprintf(OUTPUT, "MOVE LF@error int@1\n");
+
+	// exit
+	fprintf(OUTPUT, "LABEL substr--exit\n");
+
+	fprintf(OUTPUT, "PUSHS LF@dest\n");
+	fprintf(OUTPUT, "PUSHS LF@error\n");
+
+	fprintf(OUTPUT, "POPFRAME\n");
+
+	fprintf(OUTPUT, "RETURN\n\n");
 }
 
-void substr_str() {
-	//
+void getchar_str_def() {
+	fprintf(OUTPUT, "LABEL getchar--def\n");
+	fprintf(OUTPUT, "CREATEFRAME\n");
+
+	fprintf(OUTPUT, "DEFVAR TF@dest\n");
+	fprintf(OUTPUT, "DEFVAR TF@error\n");
+	fprintf(OUTPUT, "DEFVAR TF@code\n");
+
+	fprintf(OUTPUT, "POPS TF@code\n");
+
+	fprintf(OUTPUT, "PUSHFRAME\n");
+
+	// init default
+	fprintf(OUTPUT, "MOVE LF@dest string@\n");
+	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+
+	fprintf(OUTPUT, "DEFVAR LF@getchar-res\n");
+	fprintf(OUTPUT, "MOVE LF@getchar-res bool@false\n");
+
+	// condition
+	fprintf(OUTPUT, "LT LF@getchar-res LF@code int@0\n");
+	fprintf(OUTPUT, "JUMPIFEQ getchar--error LF@getchar-res bool@true\n");
+	fprintf(OUTPUT, "GT LF@getchar-res LF@code int@255\n");
+	fprintf(OUTPUT, "JUMPIFEQ getchar--error LF@getchar-res bool@true\n");
+
+	// valid
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
+	fprintf(OUTPUT, "INT2CHAR LF@dest LF@getchar-code\n");
+	fprintf(OUTPUT, "JUMP getchar--exit\n");
+
+	// error
+	fprintf(OUTPUT, "LABEL getchar--error\n");
+	fprintf(OUTPUT, "MOVE LF@error int@1\n");
+
+	// exit
+	fprintf(OUTPUT, "LABEL getchar--exit\n");
+
+	fprintf(OUTPUT, "PUSHS LF@dest\n");
+	fprintf(OUTPUT, "PUSHS LF@error\n");
+
+	fprintf(OUTPUT, "POPFRAME\n");
+
+	fprintf(OUTPUT, "RETURN\n\n");
+}
+
+void str2int_def() {
+	fprintf(OUTPUT, "LABEL str2int--def\n");
+	fprintf(OUTPUT, "CREATEFRAME\n");
+
+	fprintf(OUTPUT, "DEFVAR TF@dest\n");
+	fprintf(OUTPUT, "DEFVAR TF@error\n");
+	fprintf(OUTPUT, "DEFVAR TF@src\n");
+	fprintf(OUTPUT, "DEFVAR TF@index\n");
+
+	fprintf(OUTPUT, "POPS TF@index\n");
+	fprintf(OUTPUT, "POPS TF@src\n");
+
+	fprintf(OUTPUT, "PUSHFRAME\n");
+
+	// init default
+	fprintf(OUTPUT, "MOVE LF@dest int@0\n");
+	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+
+	fprintf(OUTPUT, "DEFVAR LF@str2int-src-len\n");
+	fprintf(OUTPUT, "DEFVAR LF@str2int-src-res\n");
+	fprintf(OUTPUT, "MOVE LF@str2int-src-len int@0\n");
+	fprintf(OUTPUT, "MOVE LF@str2int-src-res bool@false\n");
+
+	fprintf(OUTPUT, "STRLEN LF@str2int-src-len LF@src\n");
+	fprintf(OUTPUT, "SUB LF@str2int-src-len LF@str2int-src-len int@1\n");
+
+	// Check conditions
+	fprintf(OUTPUT, "LT LF@str2int-src-res LF@index int@0\n");
+	fprintf(OUTPUT, "JUMPIFEQ str2int--error LF@str2int-src-res bool@true\n");
+	fprintf(OUTPUT, "GT LF@str2int-src-res LF@index LF@str2int-src-len\n");
+	fprintf(OUTPUT, "JUMPIFEQ str2int--error LF@str2int-src-res bool@true\n");
+
+	// valid
+	fprintf(OUTPUT, "MOVE LT@error int@0\n");
+	fprintf(OUTPUT, "STRI2INT LF@dest LF@src LF@index\n");
+	fprintf(OUTPUT, "JUMP str2int--exit\n");
+
+	// error
+	fprintf(OUTPUT, "LABEL str2int--error\n");
+	fprintf(OUTPUT, "MOVE LT@error int@1\n");
+
+	// exit
+	fprintf(OUTPUT, "LABEL str2int--exit\n");
+
+	fprintf(OUTPUT, "PUSHS LF@dest\n");
+	fprintf(OUTPUT, "PUSHS LF@error\n");
+
+	fprintf(OUTPUT, "POPFRAME\n");
+
+	fprintf(OUTPUT, "RETURN\n\n");
+}
+
+void read_int_def() {
+	fprintf(OUTPUT, "LABEL read-int--def\n");
+	fprintf(OUTPUT, "CREATEFRAME\n");
+
+	fprintf(OUTPUT, "DEFVAR TF@dest\n");
+	fprintf(OUTPUT, "DEFVAR TF@error\n");
+
+	fprintf(OUTPUT, "PUSHFRAME\n");
+
+	// init default
+	fprintf(OUTPUT, "MOVE LF@dest int@0\n");
+	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+
+	fprintf(OUTPUT, "DEFVAR LF@read-int-dest\n");
+	fprintf(OUTPUT, "DEFVAR LF@read-int-res\n");
+	fprintf(OUTPUT, "MOVE LF@read-int-res bool@false\n");
+
+	// read string
+	fprintf(OUTPUT, "READ LF@read-int-dest int\n");
+
+	fprintf(OUTPUT, "EQ LF@read-int-res LF@read-int-dest nil@nil\n");
+	fprintf(OUTPUT, "JUMPIFEQ read-int--valid LF@read-int-res bool@false\n");
+
+	// error
+	fprintf(OUTPUT, "MOVE LF@error int@1\n");
+	fprintf(OUTPUT, "JUMP read-int--exit\n");
+
+	// valid
+	fprintf(OUTPUT, "LABEL read-int--valid\n");
+	fprintf(OUTPUT, "MOVE LF@dest LF@read-int-dest\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
+
+	fprintf(OUTPUT, "LABEL read-int--exit\n");
+
+	fprintf(OUTPUT, "PUSHS LF@dest\n");
+	fprintf(OUTPUT, "PUSHS LF@error\n");
+
+	fprintf(OUTPUT, "POPFRAME\n");
+
+	fprintf(OUTPUT, "RETURN\n\n");
+}
+
+void read_float_def() {
+	fprintf(OUTPUT, "LABEL read-float--def\n");
+	fprintf(OUTPUT, "CREATEFRAME\n");
+
+	fprintf(OUTPUT, "DEFVAR TF@dest\n");
+	fprintf(OUTPUT, "DEFVAR TF@error\n");
+
+	fprintf(OUTPUT, "PUSHFRAME\n");
+
+	// init default
+	fprintf(OUTPUT, "MOVE LF@dest float@0x0p+0\n");
+	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+
+	fprintf(OUTPUT, "DEFVAR LF@read-float-dest\n");
+	fprintf(OUTPUT, "DEFVAR LF@read-float-res\n");
+	fprintf(OUTPUT, "MOVE LF@read-float-res bool@false\n");
+
+	// read string
+	fprintf(OUTPUT, "READ LF@read-float-dest float\n");
+
+	fprintf(OUTPUT, "EQ LF@read-float-res LF@read-float-dest nil@nil\n");
+	fprintf(OUTPUT, "JUMPIFEQ read-float--valid LF@read-float-res bool@false\n");
+
+	// error
+	fprintf(OUTPUT, "MOVE LF@error int@1\n");
+	fprintf(OUTPUT, "JUMP read-float--exit\n");
+
+	// valid
+	fprintf(OUTPUT, "LABEL read-float--valid\n");
+	fprintf(OUTPUT, "MOVE LF@dest LF@read-float-dest\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
+
+	fprintf(OUTPUT, "LABEL read-float--exit\n");
+
+	fprintf(OUTPUT, "PUSHS LF@dest\n");
+	fprintf(OUTPUT, "PUSHS LF@error\n");
+
+	fprintf(OUTPUT, "POPFRAME\n");
+
+	fprintf(OUTPUT, "RETURN\n\n");
+}
+
+void read_string_def() {
+	fprintf(OUTPUT, "LABEL read-string--def\n");
+	fprintf(OUTPUT, "CREATEFRAME\n");
+
+	fprintf(OUTPUT, "DEFVAR TF@dest\n");
+	fprintf(OUTPUT, "DEFVAR TF@error\n");
+
+	fprintf(OUTPUT, "PUSHFRAME\n");
+
+	// init default
+	fprintf(OUTPUT, "MOVE LF@dest string@\n");
+	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+
+	fprintf(OUTPUT, "DEFVAR LF@read-string-dest\n");
+	fprintf(OUTPUT, "DEFVAR LF@read-string-res\n");
+	fprintf(OUTPUT, "MOVE LF@read-string-res bool@false\n");
+
+	// read string
+	fprintf(OUTPUT, "READ LF@read-string-dest string\n");
+
+	fprintf(OUTPUT, "EQ LF@read-string-res LF@read-string-dest nil@nil\n");
+	fprintf(OUTPUT, "JUMPIFEQ read-string--valid LF@read-string-res bool@false\n");
+
+	// error
+	fprintf(OUTPUT, "MOVE LF@error int@1\n");
+	fprintf(OUTPUT, "JUMP read-string--exit\n");
+
+	// valid
+	fprintf(OUTPUT, "LABEL read-string--valid\n");
+	fprintf(OUTPUT, "MOVE LF@dest LF@read-string-dest\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
+
+	fprintf(OUTPUT, "LABEL read-string--exit\n");
+
+	fprintf(OUTPUT, "PUSHS LF@dest\n");
+	fprintf(OUTPUT, "PUSHS LF@error\n");
+
+	fprintf(OUTPUT, "POPFRAME\n");
+
+	fprintf(OUTPUT, "RETURN\n\n");
+}
+
+void read_bool_def() {
+	fprintf(OUTPUT, "LABEL read-bool--def\n");
+	fprintf(OUTPUT, "CREATEFRAME\n");
+
+	fprintf(OUTPUT, "DEFVAR TF@dest\n");
+	fprintf(OUTPUT, "DEFVAR TF@error\n");
+
+	fprintf(OUTPUT, "PUSHFRAME\n");
+
+	// init default
+	fprintf(OUTPUT, "MOVE LF@dest bool@false\n");
+	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+
+	fprintf(OUTPUT, "DEFVAR LF@read-bool-dest\n");
+	fprintf(OUTPUT, "DEFVAR LF@read-bool-res\n");
+	fprintf(OUTPUT, "MOVE LF@read-bool-res bool@false\n");
+
+	// read string
+	fprintf(OUTPUT, "READ LF@read-bool-dest bool\n");
+
+	fprintf(OUTPUT, "EQ LF@read-bool-res LF@read-bool-dest nil@nil\n");
+	fprintf(OUTPUT, "JUMPIFEQ read-bool--valid LF@read-bool-res bool@false\n");
+
+	// error
+	fprintf(OUTPUT, "MOVE LF@error int@1\n");
+	fprintf(OUTPUT, "JUMP read-bool--exit\n");
+
+	// valid
+	fprintf(OUTPUT, "LABEL read-bool--valid\n");
+	fprintf(OUTPUT, "MOVE LF@dest LF@read-bool-dest\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
+
+	fprintf(OUTPUT, "LABEL read-bool--exit\n");
+
+	fprintf(OUTPUT, "PUSHS LF@dest\n");
+	fprintf(OUTPUT, "PUSHS LF@error\n");
+
+	fprintf(OUTPUT, "POPFRAME\n");
+
+	fprintf(OUTPUT, "RETURN\n\n");
 }
 
 void if_def() {
@@ -2236,7 +2538,7 @@ void codegen_generate_instr() {
 				setchar_str(*instr);
 				break;
 			case IC_SUBSTR_STR:
-				substr_str();
+				substr_str(*instr);
 				break;
 			case IC_IF_DEF:
 				if_def();
@@ -2289,4 +2591,5 @@ void codegen_generate_instr() {
 void codegen() {
 	codegen_init();
 	codegen_generate_instr();
+	// todo post generate build-in function definitions which are needed
 }
