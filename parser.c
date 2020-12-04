@@ -10,15 +10,6 @@
  *          Bartko Jakub    xbartk07@stud.fit.vutbr.cz
  */
 
-/*
-TODO:
-  DOCUMENTATION
-
-  fix LL table
-
-  remove unused functions
-*/
-
 
 #include "parser.h"   // own header
 #include <stdio.h>
@@ -33,36 +24,45 @@ TODO:
 #include "str.h"      // contextual IDs
 #include "expression.h" // expression parser
 
+/*__________________________________________*/
 /*_____________GLOBAL_VARIABLES_____________*/
+// list of instructions
 extern list_t * list;
+// symbol table
 extern symtable_t * symtable;
-tToken next;
+// list of scopes (for keeping track of var/func_call context)
 extern struct scope_t scope;
+// token from scanner yet to be processed
+tToken next;
 
-
-unsigned long U_ID = 0; // unique id
+// generating of unique IDs (for symtable, tmp variables)
+unsigned long U_ID = 0;
 #define U_ID_LENGTH 20
 char u_id[U_ID_LENGTH + 1] = "";
 
 /*_____________SYMTABLE_HANDLING____________*/
+// keeps track of function that's being defined
 elem_t * last_func;
+// keeps track of last variable
+//  for purposes of type assigning, ...
 elem_t * last_elem;
 
 
 /*_______________GLOBAL_FLAGS_______________*/
+// EPS terminal
 // outside match():
 //    for allowing eps terminal
 // inside of match():
 //    for checking whether EPS or NON-EPS terminal matched
 bool eps = false;
+// DEFINITION / CALL switch for variable & function IDs
 // outside match():
 //    for allowing definiton
 // inside of match():
 //    for checking whether ID is being defined or called
 bool def = false;
-
+// get_next_token controll inside of match()
 bool get_next = true;
-
 // for checking whether function with defined return types
 // contains at least a single return call
 bool has_ret = false;
@@ -71,252 +71,41 @@ bool has_ret = false;
 /*_______________MAIN_FUNCTION______________*/
 void parse() {
   // initialization
-  source_file_setup(stdin);
-  get_next_token(&next);
+  // global
+  source_file_setup(stdin);   // for scanner
   list = list_create();
   symtable = symtable_init(1061);
+  get_next_token(&next);
+  // local
   scope_init();
   func_defs_init();
   undef_types_init();
-
   add_built_in();
 
-  fprintf(stderr, "\n\n___________SYMTABLE:____________\n");
-  fprintf(stderr, "________________________________\n");
-
-
-  // start of parsing
+  // entry point to parsing
   program();
 
-  fprintf(stderr, "\n\n_________INSTRUCTIONS:__________\n");
-  fprintf(stderr, "________________________________\n");
-  for (
-    instr_t * tmp = list->first;
-    tmp != NULL;
-    tmp = tmp->next
-  ) {
-    switch (instr_get_type(tmp)) {
-      case IC_DEF_FUN: {
-       fprintf(stderr, "DEF_FUN\t  %s\n", *(instr_get_dest(tmp)->key));
-        sym_var_list_t * params = instr_get_dest(tmp)->symbol.sym_func->params;
-        if (params != NULL) {
-          fprintf(stderr, "\t\t__PARAMS:\n");
-          for (
-            list_item_t * it = params->first;
-            it != NULL;
-            it = it->next
-          ) {
-           fprintf(stderr, "\t\t  %s\n", it->item->name);
-          }
-        }
-
-        sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
-        if (rets != NULL) {
-          fprintf(stderr, "\t\t__RETURNS:\n");
-          sym_var_item_t * tmp;
-          for (
-            list_item_t * it = rets->first;
-            it != NULL;
-            it = it->next
-          ) {
-            tmp = it->item;
-            fprintf(stderr, "\t\t");
-            switch (tmp->type) {
-              case VAR_INT:
-               fprintf(stderr, "INT");
-                break;
-              case VAR_FLOAT64:
-                fprintf(stderr, "FLOAT64");
-                break;
-              case VAR_STRING:
-                fprintf(stderr, "STRING");
-                break;
-              case VAR_BOOL:
-                fprintf(stderr, "BOOL");
-                break;
-              default:
-                fprintf(stderr, "Invalid return type");
-                exit(1);
-                break;
-            }
-            fprintf(stderr, "\n");
-          }
-        }
-        break; }
-      case IC_END_FUN:
-        fprintf(stderr, "_________________________END_FUN: ");
-        fprintf(stderr, "%s\n", *(instr_get_dest(tmp)->key));
-        break;
-      case IC_DECL_VAR: {
-        fprintf(stderr, "\tDECL_VAR\t%s", *(instr_get_dest(tmp)->key));
-        break; }
-      case IC_DEF_VAR: {
-        fprintf(stderr, "\tDEF_VAR\t\t");
-        for (
-          list_item_t * it = instr_get_dest(tmp)->symbol.sym_var_list->first;
-          it != NULL;
-          it = it->next
-        ) {
-          if (it->item == NULL) fprintf(stderr, "_, ");
-          else fprintf(stderr, "%s, ", it->item->name);
-        }
-        fprintf(stderr, "    ===    ");
-        for (
-          list_item_t * it = instr_get_elem1(tmp)->symbol.sym_var_list->first;
-          it != NULL;
-          it = it->next
-        ) {
-          fprintf(stderr, "%s, ", it->item->name);
-        }
-        break; }
-      case IC_IF_DEF:
-     fprintf(stderr, "\n\tIF");
-        break;
-      case IC_IF_START:
-     fprintf(stderr, "\t__ifstart\n");
-        break;
-      case IC_IF_END:
-     fprintf(stderr, "\n\t____________ENDIF\n");
-        break;
-      case IC_ELSE_START:
-     fprintf(stderr, "\n\tELSE\n");
-        break;
-      case IC_ELSE_END:
-     fprintf(stderr, "\n\t____________END_ELSE\n");
-        break;
-      case IC_FOR_DEF:
-     fprintf(stderr, "\n\tFOR\n");
-        break;
-      case IC_FOR_COND:
-       fprintf(stderr, "\n\t__for_cond\n");
-        break;
-      case IC_FOR_STEP:
-       fprintf(stderr, "\n\t__for_step\n");
-        break;
-      case IC_FOR_BODY_START:
-       fprintf(stderr, "\n\t__for_body_start\n");
-        break;
-      case IC_FOR_BODY_END:
-       fprintf(stderr, "\n\t____________END_FOR\n");
-        break;
-      case IC_CALL_FUN:
-       fprintf(stderr, "\tFUNC CALL\t%s\n", instr_get_dest(tmp)->symbol.sym_func->name);
-        break;
-      case IC_RET_FUN: {
-     fprintf(stderr, "\tRET %s    ", instr_get_dest(tmp)->symbol.sym_func->name);
-        sym_var_list_t * rets = instr_get_dest(tmp)->symbol.sym_func->returns;
-        if (rets == NULL) {
-       fprintf(stderr, "void");
-          break;
-        }
-        for (
-          list_item_t * tmp = rets->first;
-          tmp != NULL;
-          tmp = tmp->next
-        ) {
-          switch (tmp->item->type) {
-            case VAR_INT:
-              fprintf(stderr, "INT");
-              break;
-            case VAR_FLOAT64:
-              fprintf(stderr, "FLOAT64");
-              break;
-            case VAR_STRING:
-              fprintf(stderr, "STRING");
-              break;
-            case VAR_BOOL:
-              fprintf(stderr, "BOOL");
-              break;
-            default:
-              fprintf(stderr, "Invalid return type");
-              exit(1);
-              break;
-          }
-           fprintf(stderr, ", ");
-        }
-        break; }
-      case IC_ADD_VAR:
-        fprintf(stderr, "\t++ADD");
-        break;
-      case IC_SUB_VAR:
-        fprintf(stderr, "\t--SUB");
-        break;
-      case IC_MUL_VAR:
-        fprintf(stderr, "\t**MUL");
-        break;
-      case IC_DIV_VAR:
-        fprintf(stderr, "\t//DIV");
-        break;
-      case IC_LT_VAR:
-        fprintf(stderr, "\t<< LT");
-        break;
-      case IC_GT_VAR:
-        fprintf(stderr, "\t>> GT");
-        break;
-      case IC_EQ_VAR:
-        fprintf(stderr, "\t== EQ");
-        break;
-      case IC_AND_VAR:
-        fprintf(stderr, "\t&& AND");
-        break;
-      case IC_OR_VAR:
-        fprintf(stderr, "\t|| OR");
-        break;
-      case IC_NOT_VAR:
-        fprintf(stderr, "\t!! NOT");
-        break;
-      case IC_READ_VAR:
-        fprintf(stderr, "\tREAD_VAR");
-        break;
-      case IC_WRITE_VAR:
-        fprintf(stderr, "\tWRITE_VAR");
-        break;
-      case IC_INT2FLOAT_VAR:
-        fprintf(stderr, "\tINT2FLOAT");
-        break;
-      case IC_FLOAT2INT_VAR:
-        fprintf(stderr, "\tFLOAT2INT");
-        break;
-      case IC_STRLEN_STR:
-        fprintf(stderr, "\tLEN");
-        break;
-      case IC_SUBSTR_STR:
-        fprintf(stderr, "\tSUBSTR");
-        break;
-      case IC_STR2INT_VAR:
-        fprintf(stderr, "\tSTR2INT");
-        break;
-      case IC_GETCHAR_STR:
-        fprintf(stderr, "\tGETCHAR");
-        break;
-
-      default:
-        fprintf(stderr, "_instr type [%d] not implemented_", instr_get_type(tmp));
-        break;
-    }
-    fprintf(stderr, "\n");
-  }
-
+  // semantic checks
   func_defs_check();
-  fprintf(stderr, "\n\n");
-
   undef_types_check();
 
-  // termination
+  // local termination
   scope_destroy();
   func_defs_destroy();
   undef_types_destroy();
   id_list_destroy();
 
+  // code generating
   codegen();
 
+  // global termination
   list_destroy(&list);
   symtable_free(symtable);
   jmp_label_stack_free_all();
 }
 
 
-/*__________________TOKENS__________________*/
+/*______________TOKEN_HANDLING______________*/
 void token_cleanup() {
   if (
     ( next.token_type == T_IDENTIFIER ||
@@ -329,7 +118,6 @@ void token_cleanup() {
     next.attr.str_lit.str = NULL;
   }
 }
-
 
 // Getters for token attributes
 int64_t to_int(tToken *t) {
@@ -362,17 +150,19 @@ void match(int term) {
         break;
       }
 
-      // create func
+      // create ID
       char * name_old = to_string(&next);
       char * name_new = malloc(sizeof(char) * (strlen(name_old) + 1));
       if (name_new == NULL) error(99, "parser", NULL, "Memory allocation failed");
       strcpy(name_new, name_old);
-      sym_func_t * func_sym = sym_func_init(name_new, NULL, NULL);
-      symbol_t func = {.sym_func = func_sym};
-      elem_t * func_data = elem_init(SYM_FUNC, func);
-      // add to symtable
-      symtable_insert(symtable, name_old, func_data);
-      last_func = func_data;
+
+      // create func elem
+      sym_func_t * func = sym_func_init(name_new, NULL, NULL);
+      symbol_t func_sym = {.sym_func = func};
+      elem_t * func_elem = elem_init(SYM_FUNC, func_sym);
+      symtable_insert(symtable, name_old, func_elem);
+      last_func = func_elem;
+
       // add to scope
       char * new_scope = malloc(sizeof(char) * 5);
       if (new_scope == NULL) error(99, "parser", NULL, "Memory allocation failed");
@@ -579,8 +369,10 @@ void scope_destroy() {
 void scope_push(char * new_name) {
   scope_elem_t * tmp = scope.first;
   scope_elem_t * new = malloc(sizeof(scope_elem_t));
+  if (new == NULL) error(99, "parser", NULL, "Memory allocation failed");
   if (tmp == NULL) {
     new->name = malloc(sizeof(char) * (strlen(new_name) + 2));
+    if (new->name == NULL) error(99, "parser", NULL, "Memory allocation failed");
     strcpy(new->name, new_name);
     strcat(new->name, "-");
   } else {
@@ -588,6 +380,7 @@ void scope_push(char * new_name) {
       sizeof(char) *
       (strlen(tmp->name) + strlen(new_name) + 2)
     );
+    if (new->name == NULL) error(99, "parser", NULL, "Memory allocation failed");
     strcpy(new->name, tmp->name);
     strcat(new->name, new_name);
     strcat(new->name, "-");
@@ -696,7 +489,7 @@ void skip_empty() {
 }
 
 
-// additional instructions-related functions
+/*__________Instruction_generating__________*/
 void instr_add_func_def() {
   instr_t * new_func = instr_create();
   instr_set_type(new_func, IC_DEF_FUN);
@@ -737,6 +530,7 @@ void instr_add_if_def() {
 
   char * prefix = get_unique();
   char * if_scope = malloc(sizeof(char) * (strlen(prefix) + 3)); // u_id + if\0
+  if (if_scope == NULL) error(99, "parser", NULL, "Memory allocation failed");
   strcpy(if_scope, prefix);
   strcat(if_scope, "if");
   scope_push(if_scope);
@@ -756,6 +550,7 @@ void instr_add_else_start() {
 
   char * prefix = get_unique();
   char * else_scope = malloc(sizeof(char) * (strlen(prefix) + 5)); // u_id + else\0
+  if (else_scope == NULL) error(99, "parser", NULL, "Memory allocation failed");
   strcpy(else_scope, prefix);
   strcat(else_scope, "else");
   scope_push(else_scope);
@@ -775,11 +570,444 @@ void instr_add_for_def() {
 
   char * prefix = get_unique();
   char * for_scope = malloc(sizeof(char) * (strlen(prefix) + 4)); // u_id + for\0
+  if (for_scope == NULL) error(99, "parser", NULL, "Memory allocation failed");
   strcpy(for_scope, prefix);
   strcat(for_scope, "for");
   scope_push(for_scope);
 }
 
+
+/*_____________FUNCTION_CONTROLL____________*/
+elem_t * try_func(tToken * token) {
+  // either parses func_call & returns func OR returns NULL
+  // in case of NULL:
+  // keep the ID before calling this func
+  // following token will be in given token (parameter)
+  char * id = to_string(token);
+  get_next_token(token);
+  if (token->token_type == T_L_BRACKET) {
+    elem_t * func = func_call(id);
+    token->token_type = next.token_type;
+    token->attr = next.attr;
+    return func;
+  } else return NULL;
+}
+
+// built-in functions insertion
+enum built_in_names {
+  INPUTS, INPUTI, INPUTF, INPUTB,
+  PRINT,
+  INT2FLOAT, FLOAT2INT,
+  LEN, SUBSTR, ORD, CHR
+};
+
+void add_built_in() {
+
+  char * built_ins[] = {
+    "inputs", "inputi", "inputf", "inputb",
+    "print",
+    "int2float", "float2int",
+    "len", "substr", "ord", "chr"
+  };
+
+  const int N = 11;
+  char * name;
+
+  for (int i = 0; i < N; i++) {
+    // create name
+    name = malloc(sizeof(char) * (strlen(built_ins[i]) + 1));
+    if (name == NULL) error(99, "parser", NULL, "Memory allocation failed");
+    strcpy(name, built_ins[i]);
+
+    // create func
+    sym_func_t * func_sym = sym_func_init(NULL, NULL, NULL);
+    symbol_t func_s = {.sym_func = func_sym};
+    elem_t * func = elem_init(SYM_FUNC, func_s);
+    symtable_insert(symtable, name, func);
+
+    // assigning of parameters & returns
+    var_type_t type;
+    switch (i) {
+      case INPUTS:
+        type = VAR_STRING;
+        break;
+      case INPUTI:
+        type = VAR_INT;
+        break;
+      case INPUTF:
+        type = VAR_FLOAT64;
+        break;
+      case INPUTB:
+        type = VAR_BOOL;
+        break;
+      default: goto not_input;
+    }
+    // was an input function
+    func_def_add_ret(func, type);
+    func_def_add_ret(func, VAR_INT);
+
+    not_input:
+    switch (i) {
+      case INT2FLOAT:
+        func_def_add_param(func, VAR_INT);
+        func_def_add_ret(func, VAR_FLOAT64);
+        break;
+      case FLOAT2INT:
+        func_def_add_param(func, VAR_FLOAT64);
+        func_def_add_ret(func, VAR_INT);
+        break;
+      case LEN:
+        func_def_add_param(func, VAR_STRING);
+        func_def_add_ret(func, VAR_INT);
+        break;
+      case SUBSTR:
+        func_def_add_param(func, VAR_STRING);
+        func_def_add_param(func, VAR_INT);
+        func_def_add_param(func, VAR_INT);
+        func_def_add_ret(func, VAR_STRING);
+        func_def_add_ret(func, VAR_INT);
+        break;
+      case ORD:
+        func_def_add_param(func, VAR_STRING);
+        func_def_add_param(func, VAR_INT);
+        func_def_add_ret(func, VAR_INT);
+        func_def_add_ret(func, VAR_INT);
+        break;
+      case CHR:
+        func_def_add_param(func, VAR_INT);
+        func_def_add_ret(func, VAR_STRING);
+        func_def_add_ret(func, VAR_INT);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+void func_def_add_ret(elem_t * func, var_type_t type) {
+  sym_var_item_t * ret = sym_var_item_init(NULL);
+  sym_var_item_set_type(ret, type);
+  if (type == VAR_STRING) ret->data.string_t = NULL;
+
+  // add to symtable for cleanup
+  symbol_t ret_sym = {.sym_var_item = ret};
+  elem_t * ret_elem = elem_init(SYM_VAR_ITEM, ret_sym);
+  char * func_name = *(func->key);
+  char * ret_id = malloc(sizeof(char) * (strlen(func_name) + 6));
+  if (ret_id == NULL) error(99, "parser", NULL, "Memory allocation failed");
+  strcpy(ret_id, func_name);
+  strcat(ret_id, "-");
+  if (func->symbol.sym_func->returns == NULL) strcat(ret_id, "0ret");
+  else strcat(ret_id, "1ret");
+
+  symtable_insert(symtable, ret_id, ret_elem);
+
+  func_add_ret(func, ret);
+}
+
+void func_def_add_param(elem_t * func, var_type_t type) {
+  sym_var_item_t * param = sym_var_item_init(NULL);
+  sym_var_item_set_type(param, type);
+  if (type == VAR_STRING) param->data.string_t = NULL;
+
+  // add to symtable for cleanup
+  symbol_t param_sym = {.sym_var_item = param};
+  elem_t * param_elem = elem_init(SYM_VAR_ITEM, param_sym);
+  char * func_name = *(func->key);
+  char * param_id = malloc(sizeof(char) * (strlen(func_name) + 6));
+  if (param_id == NULL) error(99, "parser", NULL, "Memory allocation failed");
+  strcpy(param_id, func_name);
+  strcat(param_id, "-");
+
+  // TODO add real cycle
+  if (func->symbol.sym_func->params == NULL) strcat(param_id, "0prm");
+  else if (func->symbol.sym_func->params->first->next == NULL) strcat(param_id, "1prm");
+  else strcat(param_id, "2prm");
+
+  symtable_insert(symtable, param_id, param_elem);
+
+  func_add_param(func, param);
+}
+
+
+void func_add_param(elem_t *func, sym_var_item_t *param) {
+  if (func == NULL || param == NULL)
+    error(99, "parser", "type", "Failed to access function's parameters");
+
+  sym_var_list_t ** params = &(func->symbol.sym_func->params);
+  if (params == NULL)
+    error(99, "parser", "func_add_param", "Failed to access function's parameters");
+  if (*params == NULL) { // param list empty
+    *params = new_sym_var_list();
+  }
+
+  // add to param list
+  list_item_t * list_item = list_item_init(param);
+  sym_var_list_add(*params, list_item);
+}
+
+void func_add_ret(elem_t *func, sym_var_item_t *ret) {
+  if (func == NULL || ret == NULL)
+    error(99, "parser", "type", "Failed to access function's returns");
+
+  sym_var_list_t ** rets = &(func->symbol.sym_func->returns);
+  if (rets == NULL)
+    error(99, "parser", "func_add_ret", "Failed to access function's returns");
+  if (*rets == NULL)  // param list empty
+    *rets = new_sym_var_list();
+
+  // add to ret list
+  list_item_t * list_item = list_item_init(ret);
+  sym_var_list_add(*rets, list_item);
+}
+
+instr_type_t get_func_instr_type(char * func) {
+  if (
+    !strcmp(func, "inputs") ||  // string
+    !strcmp(func, "inputi") ||  // int
+    !strcmp(func, "inputf") ||  // float
+    !strcmp(func, "inputb")     // bool
+  ) return IC_READ_VAR;
+  if (!strcmp(func, "print"))     return IC_WRITE_VAR;
+  if (!strcmp(func, "int2float")) return IC_INT2FLOAT_VAR;
+  if (!strcmp(func, "float2int")) return IC_FLOAT2INT_VAR;
+  if (!strcmp(func, "len"))       return IC_STRLEN_STR;
+  if (!strcmp(func, "SUBSTR"))    return IC_SUBSTR_STR;
+  if (!strcmp(func, "ORD"))       return IC_STR2INT_VAR;
+  if (!strcmp(func, "CHR"))       return IC_GETCHAR_STR;
+
+  return IC_CALL_FUN;
+}
+
+elem_t * create_expr(elem_t * func) {
+  char * key = make_unique(func);
+  sym_var_item_t * expr = sym_var_item_init(key);
+  symbol_t expr_sym = {.sym_var_item = expr};
+  elem_t * expr_elem = elem_init(SYM_VAR_ITEM, expr_sym);
+  symtable_insert(symtable, key, expr_elem);
+  instr_add_var_decl(expr_elem);
+
+  return expr_elem;
+}
+
+void var_init(elem_t * var) {
+  // create initializing expression
+  char * key = make_unique(var);
+  sym_var_item_t * expr_item = sym_var_item_init(key);
+  symbol_t expr_sym = {.sym_var_item = expr_item};
+  elem_t * expr = elem_init(SYM_VAR_ITEM, expr_sym);
+  symtable_insert(symtable, key, expr);
+
+  // create initializing data
+  variable_t init;
+  switch (var->symbol.sym_var_item->type) {
+    case VAR_INT:
+      init.int_t = 0;
+      break;
+    case VAR_FLOAT64:
+      init.float64_t = 0.0;
+      break;
+    case VAR_STRING: {
+      char * empty = malloc(sizeof(char));
+      if (empty == NULL) error(99, "parser", NULL, "Memory allocation failed");
+      empty[0] = '\0';
+      init.string_t = empty;
+      break;}
+    case VAR_BOOL:
+      init.bool_t = false;
+      break;
+    default:
+      break;
+  }
+  sym_var_item_set_type(
+    expr->symbol.sym_var_item,
+    var->symbol.sym_var_item->type
+  );
+  sym_var_item_set_data(expr->symbol.sym_var_item, init);
+  sym_var_item_set_const(expr->symbol.sym_var_item, true);
+
+  // create lists for var_def instruction
+  sym_var_list_t * dest_list = sym_var_list_init();
+  sym_var_list_t * src_list = sym_var_list_init();
+  symbol_t dest_sym = {.sym_var_list = dest_list};
+  symbol_t src_sym = {.sym_var_list = src_list};
+  elem_t * dest_elem = elem_init(SYM_VAR_LIST, dest_sym);
+  elem_t * src_elem = elem_init(SYM_VAR_LIST, src_sym);
+  symtable_insert(symtable, make_unique(dest_elem), dest_elem);
+  symtable_insert(symtable, make_unique(src_elem), src_elem);
+  // add initializator & var to lists
+  list_item_t * var_item = list_item_init(var->symbol.sym_var_item);
+  list_item_t * init_item = list_item_init(expr->symbol.sym_var_item);
+  sym_var_list_add(dest_list, var_item);
+  sym_var_list_add(src_list, init_item);
+
+  // add initializing instruction
+  instr_t * new_init = instr_create();
+  instr_set_type(new_init, IC_DEF_VAR);
+  instr_add_dest(new_init, dest_elem);
+  instr_add_elem1(new_init, src_elem);
+  list_add(list, new_init);
+}
+
+
+/*___________LISTS_OF_DECLARATIONS__________*/
+extern elem_t * decl_list;
+
+elem_t * decl_list_init() {
+  sym_var_list_t * list = sym_var_list_init();
+  symbol_t list_sym = {.sym_var_list = list};
+  elem_t * list_elem = elem_init(SYM_VAR_LIST, list_sym);
+  symtable_insert(symtable, make_unique(list_elem), list_elem);
+  decl_list = list_elem;
+
+  return list_elem;
+}
+
+void decl_list_clear() {
+  decl_list = NULL;
+}
+
+void decl_list_add(sym_var_item_t *item) {
+  list_item_t * list_item = list_item_init(item);
+  sym_var_list_add(decl_list->symbol.sym_var_list, list_item);
+}
+
+
+/*____________LISTS_OF_VARIABLES____________*/
+extern struct id_list_t id_list;
+
+void id_list_init() {
+  id_list.first = NULL;
+  id_list.last = NULL;
+}
+
+void id_list_destroy() {
+  id_t * next;
+  for (
+    id_t * it = id_list.first;
+    it != NULL;
+    it = next
+  ) {
+    next = it->next;
+    free(it->id);
+    free(it);
+  }
+  id_list_init();
+}
+
+void id_list_add(char * id) {
+  id_t * new = malloc(sizeof(id_t));
+  char * new_id = malloc(sizeof(char) * (strlen(id) + 1));
+  if (new == NULL || new_id == NULL) error(99, "parser", NULL, "Memory allocation failed");
+  strcpy(new_id, id);
+
+  new->id = new_id;
+  new->next = NULL;
+
+  if (id_list.first == NULL) {
+    id_list.first = new;
+  } else {
+    id_list.last->next = new;
+  }
+
+  id_list.last = new;
+}
+
+elem_t * make_dest(int operation) {
+  // create dest
+  sym_var_list_t * dest_list = sym_var_list_init();
+  symbol_t dest_list_sym = {.sym_var_list = dest_list};
+  elem_t * dest = elem_init(SYM_VAR_LIST, dest_list_sym);
+  symtable_insert(symtable, make_unique(dest), dest);
+
+  id_t * next;
+  if (operation == T_DEF_IDENT) { // :=
+    for (
+      id_t * tmp = id_list.first;
+      tmp != NULL;
+      tmp = next
+    ) {
+      next = tmp->next;
+      // for cleanup in case of error
+      id_list.first = tmp;
+
+      // try to get existing variable -- in current scope
+      char * id = id_add_scope(scope_get_head(), tmp->id);
+      symtable_iterator_t it = symtable_find(symtable, id);
+
+      // handling of special variable
+      if (!strcmp(tmp->id, "_")) {
+        list_item_t * list_item = list_item_init(NULL);
+        sym_var_list_add(dest_list, list_item);
+        free(tmp->id);
+        free(tmp);
+        free(id);
+        continue;
+      }
+
+      if (symtable_iterator_valid(it)) { // found in current scope
+        // add existing item to list
+        sym_var_item_t * item = symtable_iterator_get_value(it)->symbol.sym_var_item;
+        list_item_t * list_item = list_item_init(item);
+        sym_var_list_add(dest_list, list_item);
+        free(id); // contextual id no longer needed
+        free(tmp->id);
+      } else {
+        // create new item
+        free(tmp->id);
+        sym_var_item_t * new_item = sym_var_item_init(id);
+        symbol_t new_sym = {.sym_var_item = new_item};
+        elem_t * new = elem_init(SYM_VAR_ITEM, new_sym);
+        new->symbol.sym_var_item->data.string_t = NULL;
+        symtable_insert(symtable, id, new);
+        // add to the list
+        list_item_t * list_item = list_item_init(new_item);
+        sym_var_list_add(dest_list, list_item);
+        // add instruction
+        instr_add_var_decl(new);
+      }
+      free(tmp);
+    }
+  } else { // =
+    for (
+      id_t * tmp = id_list.first;
+      tmp != NULL;
+      tmp = next
+    ) {
+      next = tmp->next;
+      // for cleanup in case of error
+      id_list.first = tmp;
+
+      // handling of special variable
+      if (!strcmp(tmp->id, "_")) {
+        list_item_t * list_item = list_item_init(NULL);
+        sym_var_list_add(dest_list, list_item);
+        free(tmp->id);
+        free(tmp);
+        continue;
+      }
+
+      // try to get ID -- in all scopes
+      eps = false;
+      elem_t * var = id_find(scope_get_head(), tmp->id);
+
+      // add exitsting item to list
+      list_item_t * list_item = list_item_init(var->symbol.sym_var_item);
+      sym_var_list_add(dest_list, list_item);
+
+      free(tmp->id);
+      free(tmp);
+    }
+  }
+
+  id_list_init();
+  return dest;
+}
+
+/*__________________________________________*/
+/*_____________SEMANTIC_ANALYSIS____________*/
+
+/*__________VARIABLE_TYPE_CHECKING__________*/
 void assign_var_def_types(elem_t * dest_elem, elem_t * src_elem) {
   // assign src to dest
   // & check their types in case of previously defined variables
@@ -933,108 +1161,146 @@ void assign_var_move_types(elem_t * dest_elem, elem_t * src_elem) {
   }
 }
 
+bool check_types(sym_var_item_t * var1, sym_var_item_t * var2) {
+  var_type_t type1 = var1->type;
+  var_type_t type2 = var2->type;
 
+  if (type1 != VAR_UNDEFINED) {
+    if (type2 != VAR_UNDEFINED) { // compare
+      if (type1 == type2) return true;
+      else return false;
+    }
+    else {  // [assign] type2 <-- type1
+      var2->type = type1;
+      if (var2->type == VAR_STRING) {
+        var2->data.string_t = NULL;
+      }
+    }
+  }
+  else {
+    if (type2 != VAR_UNDEFINED) { // [assign] type1 <-- type2
+      var1->type = type2;
+      if (var1->type == VAR_STRING) {
+        var1->data.string_t = NULL;
+      }
+    }
+    else {
+      undef_types_add(var1, var2);
+    }
+  }
+  return true;
+}
+
+void undef_types_init() {
+  undef_types.first = NULL;
+  undef_types.last = NULL;
+}
+
+void undef_types_destroy() {
+  undef_type_t * next;
+  for (
+    undef_type_t * it = undef_types.first;
+    it != NULL;
+    it = next
+  ) {
+    next = it->next;
+    free(it);
+  }
+
+  undef_types_init();
+}
+
+void undef_types_add(sym_var_item_t * var1, sym_var_item_t * var2) {
+  undef_type_t * new = malloc(sizeof(undef_type_t));
+  if (new == NULL) error(99, "parser", NULL, "Memory allocation failed");
+  if (new == NULL) error(99, "parser", NULL, "Memory allocation failed");
+
+  new->var1 = var1;
+  new->var2 = var2;
+  new->next = NULL;
+
+  if (undef_types.first == NULL) {
+    undef_types.first = new;
+  } else {
+    undef_types.last->next = new;
+  }
+  undef_types.last = new;
+}
+
+void undef_types_check() {
+  for (
+    undef_type_t * it = undef_types.first;
+    it != NULL;
+    it = it->next
+  ) {
+    if (!check_types(it->var1, it->var2)) {
+      error(5, "parser", "undef_types_check", "Function call destination types do not match");
+    }
+  }
+}
+
+
+/*__________FUNCTION_CALL_CHECK-UP__________*/
+extern struct func_defs_t func_defs;
+
+// [var_type_t] --> [char *] conversion for error handling
+// of non-matching variable types
 #define NAME_MAX_L 8 // strlen("FLOAT64") + \0
-void check_ret(elem_t * func) {
-  // check whether return types match the definition
 
-  // returns setup
-  sym_var_list_t * ret_list = func->symbol.sym_func->returns;
+sym_var_list_t * new_sym_var_list() {
+  sym_var_list_t * var_list = sym_var_list_init();
+  symbol_t var_list_sym = {.sym_var_list = var_list};
+  elem_t * dest = elem_init(SYM_VAR_LIST, var_list_sym);
+  symtable_insert(symtable, make_unique(dest), dest);
+  return var_list;
+}
 
-  // definitions setup
-  elem_t * func_defs = symtable_iterator_get_value(
-    symtable_find(symtable, func->symbol.sym_func->name)
-  );
-  sym_var_list_t * def_list = func_defs->symbol.sym_func->returns;
+void func_defs_init() {
+    func_defs.first = NULL;
+}
 
-  list_item_t * ret;
-  list_item_t * def;
-  if (ret_list == NULL) ret = NULL;
-  else ret = ret_list->first;
-  if (def_list == NULL) def = NULL;
-  else def = def_list->first;
-
-  int n_defs = 0, n_rets = 0;
-  while (def != NULL) {
-    // unmatched number of returns / defined returns
-    if (ret == NULL) {
-      // count vars
-      while (def != NULL) {
-        def = def->next;
-        n_defs++;
-      }
-      error(
-        6, "parser", "check_rets",
-        "Number of returns [%d] differs from defined [%d] for function [%s]",
-        n_rets, n_defs, *(last_func->key)
-      );
-    }
-
-    if (!check_types(def->item, ret->item)) {
-      char def_type[NAME_MAX_L] = "";
-      char ret_type[NAME_MAX_L] = "";
-      switch (def->item->type) {
-        case VAR_INT:
-          strcpy(def_type, "INT");
-        break;
-        case VAR_FLOAT64:
-          strcpy(def_type, "FLOAT64");
-        break;
-        case VAR_STRING:
-          strcpy(def_type, "STRING");
-        break;
-        case VAR_BOOL:
-          strcpy(def_type, "BOOL");
-        break;
-        default:
-        break;
-      }
-      switch (ret->item->type) {
-        case VAR_INT:
-          strcpy(ret_type, "INT");
-        break;
-        case VAR_FLOAT64:
-          strcpy(ret_type, "FLOAT64");
-        break;
-        case VAR_STRING:
-          strcpy(ret_type, "STRING");
-        break;
-        case VAR_BOOL:
-          strcpy(ret_type, "BOOL");
-        break;
-        default:
-        break;
-      }
-
-      error(
-        6, "parser", "check_rets",
-        "Returning [%s] where [%s] was defined for parameter [%d] of function [%s]",
-        ret_type, def_type, n_defs, *(func_defs->key)
-      );
-    }
-
-    // next step
-    def = def->next;
-    ret = ret->next;
-    n_defs++;
-    n_rets++;
+void func_defs_destroy() {
+  func_def_t * tmp = func_defs.first;
+  func_def_t * next;
+  while (tmp != NULL) {
+    next = tmp->next;
+    free(tmp);
+    tmp = next;
   }
+  func_defs.first = NULL;
+}
 
-  // check if src also finished
-  if (ret != NULL) {
-    // count exprs
-    while (ret != NULL) {
-      ret = ret->next;
-      n_rets++;
+void func_defs_add(elem_t * func) {
+  func_def_t * new = malloc(sizeof(func_def_t));
+  if (new == NULL) error(99, "parser", NULL, "Memory allocation failed");
+  new->func = func;
+  new->next = func_defs.first;
+  func_defs.first = new;
+}
+
+void func_defs_check() {
+  fprintf(stderr, "\n\n__________FUNC_CALLS:___________\n");
+  fprintf(stderr, "________________________________\n");
+  func_def_t * func_call = func_defs.first;
+  char * name;
+  while (func_call != NULL) {
+    name = func_call->func->symbol.sym_func->name;
+    symtable_iterator_t it = symtable_find(symtable, name);
+    if (symtable_iterator_valid(it)) {
+      fprintf(stderr, "FUNC\t%s\n\n", name);
+      elem_t * elem = symtable_iterator_get_value(it);
+      if (!strcmp(name, "print")) {
+        // no need to check arguments -- print can take any ammount of anything
+        check_func_call_rets(elem, func_call->func);
+      } else {
+        check_func_call_args(elem, func_call->func);
+        check_func_call_rets(elem, func_call->func);
+      }
+    } else {
+      error(3, "parser", "func_check", "Function '%s' called but not defined", name);
     }
-    error(
-      6, "parser", "check_rets",
-      "Number of returns [%d] differs from defined [%d] for function [%s]",
-      n_rets, n_defs, *(last_func->key)
-    );
+    func_call = func_call->next;
   }
-
-  has_ret = true;
 }
 
 void check_func_call_args(elem_t * def_e, elem_t * call_e) {
@@ -1227,497 +1493,106 @@ void check_func_call_rets(elem_t * def_e, elem_t * call_e) {
   }
 }
 
-sym_var_list_t * new_sym_var_list() {
-  sym_var_list_t * var_list = sym_var_list_init();
-  symbol_t var_list_sym = {.sym_var_list = var_list};
-  elem_t * dest = elem_init(SYM_VAR_LIST, var_list_sym);
-  symtable_insert(symtable, make_unique(dest), dest);
-  return var_list;
-}
+void check_ret(elem_t * func) {
+  // check whether return types match the definition
 
-// func functions
-void func_add_param(elem_t *func, sym_var_item_t *param) {
-  if (func == NULL || param == NULL)
-    error(99, "parser", "type", "Failed to access function's parameters");
+  // returns setup
+  sym_var_list_t * ret_list = func->symbol.sym_func->returns;
 
-  sym_var_list_t ** params = &(func->symbol.sym_func->params);
-  if (params == NULL)
-    error(99, "parser", "func_add_param", "Failed to access function's parameters");
-  if (*params == NULL) { // param list empty
-    *params = new_sym_var_list();
-  }
+  // definitions setup
+  elem_t * func_defs = symtable_iterator_get_value(
+    symtable_find(symtable, func->symbol.sym_func->name)
+  );
+  sym_var_list_t * def_list = func_defs->symbol.sym_func->returns;
 
-  // add to param list
-  list_item_t * list_item = list_item_init(param);
-  sym_var_list_add(*params, list_item);
-}
+  list_item_t * ret;
+  list_item_t * def;
+  if (ret_list == NULL) ret = NULL;
+  else ret = ret_list->first;
+  if (def_list == NULL) def = NULL;
+  else def = def_list->first;
 
-void func_add_ret(elem_t *func, sym_var_item_t *ret) {
-  if (func == NULL || ret == NULL)
-    error(99, "parser", "type", "Failed to access function's returns");
-
-  sym_var_list_t ** rets = &(func->symbol.sym_func->returns);
-  if (rets == NULL)
-    error(99, "parser", "func_add_ret", "Failed to access function's returns");
-  if (*rets == NULL)  // param list empty
-    *rets = new_sym_var_list();
-
-  // add to ret list
-  list_item_t * list_item = list_item_init(ret);
-  sym_var_list_add(*rets, list_item);
-}
-
-
-void func_defs_init() {
-    func_defs.first = NULL;
-}
-
-void func_defs_destroy() {
-  func_def_t * tmp = func_defs.first;
-  func_def_t * next;
-  while (tmp != NULL) {
-    next = tmp->next;
-    free(tmp);
-    tmp = next;
-  }
-  func_defs.first = NULL;
-}
-
-void func_defs_add(elem_t * func) {
-  func_def_t * new = malloc(sizeof(func_def_t));
-  new->func = func;
-  new->next = func_defs.first;
-  func_defs.first = new;
-}
-
-void func_defs_check() {
-  fprintf(stderr, "\n\n__________FUNC_CALLS:___________\n");
-  fprintf(stderr, "________________________________\n");
-  func_def_t * func_call = func_defs.first;
-  char * name;
-  while (func_call != NULL) {
-    name = func_call->func->symbol.sym_func->name;
-    symtable_iterator_t it = symtable_find(symtable, name);
-    if (symtable_iterator_valid(it)) {
-      fprintf(stderr, "FUNC\t%s\n\n", name);
-      elem_t * elem = symtable_iterator_get_value(it);
-      if (!strcmp(name, "print")) {
-        // no need to check arguments -- print can take any ammount of anything
-        check_func_call_rets(elem, func_call->func);
-      } else {
-        check_func_call_args(elem, func_call->func);
-        check_func_call_rets(elem, func_call->func);
+  int n_defs = 0, n_rets = 0;
+  while (def != NULL) {
+    // unmatched number of returns / defined returns
+    if (ret == NULL) {
+      // count vars
+      while (def != NULL) {
+        def = def->next;
+        n_defs++;
       }
-    } else {
-      error(3, "parser", "func_check", "Function '%s' called but not defined", name);
+      error(
+        6, "parser", "check_rets",
+        "Number of returns [%d] differs from defined [%d] for function [%s]",
+        n_rets, n_defs, *(last_func->key)
+      );
     }
-    func_call = func_call->next;
-  }
-}
 
-
-enum built_in_names {
-  INPUTS, INPUTI, INPUTF, INPUTB,
-  PRINT,
-  INT2FLOAT, FLOAT2INT,
-  LEN, SUBSTR, ORD, CHR
-};
-
-void func_def_add_ret(elem_t * func, var_type_t type) {
-  sym_var_item_t * ret = sym_var_item_init(NULL);
-  sym_var_item_set_type(ret, type);
-  if (type == VAR_STRING) ret->data.string_t = NULL;
-
-  // add to symtable for cleanup
-  symbol_t ret_sym = {.sym_var_item = ret};
-  elem_t * ret_elem = elem_init(SYM_VAR_ITEM, ret_sym);
-  char * func_name = *(func->key);
-  char * ret_id = malloc(sizeof(char) * (strlen(func_name) + 6));
-  strcpy(ret_id, func_name);
-  strcat(ret_id, "-");
-  if (func->symbol.sym_func->returns == NULL) strcat(ret_id, "0ret");
-  else strcat(ret_id, "1ret");
-
-  symtable_insert(symtable, ret_id, ret_elem);
-
-  func_add_ret(func, ret);
-}
-
-void func_def_add_param(elem_t * func, var_type_t type) {
-  sym_var_item_t * param = sym_var_item_init(NULL);
-  sym_var_item_set_type(param, type);
-  if (type == VAR_STRING) param->data.string_t = NULL;
-
-  // add to symtable for cleanup
-  symbol_t param_sym = {.sym_var_item = param};
-  elem_t * param_elem = elem_init(SYM_VAR_ITEM, param_sym);
-  char * func_name = *(func->key);
-  char * param_id = malloc(sizeof(char) * (strlen(func_name) + 6));
-  strcpy(param_id, func_name);
-  strcat(param_id, "-");
-
-  // TODO add real cycle
-  if (func->symbol.sym_func->params == NULL) strcat(param_id, "0prm");
-  else if (func->symbol.sym_func->params->first->next == NULL) strcat(param_id, "1prm");
-  else strcat(param_id, "2prm");
-
-  symtable_insert(symtable, param_id, param_elem);
-
-  func_add_param(func, param);
-}
-
-void add_built_in() {
-
-  char * built_ins[] = {
-    "inputs", "inputi", "inputf", "inputb",
-    "print",
-    "int2float", "float2int",
-    "len", "substr", "ord", "chr"
-  };
-
-  const int N = 11;
-  char * name;
-
-  for (int i = 0; i < N; i++) {
-    // create name
-    name = malloc(sizeof(char) * (strlen(built_ins[i]) + 1));
-    strcpy(name, built_ins[i]);
-
-    // create func
-    sym_func_t * func_sym = sym_func_init(NULL, NULL, NULL);
-    symbol_t func_s = {.sym_func = func_sym};
-    elem_t * func = elem_init(SYM_FUNC, func_s);
-    symtable_insert(symtable, name, func);
-
-    // assigning of parameters & returns
-    var_type_t type;
-    switch (i) {
-      case INPUTS:
-        type = VAR_STRING;
+    if (!check_types(def->item, ret->item)) {
+      char def_type[NAME_MAX_L] = "";
+      char ret_type[NAME_MAX_L] = "";
+      switch (def->item->type) {
+        case VAR_INT:
+          strcpy(def_type, "INT");
         break;
-      case INPUTI:
-        type = VAR_INT;
+        case VAR_FLOAT64:
+          strcpy(def_type, "FLOAT64");
         break;
-      case INPUTF:
-        type = VAR_FLOAT64;
+        case VAR_STRING:
+          strcpy(def_type, "STRING");
         break;
-      case INPUTB:
-        type = VAR_BOOL;
+        case VAR_BOOL:
+          strcpy(def_type, "BOOL");
         break;
-      default: goto not_input;
-    }
-    // was an input function
-    func_def_add_ret(func, type);
-    func_def_add_ret(func, VAR_INT);
-
-    not_input:
-    switch (i) {
-      case INT2FLOAT:
-        func_def_add_param(func, VAR_INT);
-        func_def_add_ret(func, VAR_FLOAT64);
+        default:
         break;
-      case FLOAT2INT:
-        func_def_add_param(func, VAR_FLOAT64);
-        func_def_add_ret(func, VAR_INT);
-        break;
-      case LEN:
-        func_def_add_param(func, VAR_STRING);
-        func_def_add_ret(func, VAR_INT);
-        break;
-      case SUBSTR:
-        func_def_add_param(func, VAR_STRING);
-        func_def_add_param(func, VAR_INT);
-        func_def_add_param(func, VAR_INT);
-        func_def_add_ret(func, VAR_STRING);
-        func_def_add_ret(func, VAR_INT);
-        break;
-      case ORD:
-        func_def_add_param(func, VAR_STRING);
-        func_def_add_param(func, VAR_INT);
-        func_def_add_ret(func, VAR_INT);
-        func_def_add_ret(func, VAR_INT);
-        break;
-      case CHR:
-        func_def_add_param(func, VAR_INT);
-        func_def_add_ret(func, VAR_STRING);
-        func_def_add_ret(func, VAR_INT);
-        break;
-      default:
-        break;
-    }
-  }
-}
-
-instr_type_t get_func_instr_type(char * func) {
-  if (
-    !strcmp(func, "inputs") ||  // string
-    !strcmp(func, "inputi") ||  // int
-    !strcmp(func, "inputf") ||  // float
-    !strcmp(func, "inputb")     // bool
-  ) return IC_READ_VAR;
-  if (!strcmp(func, "print"))     return IC_WRITE_VAR;
-  if (!strcmp(func, "int2float")) return IC_INT2FLOAT_VAR;
-  if (!strcmp(func, "float2int")) return IC_FLOAT2INT_VAR;
-  if (!strcmp(func, "len"))       return IC_STRLEN_STR;
-  if (!strcmp(func, "SUBSTR"))    return IC_SUBSTR_STR;
-  if (!strcmp(func, "ORD"))       return IC_STR2INT_VAR;
-  if (!strcmp(func, "CHR"))       return IC_GETCHAR_STR;
-
-  return IC_CALL_FUN;
-}
-
-
-// either parses func_call & returns func OR returns NULL
-// in case of NULL:
-// keep the ID before calling this func
-// following token will be in given token (parameter)
-elem_t * try_func(tToken * token) {
-  char * id = to_string(token);
-  get_next_token(token);
-  if (token->token_type == T_L_BRACKET) {
-    elem_t * func = func_call(id);
-    token->token_type = next.token_type;
-    token->attr = next.attr;
-    return func;
-  } else return NULL;
-}
-
-bool check_types(sym_var_item_t * var1, sym_var_item_t * var2) {
-  var_type_t type1 = var1->type;
-  var_type_t type2 = var2->type;
-
-  if (type1 != VAR_UNDEFINED) {
-    if (type2 != VAR_UNDEFINED) { // compare
-      if (type1 == type2) return true;
-      else return false;
-    }
-    else {  // [assign] type2 <-- type1
-      var2->type = type1;
-      if (var2->type == VAR_STRING) {
-        var2->data.string_t = NULL;
       }
-    }
-  }
-  else {
-    if (type2 != VAR_UNDEFINED) { // [assign] type1 <-- type2
-      var1->type = type2;
-      if (var1->type == VAR_STRING) {
-        var1->data.string_t = NULL;
-      }
-    }
-    else {
-      undef_types_add(var1, var2);
-    }
-  }
-  return true;
-}
-
-void undef_types_init() {
-  undef_types.first = NULL;
-  undef_types.last = NULL;
-}
-
-void undef_types_destroy() {
-  undef_type_t * next;
-  for (
-    undef_type_t * it = undef_types.first;
-    it != NULL;
-    it = next
-  ) {
-    next = it->next;
-    free(it);
-  }
-
-  undef_types_init();
-}
-
-void undef_types_add(sym_var_item_t * var1, sym_var_item_t * var2) {
-  undef_type_t * new = malloc(sizeof(undef_type_t));
-  if (new == NULL) error(99, "parser", NULL, "Memory allocation failed");
-
-  new->var1 = var1;
-  new->var2 = var2;
-  new->next = NULL;
-
-  if (undef_types.first == NULL) {
-    undef_types.first = new;
-  } else {
-    undef_types.last->next = new;
-  }
-  undef_types.last = new;
-}
-
-void undef_types_check() {
-  for (
-    undef_type_t * it = undef_types.first;
-    it != NULL;
-    it = it->next
-  ) {
-    if (!check_types(it->var1, it->var2)) {
-      error(5, "parser", "undef_types_check", "Function call destination types do not match");
-    }
-  }
-}
-
-
-elem_t * create_expr(elem_t * func) {
-  char * key = make_unique(func);
-  sym_var_item_t * expr = sym_var_item_init(key);
-  symbol_t expr_sym = {.sym_var_item = expr};
-  elem_t * expr_elem = elem_init(SYM_VAR_ITEM, expr_sym);
-  symtable_insert(symtable, key, expr_elem);
-  instr_add_var_decl(expr_elem);
-
-  return expr_elem;
-}
-
-
-void id_list_init() {
-  id_list.first = NULL;
-  id_list.last = NULL;
-}
-
-void id_list_destroy() {
-  id_t * next;
-  for (
-    id_t * it = id_list.first;
-    it != NULL;
-    it = next
-  ) {
-    next = it->next;
-    free(it->id);
-    free(it);
-  }
-  id_list_init();
-}
-
-void id_list_add(char * id) {
-  id_t * new = malloc(sizeof(id_t));
-  if (new == NULL) error(99, "parser", NULL, "Memory allocation failed");
-
-  char * new_id = malloc(sizeof(char) * (strlen(id) + 1));
-  strcpy(new_id, id);
-
-  new->id = new_id;
-  new->next = NULL;
-
-  if (id_list.first == NULL) {
-    id_list.first = new;
-  } else {
-    id_list.last->next = new;
-  }
-
-  id_list.last = new;
-}
-
-elem_t * make_dest(int operation) {
-  // create dest
-  sym_var_list_t * dest_list = sym_var_list_init();
-  symbol_t dest_list_sym = {.sym_var_list = dest_list};
-  elem_t * dest = elem_init(SYM_VAR_LIST, dest_list_sym);
-  symtable_insert(symtable, make_unique(dest), dest);
-
-  id_t * next;
-  if (operation == T_DEF_IDENT) { // :=
-    for (
-      id_t * tmp = id_list.first;
-      tmp != NULL;
-      tmp = next
-    ) {
-      next = tmp->next;
-      // for cleanup in case of error
-      id_list.first = tmp;
-
-      // try to get existing variable -- in current scope
-      char * id = id_add_scope(scope_get_head(), tmp->id);
-      symtable_iterator_t it = symtable_find(symtable, id);
-
-      // handling of special variable
-      if (!strcmp(tmp->id, "_")) {
-        list_item_t * list_item = list_item_init(NULL);
-        sym_var_list_add(dest_list, list_item);
-        free(tmp->id);
-        free(tmp);
-        free(id);
-        continue;
+      switch (ret->item->type) {
+        case VAR_INT:
+          strcpy(ret_type, "INT");
+        break;
+        case VAR_FLOAT64:
+          strcpy(ret_type, "FLOAT64");
+        break;
+        case VAR_STRING:
+          strcpy(ret_type, "STRING");
+        break;
+        case VAR_BOOL:
+          strcpy(ret_type, "BOOL");
+        break;
+        default:
+        break;
       }
 
-      if (symtable_iterator_valid(it)) { // found in current scope
-        // add existing item to list
-        sym_var_item_t * item = symtable_iterator_get_value(it)->symbol.sym_var_item;
-        list_item_t * list_item = list_item_init(item);
-        sym_var_list_add(dest_list, list_item);
-        free(id); // contextual id no longer needed
-        free(tmp->id);
-      } else {
-        // create new item
-        free(tmp->id);
-        sym_var_item_t * new_item = sym_var_item_init(id);
-        symbol_t new_sym = {.sym_var_item = new_item};
-        elem_t * new = elem_init(SYM_VAR_ITEM, new_sym);
-        new->symbol.sym_var_item->data.string_t = NULL;
-        symtable_insert(symtable, id, new);
-        // add to the list
-        list_item_t * list_item = list_item_init(new_item);
-        sym_var_list_add(dest_list, list_item);
-        // add instruction
-        instr_add_var_decl(new);
-      }
-      free(tmp);
+      error(
+        6, "parser", "check_rets",
+        "Returning [%s] where [%s] was defined for parameter [%d] of function [%s]",
+        ret_type, def_type, n_defs, *(func_defs->key)
+      );
     }
-  } else { // =
-    for (
-      id_t * tmp = id_list.first;
-      tmp != NULL;
-      tmp = next
-    ) {
-      next = tmp->next;
-      // for cleanup in case of error
-      id_list.first = tmp;
 
-      // handling of special variable
-      if (!strcmp(tmp->id, "_")) {
-        list_item_t * list_item = list_item_init(NULL);
-        sym_var_list_add(dest_list, list_item);
-        free(tmp->id);
-        free(tmp);
-        continue;
-      }
-
-      // try to get ID -- in all scopes
-      eps = false;
-      elem_t * var = id_find(scope_get_head(), tmp->id);
-
-      // add exitsting item to list
-      list_item_t * list_item = list_item_init(var->symbol.sym_var_item);
-      sym_var_list_add(dest_list, list_item);
-
-      free(tmp->id);
-      free(tmp);
-    }
+    // next step
+    def = def->next;
+    ret = ret->next;
+    n_defs++;
+    n_rets++;
   }
 
-  id_list_init();
-  return dest;
-}
+  // check if src also finished
+  if (ret != NULL) {
+    // count exprs
+    while (ret != NULL) {
+      ret = ret->next;
+      n_rets++;
+    }
+    error(
+      6, "parser", "check_rets",
+      "Number of returns [%d] differs from defined [%d] for function [%s]",
+      n_rets, n_defs, *(last_func->key)
+    );
+  }
 
-elem_t * decl_list_init() {
-  sym_var_list_t * list = sym_var_list_init();
-  symbol_t list_sym = {.sym_var_list = list};
-  elem_t * list_elem = elem_init(SYM_VAR_LIST, list_sym);
-  symtable_insert(symtable, make_unique(list_elem), list_elem);
-  decl_list = list_elem;
-
-  return list_elem;
-}
-
-void decl_list_clear() {
-  decl_list = NULL;
-}
-
-void decl_list_add(sym_var_item_t *item) {
-  list_item_t * list_item = list_item_init(item);
-  sym_var_list_add(decl_list->symbol.sym_var_list, list_item);
+  has_ret = true;
 }
 
 
@@ -1930,103 +1805,6 @@ void func_def_ret() {
   }
 }
 
-void var_init(elem_t * var) {
-  // create initializing expression
-  char * key = make_unique(var);
-  sym_var_item_t * expr_item = sym_var_item_init(key);
-  symbol_t expr_sym = {.sym_var_item = expr_item};
-  elem_t * expr = elem_init(SYM_VAR_ITEM, expr_sym);
-  symtable_insert(symtable, key, expr);
-
-  // create initializing data
-  variable_t init;
-  switch (var->symbol.sym_var_item->type) {
-    case VAR_INT:
-      init.int_t = 0;
-      break;
-    case VAR_FLOAT64:
-      init.float64_t = 0.0;
-      break;
-    case VAR_STRING: {
-      char * empty = malloc(sizeof(char));
-      empty[0] = '\0';
-      init.string_t = empty;
-      break;}
-    case VAR_BOOL:
-      init.bool_t = false;
-      break;
-    default:
-      break;
-  }
-  sym_var_item_set_type(
-    expr->symbol.sym_var_item,
-    var->symbol.sym_var_item->type
-  );
-  sym_var_item_set_data(expr->symbol.sym_var_item, init);
-  sym_var_item_set_const(expr->symbol.sym_var_item, true);
-
-  // create lists for var_def instruction
-  sym_var_list_t * dest_list = sym_var_list_init();
-  sym_var_list_t * src_list = sym_var_list_init();
-  symbol_t dest_sym = {.sym_var_list = dest_list};
-  symbol_t src_sym = {.sym_var_list = src_list};
-  elem_t * dest_elem = elem_init(SYM_VAR_LIST, dest_sym);
-  elem_t * src_elem = elem_init(SYM_VAR_LIST, src_sym);
-  symtable_insert(symtable, make_unique(dest_elem), dest_elem);
-  symtable_insert(symtable, make_unique(src_elem), src_elem);
-  // add initializator & var to lists
-  list_item_t * var_item = list_item_init(var->symbol.sym_var_item);
-  list_item_t * init_item = list_item_init(expr->symbol.sym_var_item);
-  sym_var_list_add(dest_list, var_item);
-  sym_var_list_add(src_list, init_item);
-
-  // add initializing instruction
-  instr_t * new_init = instr_create();
-  instr_set_type(new_init, IC_DEF_VAR);
-  instr_add_dest(new_init, dest_elem);
-  instr_add_elem1(new_init, src_elem);
-  list_add(list, new_init);
-}
-
-void ret_list_def_named() {
-  // add variable
-  def = true; eps = false;
-  match(T_VAR_ID);
-  elem_t * var = last_elem;
-  func_add_ret(last_func, var->symbol.sym_var_item);
-  var->symbol.sym_var_item->is_defined = true;
-  instr_add_var_decl(var);
-
-  // add type & initialize
-  type();
-  var_init(var);
-
-  next_ret_def_named();
-}
-
-void next_ret_def_named() {
-  eps = true;
-  match(T_COMMA);
-  if (eps) {
-    eps = false;
-    return;
-  }
-  skip_empty();
-
-  def = true; eps = false;
-  match(T_VAR_ID);
-  elem_t * var = last_elem;
-  func_add_ret(last_func, var->symbol.sym_var_item);
-  var->symbol.sym_var_item->is_defined = true;
-  instr_add_var_decl(var);
-
-  // add type & initialize
-  type();
-  var_init(var);
-
-  next_ret_def_named();
-}
-
 void ret_list_def() {
   // adding rets of func
   type();
@@ -2074,6 +1852,45 @@ void next_ret_def() {
 
   type();
   next_ret_def();
+}
+
+void ret_list_def_named() {
+  // add variable
+  def = true; eps = false;
+  match(T_VAR_ID);
+  elem_t * var = last_elem;
+  func_add_ret(last_func, var->symbol.sym_var_item);
+  var->symbol.sym_var_item->is_defined = true;
+  instr_add_var_decl(var);
+
+  // add type & initialize
+  type();
+  var_init(var);
+
+  next_ret_def_named();
+}
+
+void next_ret_def_named() {
+  eps = true;
+  match(T_COMMA);
+  if (eps) {
+    eps = false;
+    return;
+  }
+  skip_empty();
+
+  def = true; eps = false;
+  match(T_VAR_ID);
+  elem_t * var = last_elem;
+  func_add_ret(last_func, var->symbol.sym_var_item);
+  var->symbol.sym_var_item->is_defined = true;
+  instr_add_var_decl(var);
+
+  // add type & initialize
+  type();
+  var_init(var);
+
+  next_ret_def_named();
 }
 
 void body() {
@@ -2266,6 +2083,7 @@ void cycle() {
   list_add(list, for_body_start);
   // body is a new scope subordinate to cycle's head
   char * body_scope = malloc(sizeof(char) * 5);
+  if (body_scope == NULL) error(99, "parser", NULL, "Memory allocation failed");
   strcpy(body_scope, "body");
   scope_push(body_scope);
   // ----------------------------
@@ -2344,6 +2162,7 @@ void return_() {
 
   // create function element
   char * func_name = malloc(sizeof(char) * (strlen(*(last_func->key)) + 1));
+  if (func_name == NULL) error(99, "parser", NULL, "Memory allocation failed");
   strcpy(func_name, *(last_func->key));
   sym_func_t * func_sym = sym_func_init(func_name, NULL, NULL);
   symbol_t func_sym_sym = {.sym_func = func_sym};

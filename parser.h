@@ -149,7 +149,7 @@ char * id_add_scope(scope_elem_t *scope, char *id);
           	Variable "Y" undefined
 */
 elem_t * id_find(scope_elem_t *scope, char *id);
-
+// Unique ID generating
 char * get_unique();
 char * make_unique(elem_t *);
 
@@ -201,7 +201,9 @@ void instr_add_for_def();
 elem_t * try_func(tToken * token);
 // Adds built-in functions to the symtable
 // before the start of parsing process
-void add_built_in();  // add built-in functions to symtable
+void add_built_in();  // adds built-in functions to symtable
+void func_def_add_ret(elem_t * func, var_type_t type);
+void func_def_add_param(elem_t * func, var_type_t type);
 // Adds given parameter to param list of given function
 void func_add_param(elem_t *func, sym_var_item_t * ret);
 // Adds given return to return list of given function
@@ -323,6 +325,9 @@ struct func_def {
 struct func_defs_t {
   func_def_t * first;
 } func_defs;
+
+// [elem_t *] sym_var_list initializer for func_add_param/ret
+sym_var_list_t * new_sym_var_list();
 
 // Initializes list of function calls
 void func_defs_init();
