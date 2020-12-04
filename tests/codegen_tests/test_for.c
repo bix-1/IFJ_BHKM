@@ -80,6 +80,9 @@ int main() {
 	add_instruction(IC_DECL_VAR, i, NULL, NULL);
 	add_instruction(IC_DECL_VAR, b1, NULL, NULL);
 	add_instruction(IC_DEF_VAR, list_def0, list_def1, NULL);
+	add_instruction(IC_DECL_VAR, j, NULL, NULL);
+	add_instruction(IC_DECL_VAR, b2, NULL, NULL);
+	add_instruction(IC_DEF_VAR, list_def2, list_def3, NULL);
 	add_instruction(IC_FOR_DEF,NULL, NULL, NULL);
 	add_instruction(IC_FOR_COND, NULL, NULL, NULL);
 	add_instruction(IC_LT_VAR, b1, i, c_10);
@@ -87,8 +90,6 @@ int main() {
 	add_instruction(IC_ADD_VAR, i, i, c_1);
 	add_instruction(IC_FOR_BODY_START, NULL, NULL, NULL);
 
-	add_instruction(IC_DECL_VAR, j, NULL, NULL);
-	add_instruction(IC_DECL_VAR, b2, NULL, NULL);
 	add_instruction(IC_DEF_VAR, list_def2, list_def3, NULL);
 	add_instruction(IC_FOR_DEF,NULL, NULL, NULL);
 	add_instruction(IC_FOR_COND, NULL, NULL, NULL);
