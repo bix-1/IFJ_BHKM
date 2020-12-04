@@ -28,9 +28,9 @@ command: VAR_ID var_ | func_call | if | cycle | return;
 
 //-----------COMMANDS----------------------------------
 //--------VARIABLE definition & assignment-------------
-var_: var_def | var_move;
-var_def: ':=' EXPR;
-var_move: next_id '=' expr_list;
+var_: var_list var_cont;
+var_cont: ':=' expr_list | '=' expr_list;
+var_list: VAR_ID next_id;
 next_id: /*eps*/ | ',' VAR_ID next_id;
 //--------IF-------------------------------------------
 if: IF COND '{' EOL body '}' if_cont;
@@ -38,15 +38,15 @@ if_cont: /*eps*/ | ELSE else_;
 else_: '{' EOL body '}' | if;
 //--------FOR------------------------------------------
 cycle: FOR for_def ';' COND ';' for_move '{' EOL body '}';
-for_def: /*eps*/ | VAR_ID var_def;
-for_move: /*eps*/ | VAR_ID var_move;
+for_def: /*eps*/ | var_list ':=' expr_list;
+for_move: /*eps*/ | var_list '=' expr_list;
 //--------RETURN---------------------------------------
 return: RETURN return_list;
-return_list: /*eps*/ | EXPR next_ret;
+return_list: /*eps*/ | func_call | EXPR next_ret;
 next_ret: /*eps*/ | ',' EXPR next_ret;
 //--------FUNCTION CALLS-------------------------------
 func_call: FUNC_ID '(' func_args ')';
-func_args: /*eps*/ | EXPR next_arg;
+func_args: /*eps*/ | func_call | EXPR next_arg;
 next_arg: /*eps*/ | ',' EXPR next_arg;
 
 //--------EXPRESSIONS----------------------------------
