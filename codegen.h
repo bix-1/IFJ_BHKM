@@ -478,30 +478,6 @@ typedef enum instr_type {
 	IC_FLOAT2INT_VAR,
 
 	/*
-	 * Int to char (ascii 0-255) type cast
-	 *
-	 * elem_dest: symbol func
-	 * elem_1: NULL
-	 * elem_2: NULL
-	 *
-	 * symbol func:     params  -> 1: [symbol var || symbol const (src)]
-	 *                  returns -> 1: [symbol var (dest)]
-	 *
-	 * Example:
-	 * x = int2char(a)
-	 * x = int2char(75)
-	 *
-	 * ==========================
-	 * Note:
-	 *
-	 * If dest element is not string - Error
-	 * If src element is not int - Error
-	 * If src element int value is out of interval <0,255> - Error
-	 *
-	 */
-	IC_INT2CHAR_VAR,
-
-	/*
 	 * Get character (ascii 0-255) from string on selected index position
 	 *
 	 * elem_dest: symbol func
@@ -654,32 +630,6 @@ typedef enum instr_type {
 	 *
 	 */
 	IC_GETCHAR_STR,
-
-	/*
-	 * Set char in string on specific index
-	 *
-	 * elem_dest: symbol func
-	 * elem_1: NULL
-	 * elem_2: NULL
-	 *
-	 * symbol func:     params  -> 2: [symbol var || symbol const (src1),
-	 *                                 symbol var || symbol const (src2)]
-	 *                  returns -> 1: [symbol var (dest)]
-	 *
-	 * Example:
-	 * x = setc(2, "c")
-	 * x = setc(0, "x")
-	 *
-	 * ==========================
-	 * Note:
-	 *
-	 * If dest element is not string- Error
-	 * If src1 element is not int - Error
-	 * If src2 element is not string - Error
-	 * If src2 int value is out of index of dest string - Error
-	 *
-	 */
-	IC_SETCHAR_STR,
 
 	/*
 	 * Returns substring of some string based on params
@@ -883,15 +833,13 @@ void or_var(instr_t instr);
 void not_var(instr_t instr);
 void int2float(instr_t instr);
 void float2int(instr_t instr);
-void int2char(instr_t instr);
 void str2int(instr_t instr);
 void read_var(instr_t instr);
 void write_var(instr_t instr);
 void concat_str(instr_t instr);
 void strlen_str(instr_t instr);
 void getchar_str(instr_t instr);
-void setchar_str(instr_t instr);
-void substr_str();
+void substr_str(instr_t instr);
 void substr_str_def();
 void getchar_str_def();
 void str2int_def();

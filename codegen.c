@@ -1622,10 +1622,6 @@ void float2int(instr_t instr) {
 	}
 }
 
-void int2char(instr_t instr) {
-	//
-}
-
 void str2int(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
 
@@ -1944,10 +1940,6 @@ void getchar_str(instr_t instr) {
 	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
 
 	getchar_used = true;
-}
-
-void setchar_str(instr_t instr) {
-	// TODO : not used directly, remove later
 }
 
 void substr_str(instr_t instr) {
@@ -2554,9 +2546,6 @@ void codegen_generate_instr() {
 			case IC_FLOAT2INT_VAR:
 				float2int(*instr);
 				break;
-			case IC_INT2CHAR_VAR:
-				int2char(*instr);
-				break;
 			case IC_STR2INT_VAR:
 				str2int(*instr);
 				break;
@@ -2574,9 +2563,6 @@ void codegen_generate_instr() {
 				break;
 			case IC_GETCHAR_STR:
 				getchar_str(*instr);
-				break;
-			case IC_SETCHAR_STR:
-				setchar_str(*instr);
 				break;
 			case IC_SUBSTR_STR:
 				substr_str(*instr);
