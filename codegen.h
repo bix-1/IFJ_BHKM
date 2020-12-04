@@ -891,6 +891,13 @@ void strlen_str(instr_t instr);
 void getchar_str(instr_t instr);
 void setchar_str(instr_t instr);
 void substr_str();
+void substr_str_def();
+void getchar_str_def();
+void str2int_def();
+void read_int_def();
+void read_float_def();
+void read_string_def();
+void read_bool_def();
 void if_def();
 void if_start();
 void if_end(instr_t instr);
@@ -905,6 +912,7 @@ void for_step();
 void for_body_start();
 void for_body_end();
 void codegen_generate_instr();
+void codegen_post_generate();
 void codegen();
 
 #endif //CODEGEN_H

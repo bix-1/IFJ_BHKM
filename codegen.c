@@ -1666,6 +1666,8 @@ void str2int(instr_t instr) {
 	// pop returns
 	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
 	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+
+	str2int_used = true;
 }
 
 void read_var(instr_t instr) {
@@ -1691,15 +1693,19 @@ void read_var(instr_t instr) {
 
 	if (sym_dest->type == VAR_INT) {
 		fprintf(OUTPUT, "CALL read-int--def\n");
+		read_int_used = true;
 	}
 	else if (sym_dest->type == VAR_FLOAT64) {
 		fprintf(OUTPUT, "CALL read-float--def\n");
+		read_float_used = true;
 	}
 	else if (sym_dest->type == VAR_STRING) {
 		fprintf(OUTPUT, "CALL read-string--def\n");
+		read_string_used = true;
 	}
 	else if (sym_dest->type == VAR_BOOL) {
 		fprintf(OUTPUT, "CALL read-bool--def\n");
+		read_bool_used = true;
 	}
 	else {
 		error(99, "codegen.c", "read_var", "Invalid data type");
@@ -1905,6 +1911,8 @@ void getchar_str(instr_t instr) {
 	// pop returns
 	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
 	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+
+	getchar_used = true;
 }
 
 void setchar_str(instr_t instr) {
@@ -1997,6 +2005,8 @@ void substr_str(instr_t instr) {
 	// pop returns
 	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
 	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+
+	substr_used = true;
 }
 
 // Build-in function definitions
@@ -2588,8 +2598,39 @@ void codegen_generate_instr() {
 	}
 }
 
+// Generate build-in instruction if they were used
+void codegen_post_generate() {
+	if (read_int_used) {
+		read_int_def();
+	}
+
+	if (read_float_used) {
+		read_float_def();
+	}
+
+	if (read_string_used) {
+		read_string_def();
+	}
+
+	if (read_bool_used) {
+		read_bool_def();
+	}
+
+	if (getchar_used) {
+		getchar_str_def();
+	}
+
+	if (str2int_used) {
+		str2int_def();
+	}
+
+	if (substr_used) {
+		substr_str_def();
+	}
+}
+
 void codegen() {
 	codegen_init();
 	codegen_generate_instr();
-	// todo post generate build-in function definitions which are needed
+	codegen_post_generate();
 }
