@@ -2,7 +2,7 @@
  * Project: Compiler for imperative programing language IFJ20
  *
  * File: test_codegen_empty_main.c
- * Brief: Test with multiple functions, params, returns, add, print
+ * Brief: Test empty main
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
  *          Kostolányi Adam xkosto04@stud.fit.vutbr.cz

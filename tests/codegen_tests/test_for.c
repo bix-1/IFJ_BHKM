@@ -1,8 +1,8 @@
 /*
  * Project: Compiler for imperative programing language IFJ20
  *
- * File: test_codegen_add1.c
- * Brief: Test with multiple functions, params, returns, add, print
+ * File: test_for.c
+ * Brief: Test for
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
  *          Kostolányi Adam xkosto04@stud.fit.vutbr.cz
@@ -29,14 +29,14 @@ int main() {
 	variable_t j_data = {.int_t = 0};
 	elem_t *j = create_var_item("j", VAR_INT, j_data, false, false);
 
-	variable_t b_data = {.bool_t = false};
-	elem_t *b = create_var_item("b", VAR_BOOL, b_data, false, false);
+	variable_t b1_data = {.bool_t = false};
+	elem_t *b1 = create_var_item("b1", VAR_BOOL, b1_data, false, false);
 
 	variable_t b2_data = {.bool_t = false};
 	elem_t *b2 = create_var_item("b2", VAR_BOOL, b2_data, false, false);
 
 	elem_t *print_list = create_var_list();
-	var_list_add(print_list->symbol.sym_var_list, i->symbol.sym_var_item);
+	var_list_add(print_list->symbol.sym_var_list, j->symbol.sym_var_item);
 	elem_t *print_fu1 = create_function("printf", print_list->symbol.sym_var_list, NULL);
 
 	variable_t new_line_data = {.string_t = "\\010"};
@@ -61,31 +61,40 @@ int main() {
 	elem_t *list_def0 = create_var_list();
 	elem_t *list_def1 = create_var_list();
 
+	elem_t *list_def2 = create_var_list();
+	elem_t *list_def3 = create_var_list();
+
 	var_list_add(list_def0->symbol.sym_var_list, i->symbol.sym_var_item);
-	var_list_add(list_def0->symbol.sym_var_list, b->symbol.sym_var_item);
+	var_list_add(list_def0->symbol.sym_var_list, b1->symbol.sym_var_item);
 
 	var_list_add(list_def1->symbol.sym_var_list, i_default->symbol.sym_var_item);
 	var_list_add(list_def1->symbol.sym_var_list, b_default->symbol.sym_var_item);
 
+	var_list_add(list_def2->symbol.sym_var_list, j->symbol.sym_var_item);
+	var_list_add(list_def2->symbol.sym_var_list, b2->symbol.sym_var_item);
+
+	var_list_add(list_def3->symbol.sym_var_list, i_default->symbol.sym_var_item);
+	var_list_add(list_def3->symbol.sym_var_list, b_default->symbol.sym_var_item);
+
 	add_instruction(IC_DEF_FUN, main, NULL, NULL);
 	add_instruction(IC_DECL_VAR, i, NULL, NULL);
-	add_instruction(IC_DECL_VAR, b, NULL, NULL);
+	add_instruction(IC_DECL_VAR, b1, NULL, NULL);
 	add_instruction(IC_DEF_VAR, list_def0, list_def1, NULL);
 	add_instruction(IC_FOR_DEF,NULL, NULL, NULL);
 	add_instruction(IC_FOR_COND, NULL, NULL, NULL);
-	add_instruction(IC_LT_VAR, b, i, c_10);
+	add_instruction(IC_LT_VAR, b1, i, c_10);
 	add_instruction(IC_FOR_STEP, NULL, NULL, NULL);
 	add_instruction(IC_ADD_VAR, i, i, c_1);
 	add_instruction(IC_FOR_BODY_START, NULL, NULL, NULL);
 
-	add_instruction(IC_DECL_VAR, i, NULL, NULL);
-	add_instruction(IC_DECL_VAR, b, NULL, NULL);
-	add_instruction(IC_DEF_VAR, list_def0, list_def1, NULL);
+	add_instruction(IC_DECL_VAR, j, NULL, NULL);
+	add_instruction(IC_DECL_VAR, b2, NULL, NULL);
+	add_instruction(IC_DEF_VAR, list_def2, list_def3, NULL);
 	add_instruction(IC_FOR_DEF,NULL, NULL, NULL);
 	add_instruction(IC_FOR_COND, NULL, NULL, NULL);
-	add_instruction(IC_LT_VAR, b, i, c_10);
+	add_instruction(IC_LT_VAR, b2, j, c_10);
 	add_instruction(IC_FOR_STEP, NULL, NULL, NULL);
-	add_instruction(IC_ADD_VAR, i, i, c_1);
+	add_instruction(IC_ADD_VAR, j, j, c_1);
 	add_instruction(IC_FOR_BODY_START, NULL, NULL, NULL);
 	add_instruction(IC_WRITE_VAR, print_fu1, NULL, NULL);
 	add_instruction(IC_FOR_BODY_END, NULL, NULL, NULL);
