@@ -2,7 +2,7 @@
  * Project: Compiler for imperative programing language IFJ20
  *
  * File: test_input_string.c
- * Brief: Test function chr
+ * Brief: Test function read
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
  *          Kostolányi Adam xkosto04@stud.fit.vutbr.cz

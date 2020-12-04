@@ -1,8 +1,8 @@
 /*
  * Project: Compiler for imperative programing language IFJ20
  *
- * File: test_chr.c
- * Brief: Test function chr
+ * File: test_ord.c
+ * Brief: Test function ord
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
  *          Kostolányi Adam xkosto04@stud.fit.vutbr.cz
