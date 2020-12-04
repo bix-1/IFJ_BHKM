@@ -2046,7 +2046,7 @@ void substr_str_def() {
 
 	// init default
 	fprintf(OUTPUT, "MOVE LF@dest string@\n");
-	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
 
 	fprintf(OUTPUT, "DEFVAR LF@substr-res\n");
 	fprintf(OUTPUT, "DEFVAR LF@substr-src-len\n");
@@ -2142,7 +2142,7 @@ void getchar_str_def() {
 
 	// init default
 	fprintf(OUTPUT, "MOVE LF@dest string@\n");
-	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
 
 	fprintf(OUTPUT, "DEFVAR LF@getchar-res\n");
 	fprintf(OUTPUT, "MOVE LF@getchar-res bool@false\n");
@@ -2155,7 +2155,7 @@ void getchar_str_def() {
 
 	// valid
 	fprintf(OUTPUT, "MOVE LF@error int@0\n");
-	fprintf(OUTPUT, "INT2CHAR LF@dest LF@getchar-code\n");
+	fprintf(OUTPUT, "INT2CHAR LF@dest LF@code\n");
 	fprintf(OUTPUT, "JUMP getchar--exit\n");
 
 	// error
@@ -2189,7 +2189,7 @@ void str2int_def() {
 
 	// init default
 	fprintf(OUTPUT, "MOVE LF@dest int@0\n");
-	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
 
 	fprintf(OUTPUT, "DEFVAR LF@str2int-src-len\n");
 	fprintf(OUTPUT, "DEFVAR LF@str2int-src-res\n");
@@ -2236,7 +2236,7 @@ void read_int_def() {
 
 	// init default
 	fprintf(OUTPUT, "MOVE LF@dest int@0\n");
-	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
 
 	fprintf(OUTPUT, "DEFVAR LF@read-int-dest\n");
 	fprintf(OUTPUT, "DEFVAR LF@read-int-res\n");
@@ -2278,7 +2278,7 @@ void read_float_def() {
 
 	// init default
 	fprintf(OUTPUT, "MOVE LF@dest float@0x0p+0\n");
-	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
 
 	fprintf(OUTPUT, "DEFVAR LF@read-float-dest\n");
 	fprintf(OUTPUT, "DEFVAR LF@read-float-res\n");
@@ -2320,7 +2320,7 @@ void read_string_def() {
 
 	// init default
 	fprintf(OUTPUT, "MOVE LF@dest string@\n");
-	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
 
 	fprintf(OUTPUT, "DEFVAR LF@read-string-dest\n");
 	fprintf(OUTPUT, "DEFVAR LF@read-string-res\n");
@@ -2362,7 +2362,7 @@ void read_bool_def() {
 
 	// init default
 	fprintf(OUTPUT, "MOVE LF@dest bool@false\n");
-	fprintf(OUTPUT, "MOVE LF@err int@0\n");
+	fprintf(OUTPUT, "MOVE LF@error int@0\n");
 
 	fprintf(OUTPUT, "DEFVAR LF@read-bool-dest\n");
 	fprintf(OUTPUT, "DEFVAR LF@read-bool-res\n");
