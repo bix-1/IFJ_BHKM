@@ -2085,6 +2085,10 @@ void cycle() {
     error(2, "parser", NULL, "Invalid condition");
   match(T_SEMICOLON);
 
+  // step instr
+  instr_t * for_step = instr_create();
+  instr_set_type(for_step, IC_FOR_STEP);
+  list_add(list, for_step);
   // step
   for_move();
   match(T_LEFT_BRACE);
