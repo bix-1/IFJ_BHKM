@@ -154,7 +154,6 @@ elem_t *create_var_item(char *name, var_type_t var_type, variable_t data, bool i
 
 	sym_var_item_set_const(sym_var_item, is_const);
 	sym_var_item_set_global(sym_var_item, is_global);
-	sym_var_item_set_formatted(sym_var_item, false);
 
 	symbol_t symbol;
 	symbol.sym_var_item = sym_var_item;
