@@ -1179,7 +1179,7 @@ fi
 echo "--LESS OR EQ 4-- 12_sy_operations_32.go"
 ./ifj20 < compiler_tests/12_sy_operations_32.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 5 ]; then
+if [ $OUT -eq 0 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))

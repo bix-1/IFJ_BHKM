@@ -22,11 +22,11 @@ func main () {
 a:= 0
 b:= ""
 b, a = foo(a)
-     fmt.Println(a)   //a = 12
+     print(a)   //a = 12
 b = b+b
-fmt.Println(b)		//FiFi
+print(b)		//FiFi
 		b = foo1("s")
-		fmt.Println(b) // 11111
+		print(b) // 11111
 }
 
 func foo1 (xl string) (string) {
