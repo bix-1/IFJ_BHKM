@@ -375,7 +375,7 @@ void ret_list_def_named();
 void next_ret_def_named();
 void body();
 void command();
-void var_(char * id);
+int var_(char * id);
 void next_id();
 void if_();
 void if_cont();

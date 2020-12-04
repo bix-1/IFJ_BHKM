@@ -1942,7 +1942,7 @@ void command() {
 }
 
 // expects ID of variable & following token in [next]
-void var_(char * id) { // collect list of dest variables
+int var_(char * id) { // collect list of dest variables
   // get list of dest variables
   id_list_add(id);
   free(id);
@@ -1973,7 +1973,7 @@ void var_(char * id) { // collect list of dest variables
     else
       assign_var_move_types(dest, dest);
 
-    return;
+    return operation;
   }
 
   if (operation == T_DEF_IDENT)
@@ -1987,6 +1987,8 @@ void var_(char * id) { // collect list of dest variables
   instr_add_dest(new_move, dest);
   instr_add_elem1(new_move, src);
   list_add(list, new_move);
+
+  return operation;
 }
 
 void next_id() {
@@ -2015,8 +2017,6 @@ void if_() {
   instr_add_if_def();
   // condition
   elem_t * cond = parse_expression(); // condition handling
-  // if (!(instr_get_type(list->last) >= IC_LT_VAR && instr_get_type(list->last) <= IC_NOT_VAR))
-    // error(2, "parser", NULL, "Invalid condition");
   if (cond->symbol.sym_var_item->type != VAR_BOOL)
     error(2, "parser", NULL, "Invalid condition");
 
@@ -2058,20 +2058,21 @@ void else_() {
 
 void cycle() {
   match(T_FOR);
+
   // initialization
   instr_add_for_def();
   for_def();
   match(T_SEMICOLON);
+
   // condition
   instr_t * for_cond = instr_create();
   instr_set_type(for_cond, IC_FOR_COND);
   list_add(list, for_cond);
   elem_t * cond = parse_expression(); // condition handling
-  // if (!(instr_get_type(list->last) >= IC_LT_VAR && instr_get_type(list->last) <= IC_NOT_VAR))
-    // error(2, "parser", NULL, "Invalid condition");
   if (cond->symbol.sym_var_item->type != VAR_BOOL)
     error(2, "parser", NULL, "Invalid condition");
   match(T_SEMICOLON);
+
   // step
   for_move();
   match(T_LEFT_BRACE);
@@ -2089,6 +2090,7 @@ void cycle() {
   // ----------------------------
   body();
   match(T_RIGHT_BRACE);
+
   // body end
   instr_t * for_body_end = instr_create();
   instr_set_type(for_body_end, IC_FOR_BODY_END);
@@ -2110,7 +2112,10 @@ void for_move() {
   // setup for var_move
   char * id = to_string(&next);
   get_next_token(&next);
-  var_(id);
+  int operation = var_(id);
+  if (operation == T_DEF_IDENT) {
+    error(2, "parser", "for cycle", "Cannot declare in post statement of for loop");
+  }
 }
 
 void return_() {
