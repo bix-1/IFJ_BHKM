@@ -814,9 +814,16 @@ struct instruction {
 	instr_t *next;
 };
 
+// Generate program start and prepare required jmp label stacks
 void codegen_init();
+
+// Get scope of variable
 char *get_frame(sym_var_item_t *sym_var_item);
+
+// Used after condition instruction, check next instruction and prepare label
 void try_create_jump(instr_t instr);
+
+// Generators for specific instruction
 void declr_var(instr_t instr);
 void def_var(instr_t instr);
 void call_fun(instr_t instr);
@@ -860,8 +867,15 @@ void for_cond();
 void for_step();
 void for_body_start();
 void for_body_end();
+
+// Cycle whole ll of instructions, get instruction, resolve and call appropriate function
 void codegen_generate_instr();
+
+// Check if build-in functions (those that requires some handle from IFJ20code)
+// have been called at least once and if so call generates for each of them
 void codegen_post_generate();
+
+// Start codegen generation. Expects filled ll with instructions
 void codegen();
 
 #endif //CODEGEN_H
