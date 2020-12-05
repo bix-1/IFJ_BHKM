@@ -39,7 +39,8 @@ int get_next_token(tToken *token) {
     //int eol = 0; // special variable that decides if we return EOL token before comment
     char hex [2];
     char *endptr;
-
+    int eolerr = 0;
+    //int eolblock = 0;
     str_init(&attr); // string for litteral attribute init
     str_clear(&attr); // clears everything in string, if it is identifier we start storing data
 
@@ -59,6 +60,11 @@ int get_next_token(tToken *token) {
                 // ignoring white spaces
                 if (isspace(c)) {
                     if (c == '\n') {
+                        /*if (eolblock == 1) {
+                            str_free(&attr);
+                            return L_SUCCESS;
+                        }*/
+                        eolerr = 0;
                         line_num++;
                         // f22
                         token->token_type = T_EOL;
@@ -66,19 +72,29 @@ int get_next_token(tToken *token) {
                           if (c == '\n') line_num++;
                         }
                         if (c == '/') {
-                          c = fgetc(source);
+                          c = getc(source);
                           if (c == '/') {
                             scanner_state = s_line_c;
                             continue;
                           }
                           else if (c == '*') {
-                             // eol = 1;
                             scanner_state = s_block_c;
+                            /*ungetc(c, source);
+                            ungetc('/', source);
+                            ungetc('\n', source);
+                            eolblock++;*/
                             continue;
+                          } else {
+                              ungetc(c,source);
+                              ungetc('/', source);
+                              eolerr=1;
                           }
-                          else ungetc(c, source);
                         }
-                        char_clear(&attr, c);
+                        if (eolerr == 0) {
+                            ungetc(c,source);
+                        }
+                        str_free(&attr);
+                        //eolblock = 0;
                         return L_SUCCESS;
                     }
 
@@ -423,7 +439,7 @@ int get_next_token(tToken *token) {
                     c = getc(source);
 
                     if (c == '/') { // end of block comment and we go to start state
-                       /* if (eol == 1) {
+                        /*if (eol == 1) {
                             return L_SUCCESS;
                         }*/
                         scanner_state = s_start;
