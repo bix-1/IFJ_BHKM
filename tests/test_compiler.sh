@@ -104,6 +104,15 @@ else
         echo "TEST FAILED"
 fi
 
+echo "--Already fixed bug with /--"
+./ifj20 < compiler_tests/01_le_comment_11.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 2 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
 
 echo "#------------------Wrong expressions------------------#"
 echo "--Wrong operand--"
@@ -1823,6 +1832,258 @@ fi
 
 echo "--compiler_tests/FUNEXP_25.go--"
 ./ifj20 < compiler_tests/FUNEXP_25.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "#------------------ZADANIE------------------#"
+echo "--ZADANIE_FACTORIAL.go--"
+./ifj20 < compiler_tests/ZADANIE_FACTORIAL.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--ZADANIE_FACTORIAL_REC.go--"
+./ifj20 < compiler_tests/ZADANIE_FACTORIAL_REC.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--ZADANIE_STRING.go--"
+./ifj20 < compiler_tests/ZADANIE_STRING.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "#------------------BUILDIN------------------#"
+echo "--BUILDIN_01.go - INPUTI--"
+./ifj20 < compiler_tests/BUILDIN_01.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_02.go - INPUTF--"
+./ifj20 < compiler_tests/BUILDIN_02.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_03.go - INPUTS--"
+./ifj20 < compiler_tests/BUILDIN_03.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_04.go - INPUTS--"
+./ifj20 < compiler_tests/BUILDIN_04.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_05.go - INPUTF--"
+./ifj20 < compiler_tests/BUILDIN_05.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_06.go - INPUTI--"
+./ifj20 < compiler_tests/BUILDIN_06.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_07.go - INPUTB--"
+./ifj20 < compiler_tests/BUILDIN_07.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_08.go - INPUTB--"
+./ifj20 < compiler_tests/BUILDIN_08.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_09.go - INPUTI--"
+./ifj20 < compiler_tests/BUILDIN_09.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_10.go - int2fliat, float2int--"
+./ifj20 < compiler_tests/BUILDIN_10.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_11.go - int2fliat, float2int--"
+./ifj20 < compiler_tests/BUILDIN_11.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_12.go - int2fliat, float2int--"
+./ifj20 < compiler_tests/BUILDIN_12.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_13.go - int2fliat, float2int--"
+./ifj20 < compiler_tests/BUILDIN_13.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_14.go - String seg--"
+./ifj20 < compiler_tests/BUILDIN_14.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_15.go - len--"
+./ifj20 < compiler_tests/BUILDIN_15.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_16.go - substr--"
+./ifj20 < compiler_tests/BUILDIN_16.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_17.go - substr--"
+./ifj20 < compiler_tests/BUILDIN_17.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_18.go - ord--"
+./ifj20 < compiler_tests/BUILDIN_18.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_19.go - substr--"
+./ifj20 < compiler_tests/BUILDIN_19.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_20.go - substr--"
+./ifj20 < compiler_tests/BUILDIN_20.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_21.go - chr--"
+./ifj20 < compiler_tests/BUILDIN_21.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_22.go - chr--"
+./ifj20 < compiler_tests/BUILDIN_22.go > /dev/null 2>&1
 OUT=$?
 if [ $OUT -eq 0 ]; then
         echo "TEST OK"

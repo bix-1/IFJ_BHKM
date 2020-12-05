@@ -39,8 +39,8 @@ int get_next_token(tToken *token) {
     //int eol = 0; // special variable that decides if we return EOL token before comment
     char hex [2];
     char *endptr;
-    int eolerr = 0;
-    //int eolblock = 0;
+    int eolerr = 0; // variable that helps us to decide, wether we unget char after new line o not
+
     str_init(&attr); // string for litteral attribute init
     str_clear(&attr); // clears everything in string, if it is identifier we start storing data
 
@@ -60,10 +60,6 @@ int get_next_token(tToken *token) {
                 // ignoring white spaces
                 if (isspace(c)) {
                     if (c == '\n') {
-                        /*if (eolblock == 1) {
-                            str_free(&attr);
-                            return L_SUCCESS;
-                        }*/
                         eolerr = 0;
                         line_num++;
                         // f22
@@ -79,10 +75,6 @@ int get_next_token(tToken *token) {
                           }
                           else if (c == '*') {
                             scanner_state = s_block_c;
-                            /*ungetc(c, source);
-                            ungetc('/', source);
-                            ungetc('\n', source);
-                            eolblock++;*/
                             continue;
                           } else {
                               ungetc(c,source);
@@ -90,11 +82,12 @@ int get_next_token(tToken *token) {
                               eolerr=1;
                           }
                         }
+                        // if we reached / after new line char, we dont unget him, because we already did
+                        // if there is not / after new line, we unget char
                         if (eolerr == 0) {
                             ungetc(c,source);
                         }
                         str_free(&attr);
-                        //eolblock = 0;
                         return L_SUCCESS;
                     }
 
@@ -447,25 +440,6 @@ int get_next_token(tToken *token) {
                         ungetc(c, source);
                     }
                 } else if (c == '\n'){ // we increment line number for error message
-                    token->token_type = T_EOL;
-                    // if there is multi-line block comment we return EOL
-                    // this while will keep on getting chars, until he gets end od block comment */
-                    /*while (1) {
-                        c = getc(source);
-                        if (c == '*') {
-                            c = getc(source);
-                            if (c == '/') {
-                                return L_SUCCESS;
-                            } else {
-                                ungetc(c, source);
-                            }
-                        }
-
-                        if (c == EOF) {
-                            char_clear(&attr, c);
-                            error(1,"scanner", "get_next_token", "Lexical error");
-                        }
-                    }*/
                     line_num++;
                 } else if (c == EOF) { // block comment without end
                     char_clear(&attr, c);

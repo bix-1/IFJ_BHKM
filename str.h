@@ -3,6 +3,7 @@
  *
  * File: str.h
  * Brief: Dynamic string file
+ * Source: Jednoduchy interpret
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
  *          Kostolányi Adam xkosto04@stud.fit.vutbr.cz

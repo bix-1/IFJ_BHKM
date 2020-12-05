@@ -1,0 +1,17 @@
+package main
+
+func main () {
+        ret:=0
+        a:="312"
+        b:="456789"
+        alen:=0
+        alen = len(a)
+        alen = alen - 2
+        a, _ = substr(b, alen, 2)
+        if ret == 1 {
+                print("err")
+        } else {
+                print("OK", a)
+        }
+}
+

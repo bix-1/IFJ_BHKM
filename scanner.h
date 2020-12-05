@@ -25,8 +25,6 @@ FILE *source;
  */
 
 #define L_SUCCESS 0
-//#define L_ERROR 1
-//#define I_ERROR 99
 
 // math
 #define T_PLUS 100          // +
@@ -99,21 +97,6 @@ enum scanner_state {
     // s - initial state
     s_start = 10,                //s
 
-    // math operators
-    s_plus,                 //f2
-    s_minus,                //f3
-    s_mul,                  //f4
-    s_div,                  //f5
-
-    // comparison operators
-    s_assignment,           //f8
-    s_less,                 //f13
-    s_leq,                  //f14
-    s_greater,              //f11
-    s_geq,                  //f12
-    s_eq,                   //f9
-    s_neq,                  //f10
-
     // number literals
     s_identifier,          //f15
     s_int_lit,              //f16 integer literal
@@ -131,9 +114,6 @@ enum scanner_state {
     s_string,               //f19
 
     // others
-    s_comma,                //f1
-    s_l_bracket,            //f6
-    s_r_bracket,            //f7
     s_line_c,               //p2
     s_block_c,              //p1
 };

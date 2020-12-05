@@ -3,6 +3,7 @@
  *
  * File: str.c
  * Brief: Implementation of dynamic string.
+ * Source: Jednoduchy interpret
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
  *          Kostolányi Adam xkosto04@stud.fit.vutbr.cz
