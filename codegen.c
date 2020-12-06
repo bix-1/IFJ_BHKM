@@ -46,6 +46,8 @@ void codegen_init() {
 	jmp_label_stack_init();
 
 	fprintf(OUTPUT, ".IFJcode20\n\n");
+
+	fprintf(OUTPUT, "DEFVAR GF@dev-null\n");
 	fprintf(OUTPUT, "JUMP main\n\n");
 }
 
@@ -80,8 +82,10 @@ void try_create_jump(instr_t instr) {
 		skip_index++;
 	}
 	else if (instr.next->type == IC_FOR_STEP) {
-		fprintf(OUTPUT, "JUMPIFEQ %s%d %s@%s bool@true\n", FOR_BODY, jmp_label_stack_top(for_def_top), frame_dest, sym_dest->name);
-		fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", FOR_END, jmp_label_stack_top(for_def_top), frame_dest, sym_dest->name);
+		fprintf(OUTPUT, "JUMPIFEQ %s%d %s@%s bool@true\n", FOR_BODY, jmp_label_stack_top(for_def_top), frame_dest,
+		        sym_dest->name);
+		fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", FOR_END, jmp_label_stack_top(for_def_top), frame_dest,
+		        sym_dest->name);
 	}
 }
 
@@ -102,7 +106,6 @@ void declr_var(instr_t instr) {
 
 	// Declare variable
 	fprintf(OUTPUT, "DEFVAR %s@%s\n", frame_dest, sym_dest->name);
-
 }
 
 void def_var(instr_t instr) {
@@ -309,58 +312,19 @@ void call_fun(instr_t instr) {
 	sym_var_list_t *returns = sym_func->returns;
 
 	if (returns != NULL) {
-		sym_var_item_t *return_active = sym_var_list_prev(returns);
+		int returns_size = sym_var_list_size(returns);
 
-		while (return_active != NULL) {
-			char *frame = get_frame(return_active);
-			fprintf(OUTPUT, "POPS %s@%s\n", frame, return_active->name);
-			return_active = sym_var_list_prev(returns);
-		}
-
-		/*while (dest != NULL && return_active != NULL) {
-			if (dest->type != return_active->type) {
-				error(99, "codegen.c", "call_var", "Different data type");
-			}
-			char *frame_dest = LF;
-			char *frame_input = TF;
-			if (return_active->is_const) {
-				switch (return_active->type) {
-					case VAR_INT:
-						fprintf(OUTPUT, "MOVE %s@%s int@%d\n", frame_dest, dest->name,
-						        return_active->data.int_t);
-						break;
-					case VAR_FLOAT64:
-						fprintf(OUTPUT, "MOVE %s@%s float@%a\n", frame_dest, dest->name,
-						        return_active->data.float64_t);
-						break;
-					case VAR_STRING:
-						fprintf(OUTPUT, "MOVE %s@%s string@%s\n", frame_dest, dest->name,
-						        return_active->data.string_t);
-						break;
-					case VAR_BOOL:
-						if (return_active->data.bool_t) {
-							fprintf(OUTPUT, "MOVE %s@%s bool@true\n", frame_dest, dest->name);
-						}
-						else {
-							fprintf(OUTPUT, "MOVE %s@%s bool@false\n", frame_dest, dest->name);
-						}
-						break;
-					case VAR_NIL:
-						fprintf(OUTPUT, "MOVE %s@%s nil@nil\n", frame_dest, dest->name);
-						break;
-					case VAR_UNDEFINED:
-						error(99, "codegen.c", "call_fun", "Undefined data type");
-						break;
-					default:
-						error(99, "codegen.c", "call_fun", "Wrong data type");
-						break;
-				}
+		for (int i = 0; i < returns_size; i++) {
+			sym_var_item_t *return_active = sym_var_list_prev(returns);
+			if (return_active == NULL) {
+				// _ variable
+				fprintf(OUTPUT, "POPS GF@dev-null\n");
 			}
 			else {
-				fprintf(OUTPUT, "MOVE %s@%s %s@%s\n", frame_dest, dest->name, frame_input, return_active->name);
+				char *frame = get_frame(return_active);
+				fprintf(OUTPUT, "POPS %s@%s\n", frame, return_active->name);
 			}
-			return_active = sym_var_list_next(returns);
-		}*/
+		}
 	}
 }
 
@@ -427,7 +391,7 @@ void ret_fun(instr_t instr) {
 	// check if function is main, if yes then EXIT may be called
 	if (strcmp(elem_dest->symbol.sym_func->name, "main") == 0) {
 		// main function
-			fprintf(OUTPUT, "EXIT int@0\n\n");
+		fprintf(OUTPUT, "EXIT int@0\n\n");
 	}
 	else {
 		fprintf(OUTPUT, "RETURN\n\n");
