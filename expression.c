@@ -62,7 +62,7 @@ int precTable[8][8] = {
     /*  +- *,/  (   )   RC  i  STRING  $ */
     {R, S, S, R, R, S, S, R},           // +-
     {R, R, S, R, R, S, S, R},         // */
-    {S, S, S, Eq, S, S, Err, Err},      // (
+    {S, S, S, Eq, S, S, S, Err},      // (
     {R, R, Err, R, R, Err, Err, R},     // )
     {S, S, S, R, Err, S, S, R},       // RC
     {R, R, Err, R, R, Err, Err, R},     // i
