@@ -2092,6 +2092,229 @@ else
         echo "TEST FAILED"
 fi
 
+echo "#------------------BOOLTHEN------------------#"
+
+echo "--BOOLTHEN_01.go--"
+./ifj20 < compiler_tests/BOOLTHEN_01.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_02.go--"
+./ifj20 < compiler_tests/BOOLTHEN_02.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_03.go--"
+./ifj20 < compiler_tests/BOOLTHEN_03.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_04.go--"
+./ifj20 < compiler_tests/BOOLTHEN_04.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_05.go--"
+./ifj20 < compiler_tests/BOOLTHEN_05.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_06.go--"
+./ifj20 < compiler_tests/BOOLTHEN_06.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_07.go--"
+./ifj20 < compiler_tests/BOOLTHEN_07.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_08.go--"
+./ifj20 < compiler_tests/BOOLTHEN_08.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_09.go--"
+./ifj20 < compiler_tests/BOOLTHEN_09.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_10.go--"
+./ifj20 < compiler_tests/BOOLTHEN_10.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_11.go--"
+./ifj20 < compiler_tests/BOOLTHEN_11.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_12.go--"
+./ifj20 < compiler_tests/BOOLTHEN_12.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "#------------------MULTIVAL------------------#"
+echo "--MULTIVAL_01.go--"
+./ifj20 < compiler_tests/MULTIVAL_01.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MULTIVAL_02.go--"
+./ifj20 < compiler_tests/MULTIVAL_02.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MULTIVAL_03.go--"
+./ifj20 < compiler_tests/MULTIVAL_03.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MULTIVAL_04.go--"
+./ifj20 < compiler_tests/MULTIVAL_04.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 6 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MULTIVAL_05.go--"
+./ifj20 < compiler_tests/MULTIVAL_05.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 3 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MULTIVAL_06.go--"
+./ifj20 < compiler_tests/MULTIVAL_06.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MULTIVAL_07.go--"
+./ifj20 < compiler_tests/MULTIVAL_07.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MULTIVAL_08.go--"
+./ifj20 < compiler_tests/MULTIVAL_08.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MULTIVAL_09.go--"
+./ifj20 < compiler_tests/MULTIVAL_09.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 6 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--MULTIVAL_10.go--"
+./ifj20 < compiler_tests/MULTIVAL_10.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 6 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
 if [ $errorcount -eq 0 ]; then
 	echo "#------------------TESTS PASSED------------------#"
 else
