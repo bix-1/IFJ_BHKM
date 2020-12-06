@@ -1476,6 +1476,25 @@ else
         echo "TEST FAILED"
 fi
 
+echo "--13_complex_18.go--"
+./ifj20 < compiler_tests/13_complex_18.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--13_complex_19.go--"
+./ifj20 < compiler_tests/13_complex_19.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
 
 echo "#------------------EOL tests------------------#"
 echo "--compiler_tests/EOL_1.go--"
@@ -2213,6 +2232,67 @@ else
         errorcount=$((errorcount + 1))
         echo "TEST FAILED"
 fi
+
+echo "--BOOLTHEN_13.go--"
+./ifj20 < compiler_tests/BOOLTHEN_13.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_14.go--"
+./ifj20 < compiler_tests/BOOLTHEN_14.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_15.go--"
+./ifj20 < compiler_tests/BOOLTHEN_15.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_16.go--"
+./ifj20 < compiler_tests/BOOLTHEN_16.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_17.go--"
+./ifj20 < compiler_tests/BOOLTHEN_17.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BOOLTHEN_18.go--"
+./ifj20 < compiler_tests/BOOLTHEN_18.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
 
 echo "#------------------MULTIVAL------------------#"
 echo "--MULTIVAL_01.go--"
