@@ -33,16 +33,15 @@ void char_clear(string *attr, int c) {
 }
 
 int get_next_token(tToken *token) {
-    int scanner_state; // variable declaration for switch
-    int c; // variable for input char
-    string attr; // string struckt that stores identifers and number literals
-    //int eol = 0; // special variable that decides if we return EOL token before comment
-    char hex [2];
+    int scanner_state; // variable declaration for switch state
+    int c; // variable for char from stdin
+    string attr; // string struct that stores identifiers and number literals
+    char hex [2]; // array that stores first and second hex number for hex decimal escape sequence
     char *endptr;
     int eolerr = 0; // variable that helps us to decide, wether we unget char after new line o not
 
-    str_init(&attr); // string for litteral attribute init
-    str_clear(&attr); // clears everything in string, if it is identifier we start storing data
+    str_init(&attr);
+    str_clear(&attr);
 
     // check for valid file stream
     if (source == NULL) {
@@ -52,12 +51,12 @@ int get_next_token(tToken *token) {
     scanner_state = s_start; // we set initial scanner state
 
     while (1) {
-        // we keep on getting our chars from source file until we get full token expression
+        // we keep on getting chars from stdin until we get full token expression
         c = getc(source);
 
         switch (scanner_state) {
             case s_start:
-                // ignoring white spaces
+                // ignoring white spaces if there is EOL, we return him
                 if (isspace(c)) {
                     if (c == '\n') {
                         eolerr = 0;
@@ -82,11 +81,12 @@ int get_next_token(tToken *token) {
                               eolerr=1;
                           }
                         }
-                        // if we reached / after new line char, we dont unget him, because we already did
+                        // if we reached / after new line char, we dont need to unget him, because we already did
                         // if there is not / after new line, we unget char
                         if (eolerr == 0) {
                             ungetc(c,source);
                         }
+
                         str_free(&attr);
                         return L_SUCCESS;
                     }
@@ -176,7 +176,7 @@ int get_next_token(tToken *token) {
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == ':') {
-                    // we check for definition of id operator otherwise it is error
+                    // we check for definition of id operator token otherwise it is lex error
                     c = getc(source);
                     // f8
                     if (c == '=') {
@@ -254,7 +254,7 @@ int get_next_token(tToken *token) {
                     str_free(&attr);
                     return L_SUCCESS;
                 } else if (c == '&') {
-                    // check for and operator or error
+                    // check for and operator, or error
                     c = getc(source);
                     // f19
                     if (c == '&') {
@@ -277,7 +277,7 @@ int get_next_token(tToken *token) {
                         char_clear(&attr, c);
                         error(1,"scanner", "get_next_token", "Lexical error");
                     }
-                }else if (c == EOF) {
+                } else if (c == EOF) {
                     // f21
                     token->token_type = T_EOF;
                     str_free(&attr);
@@ -420,9 +420,11 @@ int get_next_token(tToken *token) {
                 }
                 break;
             case s_line_c:
+                // we keep on reading chars from stdin until we reach EOL or EOF, while we are in line comment state
                 while (c != EOF && c != '\n') {
                   c = fgetc(source);
                 }
+
                 ungetc(c, source);
                 scanner_state = s_start;
                 break;
@@ -451,9 +453,8 @@ int get_next_token(tToken *token) {
                     if (c == '"') { // end of string
                         scanner_state = s_string;
                     } else if (c == '\\') { // escape sequence
-                        //str_add_char(&attr, (char) c);
                         scanner_state = s_esc_seq;
-                    } else {
+                    } else { // we keep reading chars from stdin, while we can write them directly
                         str_add_char(&attr, (char) c);
                     }
                 } else { // chars less then 32 should be in escape sequence
@@ -500,7 +501,7 @@ int get_next_token(tToken *token) {
                     hex[1] = (char) c; // storing second hex number
                     pars_tmp = strtol(hex, &endptr, 16); // converting hex number into decimal number
                     c = (int) pars_tmp;
-                    //sprintf(attr.str, "%s", hex);
+                    // writing converted hex decimal char into our string
                     str_add_char(&attr, (char) c);
                     scanner_state = s_string_tmp;
                 } else { // wrong hex number
@@ -514,12 +515,15 @@ int get_next_token(tToken *token) {
                 str_clear(&token->attr.str_lit);
                 token->token_type = T_STRING_VALUE;
                 char *ss = attr.str;
+                // wer are calling escape_reformat function, that helps us to convert loaded string with white spaces
+                // into string that can be generated by code generator
                 char *temp = escape_reformat(ss);
+                // we need to reallocate our memory because converted string is much bigger then before reformation
                 attr.str = temp;
                 attr.str_lenght = (int) strlen(attr.str) + 1;
                 attr.str_alloc_size = (int) strlen(attr.str) + 1;
                 free(ss);
-                str_copy(&token->attr.str_lit, &attr);
+                str_copy(&token->attr.str_lit, &attr); // string is copied into token attribute
                 char_clear(&attr, c);
                 return L_SUCCESS;
                 break;

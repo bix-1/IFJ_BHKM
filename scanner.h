@@ -45,7 +45,7 @@ FILE *source;
 #define T_R_BRACKET 113     // )
 #define T_LINE_C 114        // '//'
 #define T_BLOCK_C 115       // '/* */'
-#define T_EOF 116
+#define T_EOF 116           // '\n'
 #define T_EOL 117
 
 // data types
@@ -64,7 +64,7 @@ FILE *source;
 // identifier token
 #define T_IDENTIFIER 127
 
-#define T_EMPTY 128 // nevedel som do ktorej kat. to mam dat, popr. to zmen/uprav
+#define T_EMPTY 128
 
 // value tokens
 #define T_INT_VALUE 129
@@ -95,31 +95,31 @@ FILE *source;
  */
 enum scanner_state {
     // s - initial state
-    s_start = 10,                //s
+    s_start = 10,
 
     // number literals
-    s_identifier,          //f15
-    s_int_lit,              //f16 integer literal
-    s_decimal_tmp,          //q17
-    s_decimal_lit,          //f17 decimal literal
-    s_exp_tmp,              //q18
-    s_exp_sig_tmp,          //r18
-    s_exp_lit,              //f18 exponential num lit
+    s_identifier,
+    s_int_lit,
+    s_decimal_tmp,
+    s_decimal_lit,
+    s_exp_tmp,
+    s_exp_sig_tmp,
+    s_exp_lit,
 
     // string literal
-    s_string_tmp,           //q19
-    s_esc_seq,              //r19
-    s_hex_tmp,              //t19
-    s_hex_num,              //u19
-    s_string,               //f19
+    s_string_tmp,
+    s_esc_seq,
+    s_hex_tmp,
+    s_hex_num,
+    s_string,
 
     // others
-    s_line_c,               //p2
-    s_block_c,              //p1
+    s_line_c,
+    s_block_c,
 };
 
 /*
- * Data type, that allows to store different data types in the same memory location.
+ * Data type, that allows us to store different data types in the same memory location.
  * Only one member can contain a value at any given time.
  */
 typedef union {
@@ -148,10 +148,11 @@ void source_file_setup(FILE *f);
 void char_clear(string *attr, int c);
 
 /*
- * Main function for lexical analyzer that keeps providing token types and his attribute
- * for syntax analyzer. Function parameter with pointer to string struct.
+ * Main function for lexical analyzer that keeps providing token types and his attributes
+ * for syntax analyzer. Function parameter is token struct.
  */
 int get_next_token(tToken *token);
+
 /*
  * Returns current line for error handling in error.c module
  */
