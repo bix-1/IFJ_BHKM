@@ -1187,6 +1187,8 @@ void assign_var_move_types(elem_t * dest_elem, elem_t * src_elem) {
 }
 
 bool check_types(sym_var_item_t * var1, sym_var_item_t * var2) {
+  if (var1 == NULL || var2 == NULL) return true;
+
   var_type_t type1 = var1->type;
   var_type_t type2 = var2->type;
 
@@ -1361,7 +1363,6 @@ void check_func_call_args(elem_t * def_e, elem_t * call_e) {
 
     // handle types
     if (!check_types(def->item, call->item)) {
-
       char def_type[NAME_MAX_L] = "";
       char call_type[NAME_MAX_L] = "";
       switch (def->item->type) {
@@ -1461,34 +1462,34 @@ void check_func_call_rets(elem_t * def_e, elem_t * call_e) {
       switch (def->item->type) {
         case VAR_INT:
           strcpy(def_type, "INT");
-        break;
+          break;
         case VAR_FLOAT64:
           strcpy(def_type, "FLOAT64");
-        break;
+          break;
         case VAR_STRING:
           strcpy(def_type, "STRING");
-        break;
+          break;
         case VAR_BOOL:
           strcpy(def_type, "BOOL");
-        break;
+          break;
         default:
-        break;
+          break;
       }
       switch (call->item->type) {
         case VAR_INT:
           strcpy(call_type, "INT");
-        break;
+          break;
         case VAR_FLOAT64:
           strcpy(call_type, "FLOAT64");
-        break;
+          break;
         case VAR_STRING:
           strcpy(call_type, "STRING");
-        break;
+          break;
         case VAR_BOOL:
           strcpy(call_type, "BOOL");
-        break;
+          break;
         default:
-        break;
+          break;
       }
 
       error(
@@ -1498,7 +1499,7 @@ void check_func_call_rets(elem_t * def_e, elem_t * call_e) {
       );
     }
 
-    if (call->item->type == VAR_STRING) {
+    if (call->item != NULL && call->item->type == VAR_STRING) {
       call->item->data.string_t = NULL;
     }
 
