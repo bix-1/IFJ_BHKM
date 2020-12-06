@@ -53,21 +53,25 @@ typedef enum
     OP_rel_comp,      // < <= > >= == !=  (RC)
     OP_value,         // i
     OP_STRING,        // string
+    OP_and,           // &&
+    OP_or,            // ||
     OP_dollar         // $
 
 } PT_operator;
 
 // Precedence table
-int precTable[8][8] = {
-    /*  +- *,/  (   )   RC  i  STRING  $ */
-    {R, S, S, R, R, S, S, R},           // +-
-    {R, R, S, R, R, S, S, R},         // */
-    {S, S, S, Eq, S, S, S, Err},      // (
-    {R, R, Err, R, R, Err, Err, R},     // )
-    {S, S, S, R, Err, S, S, R},       // RC
-    {R, R, Err, R, R, Err, Err, R},     // i
-    {R, Err, Err, Err, R, Err, Err, R}, // STRING
-    {S, S, S, Err, S, S, S, A},         // $
+int precTable[10][10] = {
+    /*  +- *,/  (   )   RC  i  STRING  &&  ||  $ */
+    {R, S, S, R, R, S, S, Err, Err, R},               // +-
+    {R, R, S, R, R, S, S, Err, Err, R},               // */
+    {S, S, S, Eq, S, S, S, S, S, Err},            // (
+    {R, R, Err, R, R, Err, Err, R, R, R},         // )
+    {S, S, S, R, Err, S, S, S, S, R},             // RC
+    {R, R, Err, R, R, Err, Err, S, S, R},         // i
+    {R, Err, Err, Err, R, Err, Err, Err, Err, R}, // STRING
+    {Err, Err, S, R, S, S, Err, R, R, R},             // &&
+    {Err, Err, S, R, S, S, Err, S, R, R},             // ||
+    {S, S, S, Err, S, S, S, S, S, A},             // $
 
 };
 
@@ -123,6 +127,12 @@ int get_index(tToken token)
         break;
     case T_STRING_VALUE:
         return OP_STRING;
+        break;
+    case T_AND:
+        return OP_and;
+        break;
+    case T_OR:
+        return OP_or;
         break;
     case T_DOLLAR:
     case T_EOL:
@@ -297,7 +307,7 @@ symtable_value_t create_dest(stackElemPtr elem)
 
     // create variable and add to symtable
     sym_var_item_t *var_item = sym_var_item_init(id_scope);
-    if (get_index(symbolStack->topToken->token) == OP_rel_comp)
+    if (get_index(symbolStack->topToken->token) == OP_rel_comp || get_index(symbolStack->topToken->token) == OP_and || get_index(symbolStack->topToken->token) == OP_or)
     {
         sym_var_item_set_type(var_item, VAR_BOOL);
     }
@@ -305,16 +315,14 @@ symtable_value_t create_dest(stackElemPtr elem)
     {
         sym_var_item_set_type(var_item, elem->data->symbol.sym_var_item->type);
         check_types(
-          var_item,
-          tokStack->topToken->data->symbol.sym_var_item
-        );
+            var_item,
+            tokStack->topToken->data->symbol.sym_var_item);
     }
     symbol_t var_sym = {.sym_var_item = var_item};
     elem_t *var = elem_init(SYM_VAR_ITEM, var_sym);
     symtable_insert(symtable, id_scope, var);
     instr_add_var_decl(var);
     var_item->is_defined = true;
-
 
     return var;
 }
@@ -485,7 +493,10 @@ void shift()
         //print();
 
     } // IF WE WANT TO PUSH SYMBOLS
-    else if (get_index(*parsData->token) == OP_plus_minus || get_index(*parsData->token) == OP_mult_div || get_index(*parsData->token) == OP_parenth_close || get_index(*parsData->token) == OP_parenth_open || get_index(*parsData->token) == OP_rel_comp || get_index(*parsData->token) == OP_dollar)
+    else if (get_index(*parsData->token) == OP_plus_minus || get_index(*parsData->token) == OP_mult_div ||
+             get_index(*parsData->token) == OP_parenth_close || get_index(*parsData->token) == OP_parenth_open ||
+             get_index(*parsData->token) == OP_rel_comp || get_index(*parsData->token) == OP_and ||
+             get_index(*parsData->token) == OP_or || get_index(*parsData->token) == OP_dollar)
     {
         stack_push(symbolStack, *parsData->token);
         get_next_token(parsData->token);
@@ -505,7 +516,7 @@ void shift()
     else
     {
         release_resources();
-        error(2, "expression parser", "reduce", "Missing an expression");
+        error(2, "expression parser", "shift", "Missing an expression");
     }
 
     if (!ret)
@@ -520,7 +531,7 @@ void shift()
         get_index(tokStack->topToken->token) == OP_dollar)
     {
         release_resources();
-        error(2, "expression parser", "reduce", "Missing an expression");
+        error(2, "expression parser", "shift", "Missing an expression");
     }
 }
 
@@ -552,16 +563,16 @@ void reduce()
     if (tokStack->topToken->token.token_type != T_DOLLAR)
     {
         if (
-          !check_types(
-            tokenTop->data->symbol.sym_var_item,
-            tokenAfterTop->data->symbol.sym_var_item
-          )
-        ) {
-          error(5, "expression parser", "check types", "Variable types do not match");
+            !check_types(
+                tokenTop->data->symbol.sym_var_item,
+                tokenAfterTop->data->symbol.sym_var_item))
+        {
+            error(5, "expression parser", "check types", "Variable types do not match");
         }
 
-        if (tokenTop->data->symbol.sym_var_item->type == VAR_STRING) {
-          check_string(tokenTop, tokenAfterTop, &symbolTop);
+        if (tokenTop->data->symbol.sym_var_item->type == VAR_STRING)
+        {
+            check_string(tokenTop, tokenAfterTop, &symbolTop);
         }
 
         // check_num(tokenTop, tokenAfterTop);
@@ -1100,6 +1111,97 @@ void reduce()
             }
 
             break;
+        case T_AND:
+            //IF E == E IS ON STACK
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
+            {
+
+                //printf("\n\t\tRULE T_AND\tE && E\n");
+
+                symtable_value_t dest = create_dest(tokenTop);
+
+                // INSTRUCTIONS
+                instr_t *instrEQ = instr_create();
+                instr_set_type(instrEQ, IC_AND_VAR);
+                instr_add_dest(instrEQ, dest);
+                instr_add_elem1(instrEQ, tokenAfterTop->data);
+                instr_add_elem2(instrEQ, tokenTop->data);
+                list_add(list, instrEQ);
+
+                retExpr = dest;
+
+                exprToken.token_type = T_EXPR;
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
+            } //IF 5 && E IS ON STACK
+            else if (tokenAfterTop->expr == false)
+            {
+                // IF $ && E IS ON STACK
+                check_expr(&(tokenAfterTop->token));
+
+                //printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->expr = true;
+            } //IF E && 5 IS ON STACK
+            else if (tokenTop->token.token_type != T_EXPR)
+            {
+                // IF E && IS ON STACK
+                check_expr(&(tokenTop->token));
+
+                //printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->expr = true;
+            }
+            else
+            {
+                release_resources();
+                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+            }
+
+            break;
+        case T_OR:
+            //IF E == E IS ON STACK
+            if (tokenTop->expr == true && tokenAfterTop->expr == true)
+            {
+                //printf("\n\t\tRULE T_OR\tE || E\n");
+
+                symtable_value_t dest = create_dest(tokenTop);
+
+                // INSTRUCTIONS
+                instr_t *instrEQ = instr_create();
+                instr_set_type(instrEQ, IC_OR_VAR);
+                instr_add_dest(instrEQ, dest);
+                instr_add_elem1(instrEQ, tokenAfterTop->data);
+                instr_add_elem2(instrEQ, tokenTop->data);
+                list_add(list, instrEQ);
+
+                retExpr = dest;
+
+                exprToken.token_type = T_EXPR;
+                stack_pop(symbolStack);
+                stack_pop(tokStack);
+            } //IF 5 || E IS ON STACK
+            else if (tokenAfterTop->expr == false)
+            {
+                // IF $ || E IS ON STACK
+                check_expr(&(tokenAfterTop->token));
+
+                //printf("\n\t\tRULE\tE -> id\n");
+                tokenAfterTop->expr = true;
+            } //IF E || 5 IS ON STACK
+            else if (tokenTop->token.token_type != T_EXPR)
+            {
+                // IF E || IS ON STACK
+                check_expr(&(tokenTop->token));
+
+                //printf("\n\t\tRULE\tE -> id\n");
+                tokenTop->expr = true;
+            }
+            else
+            {
+                release_resources();
+                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+            }
+
+            break;
         default:
             release_resources();
             error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
@@ -1109,17 +1211,8 @@ void reduce()
     else
     {
         release_resources();
-        error(2, "expression parser", "reduce", "debilko");
+        error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
     }
-
-    /*     // KONTROLA STACKU
-    tmp2 = tokStack->topToken;
-    while (tmp2->token.token_type != T_EMPTY)
-    {
-        //printf("\nREDUCE STACK VALUES BOTTOM\t%d", tmp2->token.token_type);
-        tmp2 = tmp2->nextTok;
-    }
-    //printf("\nEND REDUCE\n"); */
 }
 
 void equal()
@@ -1346,7 +1439,6 @@ symtable_value_t parse_expression()
         case Eq: /*=*/
             //printf("\nEQUAL");
             equal();
-            //print();
             break;
         case Err: /* empty*/
             //print();
@@ -1356,15 +1448,6 @@ symtable_value_t parse_expression()
                 next.token_type = parsData->token->token_type;
                 next.attr = parsData->token->attr;
             }
-            /* else if (tokStack->topToken->originalType == T_STRING_VALUE)
-            {
-                // ERROR a = string * string || a = string / string or anything starting with string followed by operation
-                free(parsData->token->attr.str_lit.str);
-                parsData->token->attr.str_lit.str = NULL;
-                release_resources();
-                error(5, "expression parser", "parse_expression", "Invalid operation with strings");
-                // alebo Faulty input or sth like that
-            } */
             else
             {
                 // f.e a := foo(3)... ')' is left on symbolStack so I pass it to parser
@@ -1382,7 +1465,6 @@ symtable_value_t parse_expression()
             break;
         case A:
             //printf("\nACCEPT\n");
-            //print();
 
             // ERROR if dollar & expression is not left on tokStack ...
             if (stack_count(&tokStack) != 2)
@@ -1391,38 +1473,12 @@ symtable_value_t parse_expression()
                 error(2, "expression parser", "check_string", "INVALID INPUT EXPRESSION");
             }
 
-            /*             // Kontrolne vypisy
-            ////printf("\nParse end tok stack\t%d", tokStack->topToken->token.token_type);
-            ////printf("\nParse end symbol stack\t%d\n", symbolStack->topToken->token.token_type);
-            stackElemPtr tmp;
-            tmp = tokStack->topToken;
-            while (tmp->token.token_type != T_EMPTY)
-            {
-                //printf("TOKEN STACK VALUES\t%d\n", tmp->token.token_type);
-                tmp = tmp->nextTok;
-            }
-            tmp = symbolStack->topToken;
-            while (tmp->token.token_type != T_EMPTY)
-            {
-                //printf("SYMBOL STACK VALUES\t%d\n", tmp->token.token_type);
-                tmp = tmp->nextTok;
-            } */
-
-            // if (get_index(tokStack->topToken->token) != OP_dollar) {
-            //   error(
-            //     2, "expression parser", NULL, "Invalid expression"
-            //   );
-            // }
-
-            //printf("\n-----END-----\n\n");
-            //printf("\nTOKEN DATA\t%s\n", tokStack->topToken->data->symbol.sym_var_item->name);
             release_resources();
             if (retExpr == NULL)
             {
                 // TODO ERROR
                 error(2, "expression parser", "parse_expression", " Missing expression ");
             }
-            //printf("\nAccept\t%s\n", retExpr->symbol.sym_var_item->data.string_t);
 
             return retExpr;
             break;
@@ -1432,11 +1488,5 @@ symtable_value_t parse_expression()
             error(99, "expression parser", "parse_expression", " ???? ");
             break;
         }
-        /*         print();
-        i++;
-        if (i == 25)
-        {
-            exit(1);
-        } */
     }
 }
