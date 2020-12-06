@@ -14,7 +14,7 @@ func main () {
 
 	if  b && d {
 	print("OK")
-	} else if (5 < 4 && c) {
+	} else if (5 < 4 && true) {
 	print ("FAIL")
 	}
 
