@@ -313,10 +313,12 @@ symtable_value_t create_dest(stackElemPtr elem)
     sym_var_item_t *var_item = sym_var_item_init(id_scope);
     if (get_index(symbolStack->topToken->token) == OP_rel_comp || get_index(symbolStack->topToken->token) == OP_and || get_index(symbolStack->topToken->token) == OP_or)
     {
+        printf("\noi\n");
         sym_var_item_set_type(var_item, VAR_BOOL);
     }
     else
     {
+        printf("\nnah\n");
         sym_var_item_set_type(var_item, elem->data->symbol.sym_var_item->type);
         check_types(
             var_item,
@@ -576,6 +578,7 @@ void reduce()
             list_add(list, instrNEG);
 
             retExpr = dest;
+            tokenTop->data = dest;
 
             stack_pop(symbolStack);
         } //IF 5  IS ON STACK
@@ -617,7 +620,6 @@ void reduce()
             {
                 check_string(tokenTop, tokenAfterTop, &symbolTop);
             }
-
 
             switch (symbolTop.token_type)
             {
@@ -837,8 +839,6 @@ void reduce()
                     //printf("\n\t\tRULE T_LESS\tE < E\n");
 
                     symtable_value_t dest = create_dest(tokenTop);
-                    //printf("\n\ndest\t%s", *tokenAfterTop->data->key);
-                    //printf("\n DEST EXPRESSION,elem1,elem2\t %s\t%s\t%s\n", dest->symbol.sym_var_item->name, tokenTop->data->symbol.sym_var_item->name, tokenAfterTop->data->symbol.sym_var_item->name);
 
                     // INSTRUCTIONS
                     instr_t *instrLT = instr_create();
@@ -918,6 +918,8 @@ void reduce()
 
                     stack_pop(symbolStack);
                     stack_pop(tokStack);
+
+                    tokenAfterTop->data = tmpDestRet;
                 } //IF 5 <= E IS ON STACK
                 else if (tokenAfterTop->expr == false)
                 {
@@ -965,6 +967,8 @@ void reduce()
 
                     stack_pop(symbolStack);
                     stack_pop(tokStack);
+                    
+                    tokenAfterTop->data = dest;
                 } //IF 5 > E IS ON STACK
                 else if (tokenAfterTop->expr == false)
                 {
@@ -1030,6 +1034,8 @@ void reduce()
 
                     stack_pop(symbolStack);
                     stack_pop(tokStack);
+
+                    tokenAfterTop->data = tmpDestRet;
                 } //IF 5 >= E IS ON STACK
                 else if (tokenAfterTop->expr == false)
                 {
@@ -1077,6 +1083,7 @@ void reduce()
 
                     stack_pop(symbolStack);
                     stack_pop(tokStack);
+                    tokenAfterTop->data = dest;
                 } //IF 5 == E IS ON STACK
                 else if (tokenAfterTop->expr == false)
                 {
@@ -1128,6 +1135,7 @@ void reduce()
                     //printf("\n\t\tRULE T_NEQ\tE != E\n");
                     stack_pop(symbolStack);
                     stack_pop(tokStack);
+                    tokenAfterTop->data = tmpDestRet;
                 } //IF 5 != E IS ON STACK
                 else if (tokenAfterTop->expr == false)
                 {
@@ -1173,6 +1181,7 @@ void reduce()
 
                     stack_pop(symbolStack);
                     stack_pop(tokStack);
+                    tokenAfterTop->data = dest;
                 } //IF 5 && E IS ON STACK
                 else if (tokenAfterTop->expr == false)
                 {
@@ -1217,6 +1226,7 @@ void reduce()
 
                     stack_pop(symbolStack);
                     stack_pop(tokStack);
+                    tokenAfterTop->data = dest;
                 } //IF 5 || E IS ON STACK
                 else if (tokenAfterTop->expr == false)
                 {
