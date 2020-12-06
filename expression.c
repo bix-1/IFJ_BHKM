@@ -313,12 +313,10 @@ symtable_value_t create_dest(stackElemPtr elem)
     sym_var_item_t *var_item = sym_var_item_init(id_scope);
     if (get_index(symbolStack->topToken->token) == OP_rel_comp || get_index(symbolStack->topToken->token) == OP_and || get_index(symbolStack->topToken->token) == OP_or)
     {
-        printf("\noi\n");
         sym_var_item_set_type(var_item, VAR_BOOL);
     }
     else
     {
-        printf("\nnah\n");
         sym_var_item_set_type(var_item, elem->data->symbol.sym_var_item->type);
         check_types(
             var_item,
