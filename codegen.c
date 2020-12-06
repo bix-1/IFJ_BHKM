@@ -1577,11 +1577,20 @@ void str2int(instr_t instr) {
 	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
 	sym_var_item_t *sym_elem2 = elem_dest->symbol.sym_func->params->first->next->item;
 
-	if (sym_dest == NULL) {
+	/*if (sym_dest == NULL) {
+		error(99, "codegen.c", "str2int", "NULL symbol");
+	}*/
+
+	/*if (sym_err == NULL) {
+		error(99, "codegen.c", "str2int", "NULL symbol");
+	}*/
+
+	// Must have at least 1 defined variable destination
+	if (sym_dest == NULL && sym_err == NULL) {
 		error(99, "codegen.c", "str2int", "NULL symbol");
 	}
 
-	if (sym_err == NULL) {
+	if (sym_elem1 == NULL) {
 		error(99, "codegen.c", "str2int", "NULL symbol");
 	}
 
@@ -1593,13 +1602,19 @@ void str2int(instr_t instr) {
 		error(99, "codegen.c", "str2int", "NULL symbol");
 	}
 
-	char *frame_dest = get_frame(sym_dest);
-	char *frame_err = get_frame(sym_err);
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
 
-	if (sym_dest->type != VAR_INT) {
-		error(99, "codegen.c", "str2int", "Incompatible data type");
+	if (sym_dest != NULL) {
+		if (sym_dest->type != VAR_INT) {
+			error(99, "codegen.c", "str2int", "Incompatible data type");
+		}
+	}
+
+	if (sym_err != NULL) {
+		if (sym_err->type != VAR_INT) {
+			error(99, "codegen.c", "str2int", "Incompatible data type");
+		}
 	}
 
 	if (sym_elem1->type != VAR_STRING) {
@@ -1607,10 +1622,6 @@ void str2int(instr_t instr) {
 	}
 
 	if (sym_elem2->type != VAR_INT) {
-		error(99, "codegen.c", "str2int", "Incompatible data type");
-	}
-
-	if (sym_err->type != VAR_INT) {
 		error(99, "codegen.c", "str2int", "Incompatible data type");
 	}
 
@@ -1632,8 +1643,21 @@ void str2int(instr_t instr) {
 	fprintf(OUTPUT, "CALL str2int--def\n");
 
 	// pop returns
-	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
-	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	if (sym_err != NULL) {
+		char *frame_err = get_frame(sym_err);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
+
+	if (sym_dest != NULL) {
+		char *frame_dest = get_frame(sym_dest);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
 
 	str2int_used = true;
 }
@@ -1648,16 +1672,18 @@ void read_var(instr_t instr) {
 	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
 	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
 
-	if (sym_dest == NULL || sym_err == NULL) {
+	// Must have at least 1 defined variable destination
+	if (sym_dest == NULL && sym_err == NULL) {
 		error(99, "codegen.c", "read_var", "NULL symbol");
 	}
 
-	if (sym_err->type != VAR_INT) {
-		error(99, "codegen.c", "read_var", "Invalid error data type");
+	if (sym_err != NULL) {
+		if (sym_err->type != VAR_INT) {
+			error(99, "codegen.c", "read_var", "Invalid error data type");
+		}
 	}
 
 	char *frame_dest = get_frame(sym_dest);
-	char *frame_err = get_frame(sym_err);
 
 	if (sym_dest->type == VAR_INT) {
 		fprintf(OUTPUT, "CALL read-int--def\n");
@@ -1679,7 +1705,15 @@ void read_var(instr_t instr) {
 		error(99, "codegen.c", "read_var", "Invalid data type");
 	}
 
-	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	if (sym_err != NULL) {
+		char *frame_err = get_frame(sym_err);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
+
+	// TODO : what if dest is _ (underscore type)
 	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
 }
 
@@ -1698,7 +1732,6 @@ void write_var(instr_t instr) {
 
 	if (sym_var_list == NULL) {
 		return;
-		//error(99, "codegen.c", "write_var", "Invalid symbol");
 	}
 
 	sym_var_item_t *active = sym_var_list_next(sym_var_list);
@@ -1833,39 +1866,46 @@ void getchar_str(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
 
 	if (elem_dest == NULL) {
-		error(99, "codegen.c", "int2char", "NULL element");
+		error(99, "codegen.c", "getchar_str", "NULL element");
 	}
 
 	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
 	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
 	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
 
-	if (sym_dest == NULL) {
+	/*if (sym_dest == NULL) {
 		error(99, "codegen.c", "int2char", "NULL symbol");
-	}
+	}*/
 
-	if (sym_err == NULL) {
+	/*if (sym_err == NULL) {
 		error(99, "codegen.c", "int2char", "NULL symbol");
+	}*/
+
+	// Must have at least 1 defined variable destination
+	if (sym_dest == NULL && sym_err == NULL) {
+		error(99, "codegen.c", "getchar_str", "NULL symbol");
 	}
 
 	if (sym_elem1 == NULL) {
-		error(99, "codegen.c", "int2char", "NULL symbol");
+		error(99, "codegen.c", "getchar_str", "NULL symbol");
 	}
 
-	char *frame_dest = get_frame(sym_dest);
-	char *frame_err = get_frame(sym_err);
 	char *frame_elem1 = get_frame(sym_elem1);
 
-	if (sym_dest->type != VAR_STRING) {
-		error(99, "codegen.c", "int2char", "Incompatible data type");
+	if (sym_dest != NULL) {
+		if (sym_dest->type != VAR_STRING) {
+			error(99, "codegen.c", "getchar_str", "Incompatible data type");
+		}
 	}
 
-	if (sym_err->type != VAR_INT) {
-		error(99, "codegen.c", "int2char", "Incompatible data type");
+	if (sym_err != NULL) {
+		if (sym_err->type != VAR_INT) {
+			error(99, "codegen.c", "getchar_str", "Incompatible data type");
+		}
 	}
 
 	if (sym_elem1->type != VAR_INT) {
-		error(99, "codegen.c", "int2char", "Incompatible data type");
+		error(99, "codegen.c", "getchar_str", "Incompatible data type");
 	}
 
 	// push params
@@ -1879,8 +1919,21 @@ void getchar_str(instr_t instr) {
 	fprintf(OUTPUT, "CALL getchar--def\n");
 
 	// pop returns
-	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
-	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	if (sym_err != NULL) {
+		char *frame_err = get_frame(sym_err);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
+
+	if (sym_dest != NULL) {
+		char *frame_dest = get_frame(sym_dest);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
 
 	getchar_used = true;
 }
@@ -1898,11 +1951,16 @@ void substr_str(instr_t instr) {
 	sym_var_item_t *sym_elem2 = elem_dest->symbol.sym_func->params->first->next->item;
 	sym_var_item_t *sym_elem3 = elem_dest->symbol.sym_func->params->first->next->next->item;
 
-	if (sym_dest == NULL) {
+	/*if (sym_dest == NULL) {
 		error(99, "codegen.c", "substr_str", "NULL symbol");
-	}
+	}*/
 
-	if (sym_err == NULL) {
+	/*if (sym_err == NULL) {
+		error(99, "codegen.c", "substr_str", "NULL symbol");
+	}*/
+
+	// Must have at least 1 defined variable destination
+	if (sym_dest == NULL && sym_err == NULL) {
 		error(99, "codegen.c", "substr_str", "NULL symbol");
 	}
 
@@ -1918,18 +1976,20 @@ void substr_str(instr_t instr) {
 		error(99, "codegen.c", "substr_str", "NULL symbol");
 	}
 
-	char *frame_dest = get_frame(sym_dest);
-	char *frame_err = get_frame(sym_err);
 	char *frame_elem1 = get_frame(sym_elem1);
 	char *frame_elem2 = get_frame(sym_elem2);
 	char *frame_elem3 = get_frame(sym_elem3);
 
-	if (sym_dest->type != VAR_STRING) {
-		error(99, "codegen.c", "substr_str", "Incompatible data type");
+	if (sym_dest != NULL) {
+		if (sym_dest->type != VAR_STRING) {
+			error(99, "codegen.c", "substr_str", "Incompatible data type");
+		}
 	}
 
-	if (sym_err->type != VAR_INT) {
-		error(99, "codegen.c", "substr_str", "Incompatible data type");
+	if (sym_err != NULL) {
+		if (sym_err->type != VAR_INT) {
+			error(99, "codegen.c", "substr_str", "Incompatible data type");
+		}
 	}
 
 	if (sym_elem1->type != VAR_STRING) {
@@ -1969,8 +2029,21 @@ void substr_str(instr_t instr) {
 	fprintf(OUTPUT, "CALL substr--def\n");
 
 	// pop returns
-	fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
-	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	if (sym_err != NULL) {
+		char *frame_err = get_frame(sym_err);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
+
+	if (sym_dest != NULL) {
+		char *frame_dest = get_frame(sym_dest);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
 
 	substr_used = true;
 }
