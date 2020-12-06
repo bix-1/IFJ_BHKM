@@ -55,30 +55,31 @@ typedef enum
     OP_STRING,        // string
     OP_and,           // &&
     OP_or,            // ||
+    OP_neg,           // !
     OP_dollar         // $
 
 } PT_operator;
 
 // Precedence table
-int precTable[10][10] = {
-    /*  +- *,/  (   )   RC  i  STRING  &&  ||  $ */
-    {R, S, S, R, R, S, S, Err, Err, R},               // +-
-    {R, R, S, R, R, S, S, Err, Err, R},               // */
-    {S, S, S, Eq, S, S, S, S, S, Err},            // (
-    {R, R, Err, R, R, Err, Err, R, R, R},         // )
-    {S, S, S, R, Err, S, S, S, S, R},             // RC
-    {R, R, Err, R, R, Err, Err, S, S, R},         // i
-    {R, Err, Err, Err, R, Err, Err, Err, Err, R}, // STRING
-    {Err, Err, S, R, S, S, Err, R, R, R},             // &&
-    {Err, Err, S, R, S, S, Err, S, R, R},             // ||
-    {S, S, S, Err, S, S, S, S, S, A},             // $
+int precTable[11][11] = {
+    /*  +- *,/  (   )   RC  i  STRING  &&  ||  !  $ */
+    {R, S, S, R, R, S, S, Err, Err, Err, R},           // +-
+    {R, R, S, R, R, S, S, Err, Err, Err, R},           // */
+    {S, S, S, Eq, S, S, S, S, S, S, Err},              // (
+    {R, R, Err, R, R, Err, Err, R, R, R, R},           // )
+    {S, S, S, R, Err, S, S, R, R, S, R},               // RC
+    {R, R, Err, R, R, Err, Err, S, S, S, R},           // i
+    {R, Err, Err, Err, R, Err, Err, Err, Err, Err, R}, // STRING
+    {Err, Err, S, R, S, S, Err, R, R, S, R},           // &&
+    {Err, Err, S, R, S, S, Err, S, R, S, R},           // ||
+    {Err, Err, S, R, S, S, Err, R, R, S, R},           // !
+    {S, S, S, Err, S, S, S, S, S, S, A},               // $
 
 };
 
 #define T_DOLLAR 500 // STACK BOTTOM
 #define T_EXPR 501   // EXPRESSION
 
-tToken exprToken;               // Expression token
 tokenStack *symbolStack = NULL; // Symbol stack
 tokenStack *tokStack = NULL;    // Token stack
 int exprNumber = 0;
@@ -133,6 +134,9 @@ int get_index(tToken token)
         break;
     case T_OR:
         return OP_or;
+        break;
+    case T_NEG:
+        return OP_neg;
         break;
     case T_DOLLAR:
     case T_EOL:
@@ -429,12 +433,6 @@ int var_type_check(stackElemPtr elem)
 
 void check_string(stackElemPtr top, stackElemPtr afterTop, tToken *symbol)
 {
-    // // ERROR if both expressions are not strings
-    // if ((top->data->symbol.sym_var_item->type == VAR_STRING && afterTop->data->symbol.sym_var_item->type != VAR_STRING) || (top->data->symbol.sym_var_item->type != VAR_STRING && afterTop->data->symbol.sym_var_item->type == VAR_STRING))
-    // {
-    //     release_resources();
-    //     error(5, "expression parser", "check_string", "Variable types do not match");
-    // }
 
     // ERROR if strings are operated with -,*,/ (string concatenation)
     if (top->data->symbol.sym_var_item->type == VAR_STRING && afterTop->data->symbol.sym_var_item->type == VAR_STRING && (symbol->token_type == T_MINUS || symbol->token_type == T_MUL || symbol->token_type == T_DIV))
@@ -496,7 +494,8 @@ void shift()
     else if (get_index(*parsData->token) == OP_plus_minus || get_index(*parsData->token) == OP_mult_div ||
              get_index(*parsData->token) == OP_parenth_close || get_index(*parsData->token) == OP_parenth_open ||
              get_index(*parsData->token) == OP_rel_comp || get_index(*parsData->token) == OP_and ||
-             get_index(*parsData->token) == OP_or || get_index(*parsData->token) == OP_dollar)
+             get_index(*parsData->token) == OP_or || get_index(*parsData->token) == OP_neg ||
+             get_index(*parsData->token) == OP_dollar)
     {
         stack_push(symbolStack, *parsData->token);
         get_next_token(parsData->token);
@@ -553,665 +552,705 @@ void reduce()
     stackElemPtr tokenAfterTop = tokStack->topToken->nextTok; // Second from the top member on VALUE stack
     tToken symbolTop = symbolStack->topToken->token;          // Top member on SYMBOL stack
 
-    if (tokenTop->data == NULL || tokenAfterTop->data == NULL)
+    if (symbolTop.token_type == T_NEG && tokenTop->data == NULL)
     {
         release_resources();
         error(2, "expression parser", "reduce", "Missing an expression");
     }
-
-    // If value stack isn't empty
-    if (tokStack->topToken->token.token_type != T_DOLLAR)
+    else if (symbolTop.token_type == T_NEG && tokenTop->data != NULL)
     {
-        if (
-            !check_types(
-                tokenTop->data->symbol.sym_var_item,
-                tokenAfterTop->data->symbol.sym_var_item))
+        // UNARY OPERATION '!'
+
+        //IF !E IS ON STACK
+        if (tokenTop->expr == true)
         {
-            error(5, "expression parser", "check types", "Variable types do not match");
+            //printf("\n\t\tRULE T_NEG\tE || E\n");
+
+            symtable_value_t dest = create_dest(tokenTop);
+
+            // INSTRUCTIONS
+            instr_t *instrNEG = instr_create();
+            instr_set_type(instrNEG, IC_NOT_VAR);
+            instr_add_dest(instrNEG, dest);
+            instr_add_elem1(instrNEG, tokenTop->data);
+            list_add(list, instrNEG);
+
+            retExpr = dest;
+
+            stack_pop(symbolStack);
+        } //IF 5  IS ON STACK
+        else if (tokenTop->token.token_type != T_EXPR)
+        {
+            // IF !5 IS ON STACK
+            check_expr(&(tokenTop->token));
+
+            //printf("\n\t\tRULE\tE -> id\n");
+            tokenTop->expr = true;
         }
-
-        if (tokenTop->data->symbol.sym_var_item->type == VAR_STRING)
+        else
         {
-            check_string(tokenTop, tokenAfterTop, &symbolTop);
-        }
-
-        // check_num(tokenTop, tokenAfterTop);
-
-        switch (symbolTop.token_type)
-        {
-        case T_PLUS:
-            //IF E + E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                symtable_value_t dest = create_dest(tokenTop);
-
-                if (tokenTop->originalType == T_STRING_VALUE || tokenAfterTop->originalType == T_STRING_VALUE)
-                {
-                    // Because valgring was fucking me up about conditional jump on uninitialised value
-                    dest->symbol.sym_var_item->data.string_t = NULL;
-
-                    // STRING CONCATENATION
-                    instr_t *instrCONCAT = instr_create();
-                    instr_set_type(instrCONCAT, IC_CONCAT_STR);
-                    instr_add_dest(instrCONCAT, dest);
-                    instr_add_elem1(instrCONCAT, tokenAfterTop->data);
-                    instr_add_elem2(instrCONCAT, tokenTop->data);
-                    list_add(list, instrCONCAT);
-
-                    // printf("GOT HERE\n\n"); exit(0);
-                }
-                else
-                {
-                    // Number addition
-                    // INSTRUCTIONS
-                    instr_t *instrADD = instr_create();
-                    instr_set_type(instrADD, IC_ADD_VAR);
-                    instr_add_dest(instrADD, dest);
-                    instr_add_elem1(instrADD, tokenAfterTop->data);
-                    instr_add_elem2(instrADD, tokenTop->data);
-                    list_add(list, instrADD);
-                }
-
-                tokenAfterTop->data = dest;
-
-                retExpr = dest;
-
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 + E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                //// printf("\n\t\tRULE +\tE -> id\n");
-                // IF $+E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                tokenAfterTop->expr = true;
-
-            } //IF E + 5 IS ON STACK
-            else if (tokenTop->expr == false)
-            {
-                // IF E+ IS ON STACK
-                //// printf("\n\t\tRULE +\tE -> id\n");
-                check_expr(&(tokenTop->token));
-
-                // TO DO INSERT INSTRUCTIONS
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_MINUS:
-            //IF E - E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                //// printf("\n\t\tRULE T_MINUS\tE = E - E\n");
-
-                symtable_value_t dest = create_dest(tokenTop);
-
-                //INSTRUCTIONS
-                instr_t *instrSUB = instr_create();
-                instr_set_type(instrSUB, IC_SUB_VAR);
-                instr_add_dest(instrSUB, dest);
-                instr_add_elem1(instrSUB, tokenAfterTop->data);
-                instr_add_elem2(instrSUB, tokenTop->data);
-                list_add(list, instrSUB);
-
-                tokenAfterTop->data = dest;
-                retExpr = dest;
-
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 - E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF $-E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                //// printf("\n\t\tRULE -\tE -> id\n");
-                tokenAfterTop->expr = true;
-
-            } //IF E - 5 IS ON STACK
-            else if (tokenTop->expr == false)
-            {
-                // IF E- IS ON STACK
-                check_expr(&(tokenTop->token));
-
-                // TO DO INSERT INSTRUCTIONS
-                //// printf("\n\t\tRULE -\tE -> id\n");
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_MUL:
-            //IF E * E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                //// printf("\n\t\tRULE T_MUL\tE = E * E\n");
-
-                symtable_value_t dest = create_dest(tokenTop);
-
-                // INSTRUCTIONS
-                instr_t *instrMUL = instr_create();
-                instr_set_type(instrMUL, IC_MUL_VAR);
-                instr_add_dest(instrMUL, dest);
-                instr_add_elem1(instrMUL, tokenAfterTop->data);
-                instr_add_elem2(instrMUL, tokenTop->data);
-                list_add(list, instrMUL);
-
-                tokenAfterTop->data = dest;
-                retExpr = dest;
-
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 * E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF $*E IS ON STACK
-                //// printf("\n\t\tRULE *\tE -> id\n");
-                check_expr(&(tokenAfterTop->token));
-
-                tokenAfterTop->expr = true;
-            } //IF E * 5 IS ON STACK
-            else if (tokenTop->expr == false)
-            {
-                // IF E* IS ON STACK
-                //// printf("\n\t\tRULE *\tE -> id\n");
-                check_expr(&(tokenTop->token));
-
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_DIV:
-            //IF E / E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                //printf("\n\t\tRULE T_DIV\tE = E / E\n");
-                // DIVIDING BY ZERO
-                if (tokenTop->token.attr.int_lit == 0)
-                {
-                    release_resources();
-                    error(9, "expression parser", "reduce", "Division by ZERO");
-                }
-
-                symtable_value_t dest = create_dest(tokenTop);
-
-                // INSTRUCTIONS
-                instr_t *instrDIV = instr_create();
-                instr_set_type(instrDIV, IC_DIV_VAR);
-                instr_add_dest(instrDIV, dest);
-                instr_add_elem1(instrDIV, tokenAfterTop->data);
-                instr_add_elem2(instrDIV, tokenTop->data);
-                list_add(list, instrDIV);
-
-                tokenAfterTop->data = dest;
-                retExpr = dest;
-
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 / E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF $/E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->expr = true;
-            } //IF E / 5 IS ON STACK
-            else if (tokenTop->expr == false)
-            {
-                // IF E/ IS ON STACK
-                check_expr(&(tokenTop->token));
-
-                // TO DO INSERT INSTRUCTIONS
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_LESS:
-            //IF E < E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                //printf("\n\t\tRULE T_LESS\tE < E\n");
-
-                symtable_value_t dest = create_dest(tokenTop);
-                //printf("\n\ndest\t%s", *tokenAfterTop->data->key);
-                //printf("\n DEST EXPRESSION,elem1,elem2\t %s\t%s\t%s\n", dest->symbol.sym_var_item->name, tokenTop->data->symbol.sym_var_item->name, tokenAfterTop->data->symbol.sym_var_item->name);
-
-                // INSTRUCTIONS
-                instr_t *instrLT = instr_create();
-                instr_set_type(instrLT, IC_LT_VAR);
-                instr_add_dest(instrLT, dest);
-                instr_add_elem1(instrLT, tokenAfterTop->data);
-                instr_add_elem2(instrLT, tokenTop->data);
-                list_add(list, instrLT);
-
-                tokenAfterTop->data = dest;
-                retExpr = dest;
-
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 < E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF $<E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                //printf("\n\t\tRULE <\tE -> id\n");
-                tokenAfterTop->expr = true;
-            } //IF E < 5 IS ON STACK
-            else if (tokenTop->expr == false)
-            {
-                // IF E< IS ON STACK
-                check_expr(&(tokenTop->token));
-
-                // TO DO INSERT INSTRUCTIONS
-                //printf("\n\t\tRULE <\tE -> id\n");
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_LESS_EQ:
-            //IF E <= E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                //printf("\n\t\tRULE T_LESS_EQ\tE <= E\n");
-
-                symtable_value_t tmpDestLT = create_dest(tokenTop);
-                symtable_value_t tmpDestEQ = create_dest(tokenTop);
-                symtable_value_t tmpDestRet = create_dest(tokenTop);
-
-                //printf("\n DEST1 EXPRESSION\t %s\n", tmpDestLT->symbol.sym_var_item->name);
-                //printf("\n DEST2 EXPRESSION\t %s\n", tmpDestEQ->symbol.sym_var_item->name);
-                //printf("\n DEST3 EXPRESSION\t %s\n", tmpDestRet->symbol.sym_var_item->name);
-
-                // INSTRUCTIONS
-                instr_t *instrLT = instr_create();
-                instr_set_type(instrLT, IC_LT_VAR);
-                instr_add_dest(instrLT, tmpDestLT);
-                instr_add_elem1(instrLT, tokenAfterTop->data);
-                instr_add_elem2(instrLT, tokenTop->data);
-                list_add(list, instrLT);
-
-                instr_t *instrEQ = instr_create();
-                instr_set_type(instrEQ, IC_EQ_VAR);
-                instr_add_dest(instrEQ, tmpDestEQ);
-                instr_add_elem1(instrEQ, tokenAfterTop->data);
-                instr_add_elem2(instrEQ, tokenTop->data);
-                list_add(list, instrEQ);
-
-                instr_t *instrOR = instr_create();
-                instr_set_type(instrOR, IC_OR_VAR);
-                instr_add_dest(instrOR, tmpDestRet);
-                instr_add_elem1(instrOR, tmpDestEQ);
-                instr_add_elem2(instrOR, tmpDestLT);
-                list_add(list, instrOR);
-
-                retExpr = tmpDestRet;
-
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 <= E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF <=E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->expr = true;
-            } //IF E <= 5 IS ON STACK
-            else if (tokenTop->expr == false)
-            {
-                // IF E<= IS ON STACK
-                check_expr(&(tokenTop->token));
-
-                // TO DO INSERT INSTRUCTIONS
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_GREATER:
-            //IF E > E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                //printf("\n\t\tRULE T_GREATER\tE > E\n");
-
-                symtable_value_t dest = create_dest(tokenTop);
-
-                //printf("\n DEST EXPRESSION\t %s\n", dest->symbol.sym_var_item->name);
-
-                // INSTRUCTIONS
-                instr_t *instrGT = instr_create();
-                instr_set_type(instrGT, IC_GT_VAR);
-                instr_add_dest(instrGT, dest);
-                instr_add_elem1(instrGT, tokenAfterTop->data);
-                instr_add_elem2(instrGT, tokenTop->data);
-                list_add(list, instrGT);
-
-                retExpr = dest;
-
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 > E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF $>E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->expr = true;
-            } //IF E > 5 IS ON STACK
-            else if (tokenTop->expr == false)
-            {
-                // IF E > IS ON STACK
-                check_expr(&(tokenTop->token));
-
-                // TO DO INSERT INSTRUCTIONS
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_GREATER_EQ:
-            //IF E >= E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                //printf("\n\t\tRULE T_GREATER_EQ\tE >= E\n");
-
-                symtable_value_t tmpDestGT = create_dest(tokenTop);
-                symtable_value_t tmpDestEQ = create_dest(tokenTop);
-                symtable_value_t tmpDestRet = create_dest(tokenTop);
-
-                //printf("\n DEST1 EXPRESSION\t %s\n", tmpDestGT->symbol.sym_var_item->name);
-                //printf("\n DEST2 EXPRESSION\t %s\n", tmpDestEQ->symbol.sym_var_item->name);
-                //printf("\n DEST3 EXPRESSION\t %s\n", tmpDestRet->symbol.sym_var_item->name);
-
-                // INSTRUCTIONS
-                instr_t *instrGT = instr_create();
-                instr_set_type(instrGT, IC_GT_VAR);
-                instr_add_dest(instrGT, tmpDestGT);
-                instr_add_elem1(instrGT, tokenAfterTop->data);
-                instr_add_elem2(instrGT, tokenTop->data);
-                list_add(list, instrGT);
-
-                instr_t *instrEQ = instr_create();
-                instr_set_type(instrEQ, IC_EQ_VAR);
-                instr_add_dest(instrEQ, tmpDestEQ);
-                instr_add_elem1(instrEQ, tokenAfterTop->data);
-                instr_add_elem2(instrEQ, tokenTop->data);
-                list_add(list, instrEQ);
-
-                instr_t *instrOR = instr_create();
-                instr_set_type(instrOR, IC_OR_VAR);
-                instr_add_dest(instrOR, tmpDestRet);
-                instr_add_elem1(instrOR, tmpDestEQ);
-                instr_add_elem2(instrOR, tmpDestGT);
-                list_add(list, instrOR);
-
-                retExpr = tmpDestRet;
-
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 >= E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF $>=E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->expr = true;
-            } //IF E >= 5 IS ON STACK
-            else if (tokenTop->expr == false)
-            {
-                // IF E >= IS ON STACK
-                check_expr(&(tokenTop->token));
-
-                // TO DO INSERT INSTRUCTIONS
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_EQ:
-            //IF E == E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                //printf("\n\t\tRULE T_EQ\tE == E\n");
-
-                symtable_value_t dest = create_dest(tokenTop);
-
-                ////printf("\n DEST EXPRESSION\t %s\n", dest->symbol.sym_var_item->name);
-
-                // INSTRUCTIONS
-                instr_t *instrEQ = instr_create();
-                instr_set_type(instrEQ, IC_EQ_VAR);
-                instr_add_dest(instrEQ, dest);
-                instr_add_elem1(instrEQ, tokenAfterTop->data);
-                instr_add_elem2(instrEQ, tokenTop->data);
-                list_add(list, instrEQ);
-
-                retExpr = dest;
-
-                exprToken.token_type = T_EXPR;
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 == E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF $ == E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->expr = true;
-            } //IF E == 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
-            {
-                // IF E == IS ON STACK
-                check_expr(&(tokenTop->token));
-
-                // TO DO INSERT INSTRUCTIONS
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_NEQ:
-            //IF E != E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                symtable_value_t tmpDestEQ = create_dest(tokenTop);
-                symtable_value_t tmpDestRet = create_dest(tokenTop);
-
-                // INSTRUCTIONS
-                instr_t *instrEQ = instr_create();
-                instr_set_type(instrEQ, IC_EQ_VAR);
-                instr_add_dest(instrEQ, tmpDestEQ);
-                instr_add_elem1(instrEQ, tokenAfterTop->data);
-                instr_add_elem2(instrEQ, tokenTop->data);
-                list_add(list, instrEQ);
-
-                instr_t *instrNOT = instr_create();
-                instr_set_type(instrNOT, IC_NOT_VAR);
-                instr_add_dest(instrNOT, tmpDestRet);
-                instr_add_elem1(instrNOT, tmpDestEQ);
-                list_add(list, instrNOT);
-
-                retExpr = tmpDestRet;
-
-                //printf("\n\t\tRULE T_NEQ\tE != E\n");
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 != E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF $ != E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->expr = true;
-            } //IF E != 5 IS ON STACK
-            else if (tokenTop->expr == false)
-            {
-                // IF E != IS ON STACK
-                check_expr(&(tokenTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_AND:
-            //IF E == E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-
-                //printf("\n\t\tRULE T_AND\tE && E\n");
-
-                symtable_value_t dest = create_dest(tokenTop);
-
-                // INSTRUCTIONS
-                instr_t *instrEQ = instr_create();
-                instr_set_type(instrEQ, IC_AND_VAR);
-                instr_add_dest(instrEQ, dest);
-                instr_add_elem1(instrEQ, tokenAfterTop->data);
-                instr_add_elem2(instrEQ, tokenTop->data);
-                list_add(list, instrEQ);
-
-                retExpr = dest;
-
-                exprToken.token_type = T_EXPR;
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 && E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF $ && E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->expr = true;
-            } //IF E && 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
-            {
-                // IF E && IS ON STACK
-                check_expr(&(tokenTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        case T_OR:
-            //IF E == E IS ON STACK
-            if (tokenTop->expr == true && tokenAfterTop->expr == true)
-            {
-                //printf("\n\t\tRULE T_OR\tE || E\n");
-
-                symtable_value_t dest = create_dest(tokenTop);
-
-                // INSTRUCTIONS
-                instr_t *instrEQ = instr_create();
-                instr_set_type(instrEQ, IC_OR_VAR);
-                instr_add_dest(instrEQ, dest);
-                instr_add_elem1(instrEQ, tokenAfterTop->data);
-                instr_add_elem2(instrEQ, tokenTop->data);
-                list_add(list, instrEQ);
-
-                retExpr = dest;
-
-                exprToken.token_type = T_EXPR;
-                stack_pop(symbolStack);
-                stack_pop(tokStack);
-            } //IF 5 || E IS ON STACK
-            else if (tokenAfterTop->expr == false)
-            {
-                // IF $ || E IS ON STACK
-                check_expr(&(tokenAfterTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenAfterTop->expr = true;
-            } //IF E || 5 IS ON STACK
-            else if (tokenTop->token.token_type != T_EXPR)
-            {
-                // IF E || IS ON STACK
-                check_expr(&(tokenTop->token));
-
-                //printf("\n\t\tRULE\tE -> id\n");
-                tokenTop->expr = true;
-            }
-            else
-            {
-                release_resources();
-                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            }
-
-            break;
-        default:
             release_resources();
             error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
-            break;
         }
     }
     else
     {
-        release_resources();
-        error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+        // BINARY OPERATIONS
+        if (tokenTop->data == NULL || tokenAfterTop->data == NULL)
+        {
+            release_resources();
+            error(2, "expression parser", "reduce", "Missing an expression");
+        }
+
+        // If value stack isn't empty
+        if (tokStack->topToken->token.token_type != T_DOLLAR)
+        {
+            if (
+                !check_types(
+                    tokenTop->data->symbol.sym_var_item,
+                    tokenAfterTop->data->symbol.sym_var_item))
+            {
+                error(5, "expression parser", "check types", "Variable types do not match");
+            }
+
+            if (tokenTop->data->symbol.sym_var_item->type == VAR_STRING)
+            {
+                check_string(tokenTop, tokenAfterTop, &symbolTop);
+            }
+
+
+            switch (symbolTop.token_type)
+            {
+            case T_PLUS:
+                //IF E + E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    symtable_value_t dest = create_dest(tokenTop);
+
+                    if (tokenTop->originalType == T_STRING_VALUE || tokenAfterTop->originalType == T_STRING_VALUE)
+                    {
+                        // Because valgring was fucking me up about conditional jump on uninitialised value
+                        dest->symbol.sym_var_item->data.string_t = NULL;
+
+                        // STRING CONCATENATION
+                        instr_t *instrCONCAT = instr_create();
+                        instr_set_type(instrCONCAT, IC_CONCAT_STR);
+                        instr_add_dest(instrCONCAT, dest);
+                        instr_add_elem1(instrCONCAT, tokenAfterTop->data);
+                        instr_add_elem2(instrCONCAT, tokenTop->data);
+                        list_add(list, instrCONCAT);
+
+                        // printf("GOT HERE\n\n"); exit(0);
+                    }
+                    else
+                    {
+                        // Number addition
+                        // INSTRUCTIONS
+                        instr_t *instrADD = instr_create();
+                        instr_set_type(instrADD, IC_ADD_VAR);
+                        instr_add_dest(instrADD, dest);
+                        instr_add_elem1(instrADD, tokenAfterTop->data);
+                        instr_add_elem2(instrADD, tokenTop->data);
+                        list_add(list, instrADD);
+                    }
+
+                    tokenAfterTop->data = dest;
+
+                    retExpr = dest;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 + E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    //// printf("\n\t\tRULE +\tE -> id\n");
+                    // IF $+E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    tokenAfterTop->expr = true;
+
+                } //IF E + 5 IS ON STACK
+                else if (tokenTop->expr == false)
+                {
+                    // IF E+ IS ON STACK
+                    //// printf("\n\t\tRULE +\tE -> id\n");
+                    check_expr(&(tokenTop->token));
+
+                    // TO DO INSERT INSTRUCTIONS
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_MINUS:
+                //IF E - E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    //// printf("\n\t\tRULE T_MINUS\tE = E - E\n");
+
+                    symtable_value_t dest = create_dest(tokenTop);
+
+                    //INSTRUCTIONS
+                    instr_t *instrSUB = instr_create();
+                    instr_set_type(instrSUB, IC_SUB_VAR);
+                    instr_add_dest(instrSUB, dest);
+                    instr_add_elem1(instrSUB, tokenAfterTop->data);
+                    instr_add_elem2(instrSUB, tokenTop->data);
+                    list_add(list, instrSUB);
+
+                    tokenAfterTop->data = dest;
+                    retExpr = dest;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 - E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF $-E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    //// printf("\n\t\tRULE -\tE -> id\n");
+                    tokenAfterTop->expr = true;
+
+                } //IF E - 5 IS ON STACK
+                else if (tokenTop->expr == false)
+                {
+                    // IF E- IS ON STACK
+                    check_expr(&(tokenTop->token));
+
+                    // TO DO INSERT INSTRUCTIONS
+                    //// printf("\n\t\tRULE -\tE -> id\n");
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_MUL:
+                //IF E * E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    //// printf("\n\t\tRULE T_MUL\tE = E * E\n");
+
+                    symtable_value_t dest = create_dest(tokenTop);
+
+                    // INSTRUCTIONS
+                    instr_t *instrMUL = instr_create();
+                    instr_set_type(instrMUL, IC_MUL_VAR);
+                    instr_add_dest(instrMUL, dest);
+                    instr_add_elem1(instrMUL, tokenAfterTop->data);
+                    instr_add_elem2(instrMUL, tokenTop->data);
+                    list_add(list, instrMUL);
+
+                    tokenAfterTop->data = dest;
+                    retExpr = dest;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 * E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF $*E IS ON STACK
+                    //// printf("\n\t\tRULE *\tE -> id\n");
+                    check_expr(&(tokenAfterTop->token));
+
+                    tokenAfterTop->expr = true;
+                } //IF E * 5 IS ON STACK
+                else if (tokenTop->expr == false)
+                {
+                    // IF E* IS ON STACK
+                    //// printf("\n\t\tRULE *\tE -> id\n");
+                    check_expr(&(tokenTop->token));
+
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_DIV:
+                //IF E / E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    //printf("\n\t\tRULE T_DIV\tE = E / E\n");
+                    // DIVIDING BY ZERO
+                    if (tokenTop->token.attr.int_lit == 0)
+                    {
+                        release_resources();
+                        error(9, "expression parser", "reduce", "Division by ZERO");
+                    }
+
+                    symtable_value_t dest = create_dest(tokenTop);
+
+                    // INSTRUCTIONS
+                    instr_t *instrDIV = instr_create();
+                    instr_set_type(instrDIV, IC_DIV_VAR);
+                    instr_add_dest(instrDIV, dest);
+                    instr_add_elem1(instrDIV, tokenAfterTop->data);
+                    instr_add_elem2(instrDIV, tokenTop->data);
+                    list_add(list, instrDIV);
+
+                    tokenAfterTop->data = dest;
+                    retExpr = dest;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 / E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF $/E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenAfterTop->expr = true;
+                } //IF E / 5 IS ON STACK
+                else if (tokenTop->expr == false)
+                {
+                    // IF E/ IS ON STACK
+                    check_expr(&(tokenTop->token));
+
+                    // TO DO INSERT INSTRUCTIONS
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_LESS:
+                //IF E < E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    //printf("\n\t\tRULE T_LESS\tE < E\n");
+
+                    symtable_value_t dest = create_dest(tokenTop);
+                    //printf("\n\ndest\t%s", *tokenAfterTop->data->key);
+                    //printf("\n DEST EXPRESSION,elem1,elem2\t %s\t%s\t%s\n", dest->symbol.sym_var_item->name, tokenTop->data->symbol.sym_var_item->name, tokenAfterTop->data->symbol.sym_var_item->name);
+
+                    // INSTRUCTIONS
+                    instr_t *instrLT = instr_create();
+                    instr_set_type(instrLT, IC_LT_VAR);
+                    instr_add_dest(instrLT, dest);
+                    instr_add_elem1(instrLT, tokenAfterTop->data);
+                    instr_add_elem2(instrLT, tokenTop->data);
+                    list_add(list, instrLT);
+
+                    tokenAfterTop->data = dest;
+                    retExpr = dest;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 < E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF $<E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    //printf("\n\t\tRULE <\tE -> id\n");
+                    tokenAfterTop->expr = true;
+                } //IF E < 5 IS ON STACK
+                else if (tokenTop->expr == false)
+                {
+                    // IF E< IS ON STACK
+                    check_expr(&(tokenTop->token));
+
+                    // TO DO INSERT INSTRUCTIONS
+                    //printf("\n\t\tRULE <\tE -> id\n");
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_LESS_EQ:
+                //IF E <= E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    //printf("\n\t\tRULE T_LESS_EQ\tE <= E\n");
+
+                    symtable_value_t tmpDestLT = create_dest(tokenTop);
+                    symtable_value_t tmpDestEQ = create_dest(tokenTop);
+                    symtable_value_t tmpDestRet = create_dest(tokenTop);
+
+                    //printf("\n DEST1 EXPRESSION\t %s\n", tmpDestLT->symbol.sym_var_item->name);
+                    //printf("\n DEST2 EXPRESSION\t %s\n", tmpDestEQ->symbol.sym_var_item->name);
+                    //printf("\n DEST3 EXPRESSION\t %s\n", tmpDestRet->symbol.sym_var_item->name);
+
+                    // INSTRUCTIONS
+                    instr_t *instrLT = instr_create();
+                    instr_set_type(instrLT, IC_LT_VAR);
+                    instr_add_dest(instrLT, tmpDestLT);
+                    instr_add_elem1(instrLT, tokenAfterTop->data);
+                    instr_add_elem2(instrLT, tokenTop->data);
+                    list_add(list, instrLT);
+
+                    instr_t *instrEQ = instr_create();
+                    instr_set_type(instrEQ, IC_EQ_VAR);
+                    instr_add_dest(instrEQ, tmpDestEQ);
+                    instr_add_elem1(instrEQ, tokenAfterTop->data);
+                    instr_add_elem2(instrEQ, tokenTop->data);
+                    list_add(list, instrEQ);
+
+                    instr_t *instrOR = instr_create();
+                    instr_set_type(instrOR, IC_OR_VAR);
+                    instr_add_dest(instrOR, tmpDestRet);
+                    instr_add_elem1(instrOR, tmpDestEQ);
+                    instr_add_elem2(instrOR, tmpDestLT);
+                    list_add(list, instrOR);
+
+                    retExpr = tmpDestRet;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 <= E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF <=E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenAfterTop->expr = true;
+                } //IF E <= 5 IS ON STACK
+                else if (tokenTop->expr == false)
+                {
+                    // IF E<= IS ON STACK
+                    check_expr(&(tokenTop->token));
+
+                    // TO DO INSERT INSTRUCTIONS
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_GREATER:
+                //IF E > E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    //printf("\n\t\tRULE T_GREATER\tE > E\n");
+
+                    symtable_value_t dest = create_dest(tokenTop);
+
+                    //printf("\n DEST EXPRESSION\t %s\n", dest->symbol.sym_var_item->name);
+
+                    // INSTRUCTIONS
+                    instr_t *instrGT = instr_create();
+                    instr_set_type(instrGT, IC_GT_VAR);
+                    instr_add_dest(instrGT, dest);
+                    instr_add_elem1(instrGT, tokenAfterTop->data);
+                    instr_add_elem2(instrGT, tokenTop->data);
+                    list_add(list, instrGT);
+
+                    retExpr = dest;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 > E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF $>E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenAfterTop->expr = true;
+                } //IF E > 5 IS ON STACK
+                else if (tokenTop->expr == false)
+                {
+                    // IF E > IS ON STACK
+                    check_expr(&(tokenTop->token));
+
+                    // TO DO INSERT INSTRUCTIONS
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_GREATER_EQ:
+                //IF E >= E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    //printf("\n\t\tRULE T_GREATER_EQ\tE >= E\n");
+
+                    symtable_value_t tmpDestGT = create_dest(tokenTop);
+                    symtable_value_t tmpDestEQ = create_dest(tokenTop);
+                    symtable_value_t tmpDestRet = create_dest(tokenTop);
+
+                    //printf("\n DEST1 EXPRESSION\t %s\n", tmpDestGT->symbol.sym_var_item->name);
+                    //printf("\n DEST2 EXPRESSION\t %s\n", tmpDestEQ->symbol.sym_var_item->name);
+                    //printf("\n DEST3 EXPRESSION\t %s\n", tmpDestRet->symbol.sym_var_item->name);
+
+                    // INSTRUCTIONS
+                    instr_t *instrGT = instr_create();
+                    instr_set_type(instrGT, IC_GT_VAR);
+                    instr_add_dest(instrGT, tmpDestGT);
+                    instr_add_elem1(instrGT, tokenAfterTop->data);
+                    instr_add_elem2(instrGT, tokenTop->data);
+                    list_add(list, instrGT);
+
+                    instr_t *instrEQ = instr_create();
+                    instr_set_type(instrEQ, IC_EQ_VAR);
+                    instr_add_dest(instrEQ, tmpDestEQ);
+                    instr_add_elem1(instrEQ, tokenAfterTop->data);
+                    instr_add_elem2(instrEQ, tokenTop->data);
+                    list_add(list, instrEQ);
+
+                    instr_t *instrOR = instr_create();
+                    instr_set_type(instrOR, IC_OR_VAR);
+                    instr_add_dest(instrOR, tmpDestRet);
+                    instr_add_elem1(instrOR, tmpDestEQ);
+                    instr_add_elem2(instrOR, tmpDestGT);
+                    list_add(list, instrOR);
+
+                    retExpr = tmpDestRet;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 >= E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF $>=E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenAfterTop->expr = true;
+                } //IF E >= 5 IS ON STACK
+                else if (tokenTop->expr == false)
+                {
+                    // IF E >= IS ON STACK
+                    check_expr(&(tokenTop->token));
+
+                    // TO DO INSERT INSTRUCTIONS
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_EQ:
+                //IF E == E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    //printf("\n\t\tRULE T_EQ\tE == E\n");
+
+                    symtable_value_t dest = create_dest(tokenTop);
+
+                    ////printf("\n DEST EXPRESSION\t %s\n", dest->symbol.sym_var_item->name);
+
+                    // INSTRUCTIONS
+                    instr_t *instrEQ = instr_create();
+                    instr_set_type(instrEQ, IC_EQ_VAR);
+                    instr_add_dest(instrEQ, dest);
+                    instr_add_elem1(instrEQ, tokenAfterTop->data);
+                    instr_add_elem2(instrEQ, tokenTop->data);
+                    list_add(list, instrEQ);
+
+                    retExpr = dest;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 == E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF $ == E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenAfterTop->expr = true;
+                } //IF E == 5 IS ON STACK
+                else if (tokenTop->token.token_type != T_EXPR)
+                {
+                    // IF E == IS ON STACK
+                    check_expr(&(tokenTop->token));
+
+                    // TO DO INSERT INSTRUCTIONS
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_NEQ:
+                //IF E != E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    symtable_value_t tmpDestEQ = create_dest(tokenTop);
+                    symtable_value_t tmpDestRet = create_dest(tokenTop);
+
+                    // INSTRUCTIONS
+                    instr_t *instrEQ = instr_create();
+                    instr_set_type(instrEQ, IC_EQ_VAR);
+                    instr_add_dest(instrEQ, tmpDestEQ);
+                    instr_add_elem1(instrEQ, tokenAfterTop->data);
+                    instr_add_elem2(instrEQ, tokenTop->data);
+                    list_add(list, instrEQ);
+
+                    instr_t *instrNOT = instr_create();
+                    instr_set_type(instrNOT, IC_NOT_VAR);
+                    instr_add_dest(instrNOT, tmpDestRet);
+                    instr_add_elem1(instrNOT, tmpDestEQ);
+                    list_add(list, instrNOT);
+
+                    retExpr = tmpDestRet;
+
+                    //printf("\n\t\tRULE T_NEQ\tE != E\n");
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 != E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF $ != E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenAfterTop->expr = true;
+                } //IF E != 5 IS ON STACK
+                else if (tokenTop->expr == false)
+                {
+                    // IF E != IS ON STACK
+                    check_expr(&(tokenTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_AND:
+                //IF E == E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+
+                    //printf("\n\t\tRULE T_AND\tE && E\n");
+
+                    symtable_value_t dest = create_dest(tokenTop);
+
+                    // INSTRUCTIONS
+                    instr_t *instrEQ = instr_create();
+                    instr_set_type(instrEQ, IC_AND_VAR);
+                    instr_add_dest(instrEQ, dest);
+                    instr_add_elem1(instrEQ, tokenAfterTop->data);
+                    instr_add_elem2(instrEQ, tokenTop->data);
+                    list_add(list, instrEQ);
+
+                    retExpr = dest;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 && E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF $ && E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenAfterTop->expr = true;
+                } //IF E && 5 IS ON STACK
+                else if (tokenTop->token.token_type != T_EXPR)
+                {
+                    // IF E && IS ON STACK
+                    check_expr(&(tokenTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+
+                break;
+            case T_OR:
+                //IF E == E IS ON STACK
+                if (tokenTop->expr == true && tokenAfterTop->expr == true)
+                {
+                    //printf("\n\t\tRULE T_OR\tE || E\n");
+
+                    symtable_value_t dest = create_dest(tokenTop);
+
+                    // INSTRUCTIONS
+                    instr_t *instrEQ = instr_create();
+                    instr_set_type(instrEQ, IC_OR_VAR);
+                    instr_add_dest(instrEQ, dest);
+                    instr_add_elem1(instrEQ, tokenAfterTop->data);
+                    instr_add_elem2(instrEQ, tokenTop->data);
+                    list_add(list, instrEQ);
+
+                    retExpr = dest;
+
+                    stack_pop(symbolStack);
+                    stack_pop(tokStack);
+                } //IF 5 || E IS ON STACK
+                else if (tokenAfterTop->expr == false)
+                {
+                    // IF $ || E IS ON STACK
+                    check_expr(&(tokenAfterTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenAfterTop->expr = true;
+                } //IF E || 5 IS ON STACK
+                else if (tokenTop->token.token_type != T_EXPR)
+                {
+                    // IF E || IS ON STACK
+                    check_expr(&(tokenTop->token));
+
+                    //printf("\n\t\tRULE\tE -> id\n");
+                    tokenTop->expr = true;
+                }
+                else
+                {
+                    release_resources();
+                    error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                }
+                break;
+            default:
+                release_resources();
+                error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+                break;
+            }
+        }
+        else
+        {
+            release_resources();
+            error(2, "expression parser", "reduce", "FAULTY INPUT EXPRESSION");
+        }
     }
 }
 
@@ -1263,7 +1302,7 @@ void print()
     tmpT = tokStack->topToken;
     while (tmpT->token.token_type != T_EMPTY)
     {
-        // printf("\nTOKEN SHIFT VALUES\t%d", tmpT->token.token_type);
+        //printf("\nTOKEN SHIFT VALUES\t%d", tmpT->token.token_type);
         tmpT = tmpT->nextTok;
     }
 
@@ -1272,7 +1311,7 @@ void print()
     tmp = symbolStack->topToken;
     while (tmp->token.token_type != T_EMPTY)
     {
-        // printf("\nSYMBOL SHIFT VALUES\t%d", tmp->token.token_type);
+        //printf("\nSYMBOL SHIFT VALUES\t%d", tmp->token.token_type);
         tmp = tmp->nextTok;
     }
 }
@@ -1470,7 +1509,7 @@ symtable_value_t parse_expression()
             if (stack_count(&tokStack) != 2)
             {
                 release_resources();
-                error(2, "expression parser", "check_string", "INVALID INPUT EXPRESSION");
+                error(2, "expression parser", "reduce", "INVALID INPUT EXPRESSION");
             }
 
             release_resources();
