@@ -36,7 +36,6 @@ instr_t * list_get_next (list_t *);
 instr_t * instr_create(); // creates empty instr
 // if exists -- init; else create && init
 void instr_init(instr_t **, instr_type_t);
-void instr_delete(instr_t *);
 void instr_set_type (instr_t *, instr_type_t);
 int instr_get_type (instr_t *);
 void instr_add_dest (instr_t *, elem_t *);
