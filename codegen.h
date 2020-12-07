@@ -523,24 +523,6 @@ typedef enum instr_type {
 	 *                  returns -> 1: [symbol var (dest)]
 	 *
 	 * Example:
-	 * x = read(22)
-	 * x = read("Hello world1")
-	 *
-	 *
-	 */
-	IC_READ_VAR,
-
-	/*
-	 * Read variable from build in functions
-	 *
-	 * elem_dest: symbol func
-	 * elem_1: NULL
-	 * elem_2: NULL
-	 *
-	 * symbol func:     params  -> 0: []
-	 *                  returns -> 1: [symbol var (dest)]
-	 *
-	 * Example:
 	 * x = inputi(22)
 	 *
 	 *
@@ -910,6 +892,10 @@ void int2float(instr_t instr);
 void float2int(instr_t instr);
 void str2int(instr_t instr);
 void read_var(instr_t instr);
+void read_int(instr_t instr);
+void read_float(instr_t instr);
+void read_string(instr_t instr);
+void read_bool(instr_t instr);
 void write_var(instr_t instr);
 void concat_str(instr_t instr);
 void strlen_str(instr_t instr);

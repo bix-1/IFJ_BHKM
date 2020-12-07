@@ -1662,11 +1662,11 @@ void str2int(instr_t instr) {
 	str2int_used = true;
 }
 
-void read_var(instr_t instr) {
+void read_int(instr_t instr) {
 	elem_t *elem_dest = instr.elem_dest_ptr;
 
 	if (elem_dest == NULL) {
-		error(99, "codegen.c", "read_var", "NULL element");
+		error(99, "codegen.c", "read_int", "NULL element");
 	}
 
 	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
@@ -1674,36 +1674,23 @@ void read_var(instr_t instr) {
 
 	// Must have at least 1 defined variable destination
 	if (sym_dest == NULL && sym_err == NULL) {
-		error(99, "codegen.c", "read_var", "NULL symbol");
+		error(99, "codegen.c", "read_int", "NULL symbol");
+	}
+
+	if (sym_dest != NULL) {
+		if (sym_dest->type != VAR_INT) {
+			error(99, "codegen.c", "read_int", "Invalid destination data type");
+		}
 	}
 
 	if (sym_err != NULL) {
 		if (sym_err->type != VAR_INT) {
-			error(99, "codegen.c", "read_var", "Invalid error data type");
+			error(99, "codegen.c", "read_int", "Invalid error data type");
 		}
 	}
 
-	char *frame_dest = get_frame(sym_dest);
-
-	if (sym_dest->type == VAR_INT) {
-		fprintf(OUTPUT, "CALL read-int--def\n");
-		read_int_used = true;
-	}
-	else if (sym_dest->type == VAR_FLOAT64) {
-		fprintf(OUTPUT, "CALL read-float--def\n");
-		read_float_used = true;
-	}
-	else if (sym_dest->type == VAR_STRING) {
-		fprintf(OUTPUT, "CALL read-string--def\n");
-		read_string_used = true;
-	}
-	else if (sym_dest->type == VAR_BOOL) {
-		fprintf(OUTPUT, "CALL read-bool--def\n");
-		read_bool_used = true;
-	}
-	else {
-		error(99, "codegen.c", "read_var", "Invalid data type");
-	}
+	fprintf(OUTPUT, "CALL read-int--def\n");
+	read_int_used = true;
 
 	if (sym_err != NULL) {
 		char *frame_err = get_frame(sym_err);
@@ -1713,8 +1700,154 @@ void read_var(instr_t instr) {
 		fprintf(OUTPUT, "POPS GF@dev-null\n");
 	}
 
-	// TODO : what if dest is _ (underscore type)
-	fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	if (sym_dest != NULL) {
+		char *frame_dest = get_frame(sym_dest);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
+}
+
+void read_float(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "read_float", "NULL element");
+	}
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
+	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
+
+	// Must have at least 1 defined variable destination
+	if (sym_dest == NULL && sym_err == NULL) {
+		error(99, "codegen.c", "read_float", "NULL symbol");
+	}
+
+	if (sym_dest != NULL) {
+		if (sym_dest->type != VAR_FLOAT64) {
+			error(99, "codegen.c", "read_float", "Invalid destination data type");
+		}
+	}
+
+	if (sym_err != NULL) {
+		if (sym_err->type != VAR_INT) {
+			error(99, "codegen.c", "read_float", "Invalid error data type");
+		}
+	}
+
+	fprintf(OUTPUT, "CALL read-float--def\n");
+	read_float_used = true;
+
+	if (sym_err != NULL) {
+		char *frame_err = get_frame(sym_err);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
+
+	if (sym_dest != NULL) {
+		char *frame_dest = get_frame(sym_dest);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
+}
+
+void read_string(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "read_string", "NULL element");
+	}
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
+	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
+
+	// Must have at least 1 defined variable destination
+	if (sym_dest == NULL && sym_err == NULL) {
+		error(99, "codegen.c", "read_string", "NULL symbol");
+	}
+
+	if (sym_dest != NULL) {
+		if (sym_dest->type != VAR_STRING) {
+			error(99, "codegen.c", "read_string", "Invalid destination data type");
+		}
+	}
+
+	if (sym_err != NULL) {
+		if (sym_err->type != VAR_INT) {
+			error(99, "codegen.c", "read_string", "Invalid error data type");
+		}
+	}
+
+	fprintf(OUTPUT, "CALL read-string--def\n");
+	read_string_used = true;
+
+	if (sym_err != NULL) {
+		char *frame_err = get_frame(sym_err);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
+
+	if (sym_dest != NULL) {
+		char *frame_dest = get_frame(sym_dest);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
+}
+
+void read_bool(instr_t instr) {
+	elem_t *elem_dest = instr.elem_dest_ptr;
+
+	if (elem_dest == NULL) {
+		error(99, "codegen.c", "read_bool", "NULL element");
+	}
+
+	sym_var_item_t *sym_dest = elem_dest->symbol.sym_func->returns->first->item;
+	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
+
+	// Must have at least 1 defined variable destination
+	if (sym_dest == NULL && sym_err == NULL) {
+		error(99, "codegen.c", "read_bool", "NULL symbol");
+	}
+
+	if (sym_dest != NULL) {
+		if (sym_dest->type != VAR_BOOL) {
+			error(99, "codegen.c", "read_bool", "Invalid destination data type");
+		}
+	}
+
+	if (sym_err != NULL) {
+		if (sym_err->type != VAR_INT) {
+			error(99, "codegen.c", "read_bool", "Invalid error data type");
+		}
+	}
+
+	fprintf(OUTPUT, "CALL read-bool--def\n");
+	read_bool_used = true;
+
+	if (sym_err != NULL) {
+		char *frame_err = get_frame(sym_err);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_err, sym_err->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
+
+	if (sym_dest != NULL) {
+		char *frame_dest = get_frame(sym_dest);
+		fprintf(OUTPUT, "POPS %s@%s\n", frame_dest, sym_dest->name);
+	}
+	else {
+		fprintf(OUTPUT, "POPS GF@dev-null\n");
+	}
 }
 
 void write_var(instr_t instr) {
@@ -2559,8 +2692,17 @@ void codegen_generate_instr() {
 			case IC_STR2INT_VAR:
 				str2int(*instr);
 				break;
-			case IC_READ_VAR:
-				read_var(*instr);
+			case IC_READ_INT:
+				read_int(*instr);
+				break;
+			case IC_READ_FLOAT:
+				read_float(*instr);
+				break;
+			case IC_READ_STRING:
+				read_string(*instr);
+				break;
+			case IC_READ_BOOL:
+				read_bool(*instr);
 				break;
 			case IC_WRITE_VAR:
 				write_var(*instr);
