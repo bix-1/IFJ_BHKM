@@ -2028,6 +2028,27 @@ void if_() {
   match(T_IF);
   instr_add_if_def();
 
+  // condition
+  elem_t * cond_dest = if_cond_();
+  match(T_LEFT_BRACE);
+  match(T_EOL);
+
+  // create body_start instruction
+  instr_t * if_start = instr_create();
+  instr_set_type(if_start, IC_IF_START);
+  list_add(list, if_start);
+  // assign condition
+  instr_add_dest(if_start, cond_dest);
+
+  // if body
+  body();
+  match(T_RIGHT_BRACE);
+  instr_add_if_end();
+
+  if_cont();
+}
+
+elem_t * if_cond_() {
   // handle condition
   elem_t * cond = parse_expression(); // condition handling
   // check for func call
@@ -2044,22 +2065,8 @@ void if_() {
   else if (cond->symbol.sym_var_item->type != VAR_BOOL) {
     error(2, "parser", NULL, "Invalid condition");
   }
-  match(T_LEFT_BRACE);
-  match(T_EOL);
 
-  // if start instr
-  instr_t * if_start = instr_create();
-  instr_set_type(if_start, IC_IF_START);
-  list_add(list, if_start);
-  // assign condition
-  instr_add_dest(if_start, cond);
-
-  // if body
-  body();
-  match(T_RIGHT_BRACE);
-  instr_add_if_end();
-
-  if_cont();
+  return cond;
 }
 
 void if_cont() {
@@ -2092,13 +2099,15 @@ void cycle() {
   match(T_SEMICOLON);
 
   // condition
-  for_cond_();
+  elem_t * cond_dest = for_cond_();
   match(T_SEMICOLON);
 
   // step instr
   instr_t * for_step = instr_create();
   instr_set_type(for_step, IC_FOR_STEP);
   list_add(list, for_step);
+  // assign condition reference
+  instr_add_dest(for_step, cond_dest);
   // step
   for_move();
   match(T_LEFT_BRACE);
@@ -2134,7 +2143,12 @@ void for_def() {
   var_(id);
 }
 
-void for_cond_() {
+elem_t * for_cond_() {
+  // create instr
+  instr_t * for_cond = instr_create();
+  instr_set_type(for_cond, IC_FOR_COND);
+  list_add(list, for_cond);
+
   // get condition
   elem_t * cond = parse_expression();
 
@@ -2153,12 +2167,7 @@ void for_cond_() {
     error(2, "parser", NULL, "Invalid condition");
   }
 
-  // create instr
-  instr_t * for_cond = instr_create();
-  instr_set_type(for_cond, IC_FOR_COND);
-  list_add(list, for_cond);
-  // assign condition
-  instr_add_dest(for_cond, cond);
+  return cond;
 }
 
 void for_move() {
