@@ -2143,7 +2143,6 @@ void for_cond_() {
     elem_t * func_dest = create_expr(cond);
     func_add_ret(cond, func_dest->symbol.sym_var_item);
     func_dest->symbol.sym_var_item->type = VAR_BOOL;
-    instr_add_dest(for_cond, func_dest);
     cond = func_dest;
   }
   // check type
