@@ -1496,6 +1496,57 @@ else
         echo "TEST FAILED"
 fi
 
+echo "--13_complex_20.go--"
+./ifj20 < compiler_tests/13_complex_20.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--13_complex_21.go--"
+./ifj20 < compiler_tests/13_complex_21.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--13_complex_22.go--"
+./ifj20 < compiler_tests/13_complex_22.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--13_complex_23.go--"
+./ifj20 < compiler_tests/13_complex_23.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--13_complex_24.go--"
+./ifj20 < compiler_tests/13_complex_24.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+
 echo "#------------------EOL tests------------------#"
 echo "--compiler_tests/EOL_1.go--"
 ./ifj20 < compiler_tests/EOL_1.go > /dev/null 2>&1
@@ -2111,6 +2162,27 @@ else
         echo "TEST FAILED"
 fi
 
+echo "--BUILDIN_23.go - chr--"
+./ifj20 < compiler_tests/BUILDIN_23.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--BUILDIN_24.go - chr--"
+./ifj20 < compiler_tests/BUILDIN_24.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+
 echo "#------------------BOOLTHEN------------------#"
 
 echo "--BOOLTHEN_01.go--"
@@ -2293,6 +2365,15 @@ else
         echo "TEST FAILED"
 fi
 
+echo "--BOOLTHEN_19.go--"
+./ifj20 < compiler_tests/BOOLTHEN_19.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
 
 echo "#------------------MULTIVAL------------------#"
 echo "--MULTIVAL_01.go--"

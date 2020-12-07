@@ -6,14 +6,14 @@ func main () {
 	if a == 3 {
 		b:=len("\xff")
 		if b != 1{
-		print("Nenastane")
+		print("Nenastane\n")
 		} else {
-			print("ok")
+			print("ok\n")
 		}
 	}
-	
-	if (len("\xff") == len("")) {
-	print("ok")
+
+	if (len("\xff") == len("1")) {
+	print("ok\n")
 	}
 
 }

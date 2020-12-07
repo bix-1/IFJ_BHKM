@@ -5,10 +5,9 @@ func main () {
 	a:=false
 	a,_ = inputb()
 	if (a == true) {
-	
-	print("\n\t\\ funguje \t\t\x00")
+	print("funguje\n", a)
 	}
-
+	print("\n", a)
 
 
 }

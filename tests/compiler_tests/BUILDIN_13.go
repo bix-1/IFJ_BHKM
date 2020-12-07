@@ -5,7 +5,7 @@ func main () {
 	a:=0.3
 	b:= a / int2float(100)
 	if (b == 0.0) {
-	print("ok")
+	print("not ok")
 	}
 
 	c:= int2float(42) / 1.0

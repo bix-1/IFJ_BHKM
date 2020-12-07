@@ -14,14 +14,14 @@ if (float2int(e) == 5) {
 	if float2int(a) >= 3 {
 	print("nenastanem")
 	} else {
-	print("nastanem\t\t\\")
+	print("nastanem\t\t\\\n")
 	}
 
 	c = 10.2 // c = 10.2
 }
 /*            ok         */
 if (c >= int2float(a)) {
-print("Nenestane")
+print("Stane")
 } else {
 e = int2float(10)	// e = 10.0
 }
