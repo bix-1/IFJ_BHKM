@@ -531,6 +531,74 @@ typedef enum instr_type {
 	IC_READ_VAR,
 
 	/*
+	 * Read variable from build in functions
+	 *
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 0: []
+	 *                  returns -> 1: [symbol var (dest)]
+	 *
+	 * Example:
+	 * x = inputi(22)
+	 *
+	 *
+	 */
+	IC_READ_INT,
+
+	/*
+	 * Read variable from build in functions
+	 *
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 0: []
+	 *                  returns -> 1: [symbol var (dest)]
+	 *
+	 * Example:
+	 * x = inputf(22.2)
+	 *
+	 *
+	 */
+	IC_READ_FLOAT,
+
+	/*
+	 * Read variable from build in functions
+	 *
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 0: []
+	 *                  returns -> 1: [symbol var (dest)]
+	 *
+	 * Example:
+	 * x = inputi("HelloWorld)
+	 *
+	 *
+	 */
+	IC_READ_STRING,
+
+	/*
+	 * Read variable from build in functions
+	 *
+	 * elem_dest: symbol func
+	 * elem_1: NULL
+	 * elem_2: NULL
+	 *
+	 * symbol func:     params  -> 0: []
+	 *                  returns -> 1: [symbol var (dest)]
+	 *
+	 * Example:
+	 * x = inputi(true)
+	 *
+	 *
+	 */
+	IC_READ_BOOL,
+
+	/*
 	 * Write variables to output from build in functions
 	 *
 	 * elem_dest: symbol func
