@@ -777,12 +777,10 @@ void func_add_ret(elem_t *func, sym_var_item_t *ret) {
 }
 
 instr_type_t get_func_instr_type(char * func) {
-  if (
-    !strcmp(func, "inputs") ||  // string
-    !strcmp(func, "inputi") ||  // int
-    !strcmp(func, "inputf") ||  // float
-    !strcmp(func, "inputb")     // bool
-  ) return IC_READ_VAR;
+  if (!strcmp(func, "inputs")) return IC_READ_STRING;
+  if (!strcmp(func, "inputi")) return IC_READ_INT;
+  if (!strcmp(func, "inputf")) return IC_READ_FLOAT;
+  if (!strcmp(func, "inputb")) return IC_READ_BOOL;
   if (!strcmp(func, "print"))     return IC_WRITE_VAR;
   if (!strcmp(func, "int2float")) return IC_INT2FLOAT_VAR;
   if (!strcmp(func, "float2int")) return IC_FLOAT2INT_VAR;
