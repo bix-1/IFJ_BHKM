@@ -2028,10 +2028,22 @@ void if_() {
   match(T_IF);
   instr_add_if_def();
 
-  // condition
+  // handle condition
   elem_t * cond = parse_expression(); // condition handling
-  if (cond->symbol.sym_var_item->type != VAR_BOOL)
+  // check for func call
+  if (cond->sym_type == SYM_FUNC) {
+    elem_t * func_dest = create_expr(cond);
+    func_add_ret(cond, func_dest->symbol.sym_var_item);
+    func_dest->symbol.sym_var_item->type = VAR_BOOL;
+    cond = func_dest;
+  }
+  // check type
+  else if (cond->symbol.sym_var_item->type == VAR_UNDEFINED) {
+    cond->symbol.sym_var_item->type = VAR_BOOL;
+  }
+  else if (cond->symbol.sym_var_item->type != VAR_BOOL) {
     error(2, "parser", NULL, "Invalid condition");
+  }
   match(T_LEFT_BRACE);
   match(T_EOL);
 
@@ -2039,6 +2051,8 @@ void if_() {
   instr_t * if_start = instr_create();
   instr_set_type(if_start, IC_IF_START);
   list_add(list, if_start);
+  // assign condition
+  instr_add_dest(if_start, cond);
 
   // if body
   body();
@@ -2078,12 +2092,7 @@ void cycle() {
   match(T_SEMICOLON);
 
   // condition
-  instr_t * for_cond = instr_create();
-  instr_set_type(for_cond, IC_FOR_COND);
-  list_add(list, for_cond);
-  elem_t * cond = parse_expression(); // condition handling
-  if (cond->symbol.sym_var_item->type != VAR_BOOL)
-    error(2, "parser", NULL, "Invalid condition");
+  for_cond_();
   match(T_SEMICOLON);
 
   // step instr
@@ -2123,6 +2132,34 @@ void for_def() {
   char * id = to_string(&next);
   get_next_token(&next);
   var_(id);
+}
+
+void for_cond_() {
+  // get condition
+  elem_t * cond = parse_expression();
+
+  // check for func call
+  if (cond->sym_type == SYM_FUNC) {
+    elem_t * func_dest = create_expr(cond);
+    func_add_ret(cond, func_dest->symbol.sym_var_item);
+    func_dest->symbol.sym_var_item->type = VAR_BOOL;
+    instr_add_dest(for_cond, func_dest);
+    cond = func_dest;
+  }
+  // check type
+  else if (cond->symbol.sym_var_item->type == VAR_UNDEFINED) {
+    cond->symbol.sym_var_item->type = VAR_BOOL;
+  }
+  else if (cond->symbol.sym_var_item->type != VAR_BOOL) {
+    error(2, "parser", NULL, "Invalid condition");
+  }
+
+  // create instr
+  instr_t * for_cond = instr_create();
+  instr_set_type(for_cond, IC_FOR_COND);
+  list_add(list, for_cond);
+  // assign condition
+  instr_add_dest(for_cond, cond);
 }
 
 void for_move() {

@@ -382,6 +382,7 @@ void if_cont();
 void else_();
 void cycle();
 void for_def();
+void for_cond_();
 void for_move();
 void return_();
 elem_t * return_list();
