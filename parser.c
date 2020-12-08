@@ -2051,6 +2051,11 @@ elem_t * if_cond_() {
   elem_t * cond = parse_expression(); // condition handling
   // check for func call
   if (cond->sym_type == SYM_FUNC) {
+    // add func call instruction
+    instr_type_t type = get_func_instr_type(cond->symbol.sym_func->name);
+    instr_add_func_call(cond, type);
+
+    // handle func_call's dest
     elem_t * func_dest = create_expr(cond);
     func_add_ret(cond, func_dest->symbol.sym_var_item);
     func_dest->symbol.sym_var_item->type = VAR_BOOL;
@@ -2152,6 +2157,11 @@ elem_t * for_cond_() {
 
   // check for func call
   if (cond->sym_type == SYM_FUNC) {
+    // add func call instruction
+    instr_type_t type = get_func_instr_type(cond->symbol.sym_func->name);
+    instr_add_func_call(cond, type);
+
+    // handle func_call's dest
     elem_t * func_dest = create_expr(cond);
     func_add_ret(cond, func_dest->symbol.sym_var_item);
     func_dest->symbol.sym_var_item->type = VAR_BOOL;
