@@ -8,6 +8,6 @@ func main () {
 
     //a, _ := inputi()
     if (foo()) {
-        printf("Hello")
+        print("Hello")
     }
 }
