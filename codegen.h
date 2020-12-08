@@ -753,36 +753,6 @@ typedef enum instr_type {
 	IC_IF_END,
 
 	/*
-	 * Helper instruction. Indicates incoming condition instructions for else-if
-	 *
-	 * elem_dest: NULL
-	 * elem_1: NULL
-	 * elem_2: NULL
-	 *
-	 */
-	IC_ELSEIF_DEF,
-
-	/*
-	 * Helper instruction. Indicates start of else-if perform instructions
-	 *
-	 * elem_dest: NULL
-	 * elem_1: NULL
-	 * elem_2: NULL
-	 *
-	 */
-	IC_ELSEIF_START,
-
-	/*
-	 * Helper instruction. Indicates end of else-if perform instructions
-	 *
-	 * elem_dest: NULL
-	 * elem_1: NULL
-	 * elem_2: NULL
-	 *
-	 */
-	IC_ELSEIF_END,
-
-	/*
 	 * Helper instruction. Indicates start of else perform instructions
 	 *
 	 * elem_dest: NULL
@@ -873,6 +843,8 @@ char *get_frame(sym_var_item_t *sym_var_item);
 // Used after condition instruction, check next instruction and prepare label
 void try_create_jump(instr_t instr);
 
+bool is_condition_instr(instr_t instr);
+
 // Generators for specific instruction
 void declr_var(instr_t instr);
 void def_var(instr_t instr);
@@ -891,7 +863,6 @@ void not_var(instr_t instr);
 void int2float(instr_t instr);
 void float2int(instr_t instr);
 void str2int(instr_t instr);
-void read_var(instr_t instr);
 void read_int(instr_t instr);
 void read_float(instr_t instr);
 void read_string(instr_t instr);
@@ -909,16 +880,13 @@ void read_float_def();
 void read_string_def();
 void read_bool_def();
 void if_def();
-void if_start();
+void if_start(instr_t instr);
 void if_end(instr_t instr);
-void elseif_def();
-void elseif_start();
-void elseif_end(instr_t instr);
 void else_start();
 void else_end();
 void for_def_codegen();
 void for_cond();
-void for_step();
+void for_step(instr_t instr);
 void for_body_start();
 void for_body_end();
 

@@ -47,6 +47,7 @@ void codegen_init() {
 
 	fprintf(OUTPUT, ".IFJcode20\n\n");
 
+	// dev-null is used to discard underscore variables
 	fprintf(OUTPUT, "DEFVAR GF@dev-null\n");
 	fprintf(OUTPUT, "JUMP main\n\n");
 }
@@ -76,7 +77,7 @@ void try_create_jump(instr_t instr) {
 
 	char *frame_dest = get_frame(sym_dest);
 
-	if (instr.next->type == IC_IF_START || instr.next->type == IC_ELSEIF_START) {
+	if (instr.next->type == IC_IF_START) {
 		jmp_label_stack_push(skip_labels_top, skip_index);
 		fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", IF_SKIP, skip_index, frame_dest, sym_dest->name);
 		skip_index++;
@@ -87,6 +88,11 @@ void try_create_jump(instr_t instr) {
 		fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", FOR_END, jmp_label_stack_top(for_def_top), frame_dest,
 		        sym_dest->name);
 	}
+}
+
+bool is_condition_instr(instr_t instr) {
+	return (instr.type == IC_LT_VAR || instr.type == IC_GT_VAR || instr.type == IC_EQ_VAR ||
+	        instr.type == IC_AND_VAR || instr.type == IC_OR_VAR || instr.type == IC_NOT_VAR);
 }
 
 void declr_var(instr_t instr) {
@@ -330,10 +336,10 @@ void call_fun(instr_t instr) {
 
 void ret_fun(instr_t instr) {
 	// Same function just return and end
-	if (last_instr != NULL && last_instr->type == IC_RET_FUN && instr.type == IC_END_FUN &&
+	/*if (last_instr != NULL && last_instr->type == IC_RET_FUN && instr.type == IC_END_FUN &&
 	    *(last_instr->elem_dest_ptr->key) == *(instr.elem_dest_ptr->key)) {
 		return;
-	}
+	}*/
 
 	elem_t *elem_dest = instr.elem_dest_ptr;
 
@@ -1577,14 +1583,6 @@ void str2int(instr_t instr) {
 	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
 	sym_var_item_t *sym_elem2 = elem_dest->symbol.sym_func->params->first->next->item;
 
-	/*if (sym_dest == NULL) {
-		error(99, "codegen.c", "str2int", "NULL symbol");
-	}*/
-
-	/*if (sym_err == NULL) {
-		error(99, "codegen.c", "str2int", "NULL symbol");
-	}*/
-
 	// Must have at least 1 defined variable destination
 	if (sym_dest == NULL && sym_err == NULL) {
 		error(99, "codegen.c", "str2int", "NULL symbol");
@@ -2006,14 +2004,6 @@ void getchar_str(instr_t instr) {
 	sym_var_item_t *sym_err = elem_dest->symbol.sym_func->returns->first->next->item;
 	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
 
-	/*if (sym_dest == NULL) {
-		error(99, "codegen.c", "int2char", "NULL symbol");
-	}*/
-
-	/*if (sym_err == NULL) {
-		error(99, "codegen.c", "int2char", "NULL symbol");
-	}*/
-
 	// Must have at least 1 defined variable destination
 	if (sym_dest == NULL && sym_err == NULL) {
 		error(99, "codegen.c", "getchar_str", "NULL symbol");
@@ -2083,14 +2073,6 @@ void substr_str(instr_t instr) {
 	sym_var_item_t *sym_elem1 = elem_dest->symbol.sym_func->params->first->item;
 	sym_var_item_t *sym_elem2 = elem_dest->symbol.sym_func->params->first->next->item;
 	sym_var_item_t *sym_elem3 = elem_dest->symbol.sym_func->params->first->next->next->item;
-
-	/*if (sym_dest == NULL) {
-		error(99, "codegen.c", "substr_str", "NULL symbol");
-	}*/
-
-	/*if (sym_err == NULL) {
-		error(99, "codegen.c", "substr_str", "NULL symbol");
-	}*/
 
 	// Must have at least 1 defined variable destination
 	if (sym_dest == NULL && sym_err == NULL) {
@@ -2552,9 +2534,69 @@ void if_def() {
 	end_index++;
 }
 
-void if_start() {
-	//fprintf(OUTPUT, "CREATEFRAME\n");
-	//fprintf(OUTPUT, "PUSHFRAME\n");
+void if_start(instr_t instr) {
+	if (!is_condition_instr(*last_instr)) {
+		// if true, if foo(), etc.
+
+		elem_t *elem_dest = instr.elem_dest_ptr;
+
+		if (elem_dest == NULL) {
+			error(99, "codegen.c", "if_start", "NULL element");
+		}
+
+		if (elem_dest->sym_type == SYM_FUNC) {
+			sym_var_item_t *sym_return = elem_dest->symbol.sym_func->returns->first->item;
+
+			// Bool return functions should have only one return
+			if (sym_return == NULL) {
+				error(99, "codegen.c", "if_start", "NULL function return variable");
+			}
+
+			jmp_label_stack_push(skip_labels_top, skip_index);
+
+			if (sym_return->is_const) {
+				if (sym_return->data.bool_t) {
+					fprintf(OUTPUT, "JUMPIFNEQ %s%d bool@true bool@true\n", IF_SKIP, skip_index);
+				}
+				else {
+					fprintf(OUTPUT, "JUMPIFNEQ %s%d bool@false bool@true\n", IF_SKIP, skip_index);
+				}
+			}
+			else {
+				char *sym_return_dest = get_frame(sym_return);
+				fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", IF_SKIP, skip_index, sym_return_dest, sym_return->name);
+			}
+
+			skip_index++;
+		}
+		else if (elem_dest->sym_type == SYM_VAR_ITEM) {
+			sym_var_item_t *sym_bool = elem_dest->symbol.sym_var_item;
+
+			if (sym_bool == NULL) {
+				error(99, "codegen.c", "if_start", "NULL item variable");
+			}
+
+			jmp_label_stack_push(skip_labels_top, skip_index);
+
+			if (sym_bool->is_const) {
+				if (sym_bool->data.bool_t) {
+					fprintf(OUTPUT, "JUMPIFNEQ %s%d bool@true bool@true\n", IF_SKIP, skip_index);
+				}
+				else {
+					fprintf(OUTPUT, "JUMPIFNEQ %s%d bool@false bool@true\n", IF_SKIP, skip_index);
+				}
+			}
+			else {
+				char *sym_bool_dest = get_frame(sym_bool);
+				fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", IF_SKIP, skip_index, sym_bool_dest, sym_bool->name);
+			}
+
+			skip_index++;
+		}
+		else {
+			error(99, "codegen.c", "if_start", "Invalid symbol");
+		}
+	}
 }
 
 void if_end(instr_t instr) {
@@ -2562,27 +2604,7 @@ void if_end(instr_t instr) {
 	fprintf(OUTPUT, "JUMP %s%d\n", IF_END, jmp_label_stack_top(end_labels_top));
 	fprintf(OUTPUT, "LABEL %s%d\n", IF_SKIP, jmp_label_stack_pop(skip_labels_bottom, skip_labels_top));
 
-	if (instr.next->type != IC_ELSEIF_DEF && instr.next->type != IC_ELSE_START) {
-		// if block end
-		fprintf(OUTPUT, "LABEL %s%d\n", IF_END, jmp_label_stack_pop(end_labels_bottom, end_labels_top));
-	}
-}
-
-void elseif_def() {
-	//
-}
-
-void elseif_start() {
-	//fprintf(OUTPUT, "CREATEFRAME\n");
-	//fprintf(OUTPUT, "PUSHFRAME\n");
-}
-
-void elseif_end(instr_t instr) {
-	//fprintf(OUTPUT, "POPFRAME\n");
-	fprintf(OUTPUT, "JUMP %s%d\n", IF_END, jmp_label_stack_top(end_labels_top));
-	fprintf(OUTPUT, "LABEL %s%d\n", IF_SKIP, jmp_label_stack_pop(skip_labels_bottom, skip_labels_top));
-
-	if (instr.next->type != IC_ELSEIF_DEF && instr.next->type != IC_ELSE_START) {
+	if (instr.next->type != IC_ELSE_START) {
 		// if block end
 		fprintf(OUTPUT, "LABEL %s%d\n", IF_END, jmp_label_stack_pop(end_labels_bottom, end_labels_top));
 	}
@@ -2610,7 +2632,72 @@ void for_cond() {
 	fprintf(OUTPUT, "LABEL %s%d\n", FOR_COND, jmp_label_stack_top(for_def_top));
 }
 
-void for_step() {
+void for_step(instr_t instr) {
+	if (!is_condition_instr(*last_instr)) {
+		// in for condition - if true, if foo(), etc.
+
+		elem_t *elem_dest = instr.elem_dest_ptr;
+
+		if (elem_dest == NULL) {
+			error(99, "codegen.c", "for_step", "NULL element");
+		}
+
+		if (elem_dest->sym_type == SYM_FUNC) {
+			sym_var_item_t *sym_return = elem_dest->symbol.sym_func->returns->first->item;
+
+			// Bool return functions should have only one return
+			if (sym_return == NULL) {
+				error(99, "codegen.c", "for_step", "NULL function return variable");
+			}
+
+			if (sym_return->is_const) {
+				if (sym_return->data.bool_t) {
+					fprintf(OUTPUT, "JUMPIFEQ %s%d bool@true bool@true\n", FOR_BODY, jmp_label_stack_top(for_def_top));
+					fprintf(OUTPUT, "JUMPIFNEQ %s%d bool@true bool@true\n", FOR_END, jmp_label_stack_top(for_def_top));
+				}
+				else {
+					fprintf(OUTPUT, "JUMPIFEQ %s%d bool@false bool@true\n", FOR_BODY, jmp_label_stack_top(for_def_top));
+					fprintf(OUTPUT, "JUMPIFNEQ %s%d bool@false bool@true\n", FOR_END, jmp_label_stack_top(for_def_top));
+				}
+			}
+			else {
+				char *sym_return_dest = get_frame(sym_return);
+				fprintf(OUTPUT, "JUMPIFEQ %s%d %s@%s bool@true\n", FOR_BODY, jmp_label_stack_top(for_def_top), sym_return_dest,
+				        sym_return->name);
+				fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", FOR_END, jmp_label_stack_top(for_def_top), sym_return_dest,
+				        sym_return->name);
+			}
+		}
+		else if (elem_dest->sym_type == SYM_VAR_ITEM) {
+			sym_var_item_t *sym_bool = elem_dest->symbol.sym_var_item;
+
+			if (sym_bool == NULL) {
+				error(99, "codegen.c", "for_step", "NULL item variable");
+			}
+
+			if (sym_bool->is_const) {
+				if (sym_bool->data.bool_t) {
+					fprintf(OUTPUT, "JUMPIFEQ %s%d bool@true bool@true\n", FOR_BODY, jmp_label_stack_top(for_def_top));
+					fprintf(OUTPUT, "JUMPIFNEQ %s%d bool@true bool@true\n", FOR_END, jmp_label_stack_top(for_def_top));
+				}
+				else {
+					fprintf(OUTPUT, "JUMPIFEQ %s%d bool@false bool@true\n", FOR_BODY, jmp_label_stack_top(for_def_top));
+					fprintf(OUTPUT, "JUMPIFNEQ %s%d bool@false bool@true\n", FOR_END, jmp_label_stack_top(for_def_top));
+				}
+			}
+			else {
+				char *sym_bool_dest = get_frame(sym_bool);
+				fprintf(OUTPUT, "JUMPIFEQ %s%d %s@%s bool@true\n", FOR_BODY, jmp_label_stack_top(for_def_top), sym_bool_dest,
+				        sym_bool->name);
+				fprintf(OUTPUT, "JUMPIFNEQ %s%d %s@%s bool@true\n", FOR_END, jmp_label_stack_top(for_def_top), sym_bool_dest,
+				        sym_bool->name);
+			}
+		}
+		else {
+			error(99, "codegen.c", "for_step", "Invalid symbol");
+		}
+	}
+
 	fprintf(OUTPUT, "LABEL %s%d\n", FOR_STEP, jmp_label_stack_top(for_def_top));
 }
 
@@ -2723,19 +2810,10 @@ void codegen_generate_instr() {
 				if_def();
 				break;
 			case IC_IF_START:
-				if_start();
+				if_start(*instr);
 				break;
 			case IC_IF_END:
 				if_end(*instr);
-				break;
-			case IC_ELSEIF_DEF:
-				elseif_def();
-				break;
-			case IC_ELSEIF_START:
-				elseif_start();
-				break;
-			case IC_ELSEIF_END:
-				elseif_end(*instr);
 				break;
 			case IC_ELSE_START:
 				else_start();
@@ -2750,7 +2828,7 @@ void codegen_generate_instr() {
 				for_cond();
 				break;
 			case IC_FOR_STEP:
-				for_step();
+				for_step(*instr);
 				break;
 			case IC_FOR_BODY_START:
 				for_body_start();

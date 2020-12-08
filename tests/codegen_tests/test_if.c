@@ -126,11 +126,11 @@ int main() {
 
 	add_instruction(IC_WRITE_VAR, print_fu1, NULL, NULL);
 	add_instruction(IC_IF_END, NULL, NULL, NULL);
-	add_instruction(IC_ELSEIF_DEF, NULL, NULL, NULL);
+	add_instruction(IC_IF_DEF, NULL, NULL, NULL);
 	add_instruction(IC_EQ_VAR, b2, i, j);
-	add_instruction(IC_ELSEIF_START, NULL, NULL, NULL);
+	add_instruction(IC_IF_START, NULL, NULL, NULL);
 	add_instruction(IC_WRITE_VAR, print_fu2, NULL, NULL);
-	add_instruction(IC_ELSEIF_END, NULL, NULL, NULL);
+	add_instruction(IC_IF_END, NULL, NULL, NULL);
 	add_instruction(IC_ELSE_START, NULL, NULL, NULL);
 	add_instruction(IC_WRITE_VAR, print_fu3, NULL, NULL);
 	add_instruction(IC_ELSE_END, NULL, NULL, NULL);
