@@ -785,9 +785,9 @@ instr_type_t get_func_instr_type(char * func) {
   if (!strcmp(func, "int2float")) return IC_INT2FLOAT_VAR;
   if (!strcmp(func, "float2int")) return IC_FLOAT2INT_VAR;
   if (!strcmp(func, "len"))       return IC_STRLEN_STR;
-  if (!strcmp(func, "SUBSTR"))    return IC_SUBSTR_STR;
-  if (!strcmp(func, "ORD"))       return IC_STR2INT_VAR;
-  if (!strcmp(func, "CHR"))       return IC_GETCHAR_STR;
+  if (!strcmp(func, "substr"))    return IC_SUBSTR_STR;
+  if (!strcmp(func, "ord"))       return IC_STR2INT_VAR;
+  if (!strcmp(func, "chr"))       return IC_GETCHAR_STR;
 
   return IC_CALL_FUN;
 }

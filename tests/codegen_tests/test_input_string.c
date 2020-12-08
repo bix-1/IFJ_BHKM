@@ -62,7 +62,7 @@ int main() {
 	elem_t *print_fun = create_function("Print1", print->symbol.sym_var_list, NULL);
 
 	add_instruction(IC_DEF_FUN, main, main_defs, NULL);
-	add_instruction(IC_READ_VAR, chr, NULL, NULL);
+	add_instruction(IC_READ_STRING, chr, NULL, NULL);
 	add_instruction(IC_WRITE_VAR, print_fun, NULL, NULL);
 	add_instruction(IC_END_FUN, main, NULL, NULL);
 
