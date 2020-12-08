@@ -1305,6 +1305,96 @@ else
         echo "TEST FAILED"
 fi
 
+echo "--12_sy_operations_44.go--"
+./ifj20 < compiler_tests/12_sy_operations_44.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 5 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--12_sy_operations_45.go--"
+./ifj20 < compiler_tests/12_sy_operations_45.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--12_sy_operations_46.go--"
+./ifj20 < compiler_tests/12_sy_operations_46.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 3 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--12_sy_operations_47.go--"
+./ifj20 < compiler_tests/12_sy_operations_47.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 6 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--12_sy_operations_48.go--"
+./ifj20 < compiler_tests/12_sy_operations_48.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 6 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--12_sy_operations_49.go--"
+./ifj20 < compiler_tests/12_sy_operations_49.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 6 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--12_sy_operations_50.go--"
+./ifj20 < compiler_tests/12_sy_operations_50.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--12_sy_operations_51.go--"
+./ifj20 < compiler_tests/12_sy_operations_51.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 0 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
+echo "--12_sy_operations_52.go--"
+./ifj20 < compiler_tests/12_sy_operations_52.go > /dev/null 2>&1
+OUT=$?
+if [ $OUT -eq 6 ]; then
+        echo "TEST OK"
+else
+        errorcount=$((errorcount + 1))
+        echo "TEST FAILED"
+fi
+
 echo "#------------------Complex tests------------------#"
 echo "--Complex tests--"
 ./ifj20 < compiler_tests/13_complex_01.go > /dev/null 2>&1

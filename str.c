@@ -3,7 +3,7 @@
  *
  * File: str.c
  * Brief: Implementation of dynamic string.
- * Source: Jednoduchy interpret
+ * Source: Jednoduchy interpret - http://www.fit.vutbr.cz/study/courses/IFJ/public/project/
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
  *          Kostolányi Adam xkosto04@stud.fit.vutbr.cz
@@ -17,7 +17,7 @@
 #include <string.h>
 
 void str_init(string *s) {
-    //allocates string to 1 char size
+    //allocates string to char len size
     s->str = (char *) malloc(STR_LEN_INC);
 
     if (s->str == NULL) {
@@ -55,9 +55,6 @@ void str_add_char(string *s, char c) {
     s->str[s->str_lenght] = '\0';
 }
 
-/*
- * Function copies second string into the first.
- */
 void str_copy(string *s1, string *s2) {
     int new_str_lenght = s2->str_lenght;
     //if there is not enoguh memory, we reallocate

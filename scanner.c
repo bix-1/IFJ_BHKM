@@ -40,6 +40,7 @@ int get_next_token(tToken *token) {
     char *endptr;
     int eolerr = 0; // variable that helps us to decide, wether we unget char after new line o not
 
+    // initialization of dynamic string, that stores attributes
     str_init(&attr);
     str_clear(&attr);
 
@@ -434,9 +435,6 @@ int get_next_token(tToken *token) {
                     c = getc(source);
 
                     if (c == '/') { // end of block comment and we go to start state
-                        /*if (eol == 1) {
-                            return L_SUCCESS;
-                        }*/
                         scanner_state = s_start;
                     } else {
                         ungetc(c, source);

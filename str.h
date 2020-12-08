@@ -3,7 +3,7 @@
  *
  * File: str.h
  * Brief: Dynamic string file
- * Source: Jednoduchy interpret
+ * Source: Jednoduchy interpret - http://www.fit.vutbr.cz/study/courses/IFJ/public/project/
  *
  * Authors: Hladký Tomáš    xhladk15@stud.fit.vutbr.cz
  *          Kostolányi Adam xkosto04@stud.fit.vutbr.cz
