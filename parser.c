@@ -2183,13 +2183,15 @@ void for_move() {
 void return_() {
   match(T_RETURN);
 
+  // get return list definition
   sym_var_list_t * rets = last_func->symbol.sym_func->returns;
-
+  // get return list of ret_call
   elem_t * ret_list = return_list();
 
   // handling of return list
   if (ret_list == NULL) {
     if (rets == NULL) return;
+
     // check for named returns
     else if (rets->first->item->name != NULL) {
       // create return list
@@ -2210,14 +2212,25 @@ void return_() {
         sym_var_list_add(r_list, list_item);
       }
     }
-    else {
+    else { // defined returns -- empty ret_call
       error(
         6, "parser", "return call",
-        "Function [%s] with unempty return list returns void",
+        "Function [%s] with non-empty return list returning void",
         *(last_func->key)
       );
     }
-  } else {
+  }
+  else { // nonempty return list
+    // check for empty return definition
+    if (rets == NULL) {
+      error(
+        6, "parser", "return call handling",
+        "Returning nonempty list where no returns were defined for function [%s]",
+        last_func->symbol.sym_func->name
+      );
+    }
+
+    // named returns --> void return call
     if (rets->first->item->name != NULL) {
       error(
         6, "parser", "return call",
