@@ -1308,7 +1308,7 @@ fi
 echo "--12_sy_operations_44.go--"
 ./ifj20 < compiler_tests/12_sy_operations_44.go > /dev/null 2>&1
 OUT=$?
-if [ $OUT -eq 5 ]; then
+if [ $OUT -eq 7 ]; then
         echo "TEST OK"
 else
         errorcount=$((errorcount + 1))
