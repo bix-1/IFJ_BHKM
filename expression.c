@@ -603,6 +603,16 @@ void reduce()
             error(2, "expression parser", "reduce", "Missing an expression");
         }
 
+        if ((tokenTop->data->symbol.sym_var_item->type == VAR_BOOL 
+            && tokenAfterTop->data->symbol.sym_var_item->type == VAR_BOOL) 
+            && (symbolTop.token_type == T_PLUS || symbolTop.token_type == T_MINUS 
+            ||symbolTop.token_type == T_MUL ||symbolTop.token_type == T_DIV))
+        {
+            release_resources();
+            error(5, "expression parser", "check types", "Variable types do not match");
+        }
+        
+
         // If value stack isn't empty
         if (tokStack->topToken->token.token_type != T_DOLLAR)
         {
@@ -611,6 +621,7 @@ void reduce()
                     tokenTop->data->symbol.sym_var_item,
                     tokenAfterTop->data->symbol.sym_var_item))
             {
+                release_resources();
                 error(5, "expression parser", "check types", "Variable types do not match");
             }
 
