@@ -1686,6 +1686,13 @@ void program() {
   // main func body
   body();
   match(T_RIGHT_BRACE);
+  // check for skipped \n
+  // NOTE wouldn't match POSIX standards for a file,
+  // but necessary for example inputs to pass
+  if (next.token_type == T_EOF) {
+    instr_add_func_end();
+    return;
+  }
   match(T_EOL);
   // end of main func
   instr_add_func_end();
@@ -1769,6 +1776,13 @@ void func_def() {
   match(T_R_BRACKET);
 
   func_def_type();
+  // check for skipped \n
+  // NOTE wouldn't match POSIX standards for a file,
+  // but necessary for example inputs to pass
+  if (next.token_type == T_EOF) {
+    instr_add_func_end();
+    return;
+  }
   match(T_EOL);
 
   // end of func def
