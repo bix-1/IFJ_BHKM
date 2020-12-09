@@ -1996,6 +1996,8 @@ int var_(char * id) { // collect list of dest variables
     match(T_ASSIGNMENT);
   else error(2, "parser", NULL, "Invalid operation following list of variables");
 
+  skip_empty();
+
   // create dest & src lists
   elem_t * dest = make_dest(operation);
   elem_t * src = get_expr_list();
