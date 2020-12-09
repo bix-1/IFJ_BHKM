@@ -597,6 +597,22 @@ elem_t * try_func(tToken * token) {
   get_next_token(token);
 
   if (token->token_type == T_L_BRACKET) {
+    // check for var of the same name --> non-functinon call error
+    eps = true;
+    elem_t * var = id_find(scope_get_head(), id);
+    if (var != NULL) {
+      // for cleanup
+      next.token_type = T_IDENTIFIER;
+      next.attr.str_lit.str = id;
+      error(
+        7, "parser", "function call",
+        "Cannot call non-function [%s]",
+        id
+      );
+    }
+    eps = false;
+
+    // handle func call
     elem_t * func = func_call(id);
     token->token_type = next.token_type;
     token->attr = next.attr;
